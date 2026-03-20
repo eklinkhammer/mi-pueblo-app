@@ -1,0 +1,71 @@
+defmodule FenceWeb.Router do
+  use FenceWeb, :router
+
+  pipeline :api do
+    plug :accepts, ["json"]
+  end
+
+  pipeline :authenticated do
+    plug FenceWeb.AuthPlug
+  end
+
+  scope "/api/v1", FenceWeb do
+    pipe_through :api
+
+    post "/auth/register", AuthController, :register
+    post "/auth/login", AuthController, :login
+    post "/auth/refresh", AuthController, :refresh
+  end
+
+  scope "/api/v1", FenceWeb do
+    pipe_through [:api, :authenticated]
+
+    get "/me", AuthController, :me
+    put "/me", AuthController, :update_me
+    post "/me/device-token", AuthController, :register_device_token
+
+    # Groups
+    get "/groups", GroupController, :index
+    post "/groups", GroupController, :create
+    get "/groups/:id", GroupController, :show
+    put "/groups/:id", GroupController, :update
+    delete "/groups/:id", GroupController, :delete
+    post "/groups/join", GroupController, :join
+    get "/groups/:id/members", GroupController, :members
+    delete "/groups/:id/members/:user_id", GroupController, :remove_member
+    post "/groups/:id/invites", GroupController, :create_invite
+
+    # Geofences
+    get "/groups/:id/geofences", GeofenceController, :index
+    post "/groups/:id/geofences", GeofenceController, :create
+    get "/groups/:gid/geofences/:fid", GeofenceController, :show
+    put "/groups/:gid/geofences/:fid", GeofenceController, :update
+    delete "/groups/:gid/geofences/:fid", GeofenceController, :delete
+
+    # Geofence subscriptions & opt-outs
+    get "/geofences/:id/subscription", GeofenceController, :show_subscription
+    put "/geofences/:id/subscription", GeofenceController, :upsert_subscription
+    post "/geofences/:id/opt-out", GeofenceController, :create_opt_out
+    delete "/geofences/:id/opt-out", GeofenceController, :delete_opt_out
+
+    # Location
+    post "/location", LocationController, :report
+    get "/groups/:id/locations", LocationController, :group_locations
+  end
+
+  # Enable LiveDashboard and Swoosh mailbox preview in development
+  if Application.compile_env(:fence, :dev_routes) do
+    # If you want to use the LiveDashboard in production, you should put
+    # it behind authentication and allow only admins to access it.
+    # If your application does not have an admins-only section yet,
+    # you can use Plug.BasicAuth to set up some basic authentication
+    # as long as you are also using SSL (which you should anyway).
+    import Phoenix.LiveDashboard.Router
+
+    scope "/dev" do
+      pipe_through [:fetch_session, :protect_from_forgery]
+
+      live_dashboard "/dashboard", metrics: FenceWeb.Telemetry
+    end
+  end
+end
