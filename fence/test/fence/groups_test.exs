@@ -2,6 +2,8 @@ defmodule Fence.GroupsTest do
   use Fence.DataCase, async: true
 
   alias Fence.Groups
+  alias Fence.Groups.Invite
+
   import Fence.Factory
 
   describe "create_group/2" do
@@ -82,20 +84,20 @@ defmodule Fence.GroupsTest do
     end
   end
 
-  describe "is_admin?/2 and is_member?/2" do
+  describe "admin?/2 and member?/2" do
     test "creator is admin and member" do
       user = create_user()
       group = create_group(user)
-      assert Groups.is_admin?(user.id, group.id)
-      assert Groups.is_member?(user.id, group.id)
+      assert Groups.admin?(user.id, group.id)
+      assert Groups.member?(user.id, group.id)
     end
 
     test "non-member is not admin or member" do
       user = create_user()
       other = create_user()
       group = create_group(user)
-      refute Groups.is_admin?(other.id, group.id)
-      refute Groups.is_member?(other.id, group.id)
+      refute Groups.admin?(other.id, group.id)
+      refute Groups.member?(other.id, group.id)
     end
   end
 
@@ -108,10 +110,10 @@ defmodule Fence.GroupsTest do
       # Add member via invite
       {:ok, invite} = Groups.create_invite(group.id, admin.id)
       {:ok, _} = Groups.join_by_invite_code(member.id, invite.code)
-      assert Groups.is_member?(member.id, group.id)
+      assert Groups.member?(member.id, group.id)
 
       assert {:ok, _} = Groups.remove_member(group.id, member.id)
-      refute Groups.is_member?(member.id, group.id)
+      refute Groups.member?(member.id, group.id)
     end
 
     test "returns error for non-member" do
@@ -140,7 +142,7 @@ defmodule Fence.GroupsTest do
 
       assert {:ok, membership} = Groups.join_by_invite_code(joiner.id, invite.code)
       assert membership.group.id == group.id
-      assert Groups.is_member?(joiner.id, group.id)
+      assert Groups.member?(joiner.id, group.id)
     end
 
     test "member role defaults to member" do
@@ -166,8 +168,8 @@ defmodule Fence.GroupsTest do
 
       # Manually insert expired invite
       {:ok, invite} =
-        %Fence.Groups.Invite{}
-        |> Fence.Groups.Invite.changeset(%{
+        %Invite{}
+        |> Invite.changeset(%{
           group_id: group.id,
           created_by_id: admin.id,
           expires_at: DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)

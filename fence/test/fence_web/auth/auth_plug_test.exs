@@ -1,6 +1,8 @@
 defmodule FenceWeb.AuthPlugTest do
   use FenceWeb.ConnCase, async: true
 
+  alias Fence.Accounts.Token
+
   import Fence.Factory
 
   describe "call/2" do
@@ -45,7 +47,8 @@ defmodule FenceWeb.AuthPlugTest do
         "exp" => System.os_time(:second) - 3600
       }
 
-      {:ok, token, _} = Joken.generate_and_sign(Fence.Accounts.Token.token_config(), claims, secret)
+      {:ok, token, _} =
+        Joken.generate_and_sign(Token.token_config(), claims, secret)
 
       conn =
         build_conn()
@@ -58,7 +61,7 @@ defmodule FenceWeb.AuthPlugTest do
 
     test "returns 401 for refresh token used as access" do
       user = create_user()
-      {:ok, token, _} = Fence.Accounts.Token.generate_refresh_token(user)
+      {:ok, token, _} = Token.generate_refresh_token(user)
 
       conn =
         build_conn()

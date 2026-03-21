@@ -1,6 +1,8 @@
 defmodule FenceWeb.GroupControllerTest do
   use FenceWeb.ConnCase, async: true
 
+  alias Fence.Groups.Invite
+
   import Fence.Factory
 
   setup %{conn: conn} do
@@ -135,8 +137,8 @@ defmodule FenceWeb.GroupControllerTest do
       group = create_group(admin)
 
       {:ok, invite} =
-        %Fence.Groups.Invite{}
-        |> Fence.Groups.Invite.changeset(%{
+        %Invite{}
+        |> Invite.changeset(%{
           group_id: group.id,
           created_by_id: admin.id,
           expires_at: DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)

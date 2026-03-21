@@ -22,12 +22,13 @@ defmodule Fence.Integration.MultiUserRealtimeTest do
       _socket_b = join_group_channel(socket_b, group_id)
 
       # A sends location via channel
-      ref = push(socket_a, "location:update", %{
-        "latitude" => @sf_lat,
-        "longitude" => @sf_lng,
-        "accuracy" => 15.0,
-        "speed" => 2.5
-      })
+      ref =
+        push(socket_a, "location:update", %{
+          "latitude" => @sf_lat,
+          "longitude" => @sf_lng,
+          "accuracy" => 15.0,
+          "speed" => 2.5
+        })
 
       assert_reply ref, :ok
 

@@ -10,6 +10,7 @@ defmodule Fence.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      dialyzer: [plt_local_path: "priv/plts", plt_core_path: "priv/plts"],
       listeners: [Phoenix.CodeReloader]
     ]
   end
@@ -65,7 +66,13 @@ defmodule Fence.MixProject do
       {:pigeon, "~> 2.0"},
 
       # CORS
-      {:cors_plug, "~> 3.0"}
+      {:cors_plug, "~> 3.0"},
+
+      # Static analysis
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -81,7 +88,15 @@ defmodule Fence.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format --check-formatted",
+        "credo --strict",
+        "sobelow --config",
+        "deps.audit --ignore-package-names hackney",
+        "test"
+      ]
     ]
   end
 end

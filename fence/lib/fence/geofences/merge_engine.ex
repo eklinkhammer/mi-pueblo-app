@@ -4,9 +4,10 @@ defmodule Fence.Geofences.MergeEngine do
   and PostGIS spatial operations.
   """
 
-  alias Fence.Repo
-  alias Fence.Geofences.{Geofence, MergedGeofence}
   import Ecto.Query
+
+  alias Fence.Geofences.{Geofence, MergedGeofence}
+  alias Fence.Repo
 
   def merge_group_geofences(group_id) do
     Repo.transaction(fn ->
@@ -27,26 +28,25 @@ defmodule Fence.Geofences.MergeEngine do
         )
         |> Repo.all()
 
-      if length(geofences) < 2 do
-        :ok
-      else
-        # 3. Find overlapping pairs using PostGIS
-        ids = Enum.map(geofences, & &1.id)
-        overlapping_pairs = find_overlapping_pairs(ids)
-
-        # 4. Build connected components via union-find
-        components = union_find(ids, overlapping_pairs)
-
-        # 5. For each cluster with 2+ members, create merged geofence
-        components
-        |> Enum.filter(fn {_root, members} -> length(members) > 1 end)
-        |> Enum.each(fn {_root, member_ids} ->
-          create_merged_geofence(group_id, member_ids)
-        end)
-      end
+      merge_geofences(group_id, geofences)
     end)
   end
 
+  defp merge_geofences(_group_id, geofences) when length(geofences) < 2, do: :ok
+
+  defp merge_geofences(group_id, geofences) do
+    ids = Enum.map(geofences, & &1.id)
+    overlapping_pairs = find_overlapping_pairs(ids)
+    components = union_find(ids, overlapping_pairs)
+
+    components
+    |> Enum.filter(fn {_root, members} -> length(members) > 1 end)
+    |> Enum.each(fn {_root, member_ids} ->
+      create_merged_geofence(group_id, member_ids)
+    end)
+  end
+
+  # sobelow_skip ["SQL.Query"]
   defp find_overlapping_pairs(geofence_ids) do
     dumped_ids = Enum.map(geofence_ids, &Ecto.UUID.dump!/1)
 
@@ -109,16 +109,19 @@ defmodule Fence.Geofences.MergeEngine do
     # Compute merged boundary via ST_Union
     dumped_ids = Enum.map(member_ids, &Ecto.UUID.dump!/1)
 
-    Repo.query!("""
-    UPDATE merged_geofences
-    SET boundary = (
-      SELECT ST_Union(boundary)
-      FROM geofences
-      WHERE id = ANY($1)
-        AND boundary IS NOT NULL
+    Repo.query!(
+      """
+      UPDATE merged_geofences
+      SET boundary = (
+        SELECT ST_Union(boundary)
+        FROM geofences
+        WHERE id = ANY($1)
+          AND boundary IS NOT NULL
+      )
+      WHERE id = $2
+      """,
+      [dumped_ids, Ecto.UUID.dump!(merged.id)]
     )
-    WHERE id = $2
-    """, [dumped_ids, Ecto.UUID.dump!(merged.id)])
 
     # Link constituent geofences
     from(g in Geofence, where: g.id in ^member_ids)

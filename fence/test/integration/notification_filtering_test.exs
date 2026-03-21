@@ -16,7 +16,9 @@ defmodule Fence.Integration.NotificationFilteringTest do
   @nyc_lng -74.0060
 
   describe "throttle suppression" do
-    test "re-entry within throttle window logs 'throttled', channel broadcast still fires", %{conn: conn} do
+    test "re-entry within throttle window logs 'throttled', channel broadcast still fires", %{
+      conn: conn
+    } do
       {_alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
       {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       conn_a = authed_conn_from_token(conn, token_a)
@@ -108,12 +110,14 @@ defmodule Fence.Integration.NotificationFilteringTest do
           )
         )
 
-      assert length(throttled_logs) >= 1
+      assert throttled_logs != []
     end
   end
 
   describe "blacklisted user" do
-    test "blacklisted triggering user does not generate push_log, non-blacklisted does", %{conn: conn} do
+    test "blacklisted triggering user does not generate push_log, non-blacklisted does", %{
+      conn: conn
+    } do
       {alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
       {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       {_carol, token_c, _} = register_via_api(conn, %{"display_name" => "Carol"})
@@ -213,7 +217,7 @@ defmodule Fence.Integration.NotificationFilteringTest do
           )
         )
 
-      assert length(bob_logs) == 0
+      assert bob_logs == []
     end
   end
 
@@ -272,7 +276,7 @@ defmodule Fence.Integration.NotificationFilteringTest do
           )
         )
 
-      assert length(entry_logs) == 0
+      assert entry_logs == []
 
       # Alice exits
       conn_a
@@ -379,7 +383,7 @@ defmodule Fence.Integration.NotificationFilteringTest do
           )
         )
 
-      assert length(exit_logs) == 0
+      assert exit_logs == []
     end
   end
 

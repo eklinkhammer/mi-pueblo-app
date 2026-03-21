@@ -1,7 +1,7 @@
 defmodule FenceWeb.LocationController do
   use FenceWeb, :controller
 
-  alias Fence.{Locations, Groups}
+  alias Fence.{Groups, Locations}
 
   def report(conn, params) do
     user = conn.assigns.current_user
@@ -20,7 +20,7 @@ defmodule FenceWeb.LocationController do
   def group_locations(conn, %{"id" => group_id}) do
     user = conn.assigns.current_user
 
-    with true <- Groups.is_member?(user.id, group_id) do
+    if Groups.member?(user.id, group_id) do
       locations = Locations.get_group_last_locations(group_id)
 
       json(conn, %{
@@ -45,8 +45,7 @@ defmodule FenceWeb.LocationController do
           end)
       })
     else
-      false ->
-        conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+      conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
     end
   end
 

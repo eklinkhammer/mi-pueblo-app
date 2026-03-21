@@ -9,6 +9,10 @@ defmodule Fence.Integration.MergeGeofencesTest do
 
   import Ecto.Query
 
+  alias Fence.Geofences
+  alias Fence.Geofences.{MergedGeofence, MergeEngine}
+  alias Fence.Repo
+
   # Two points ~1.3 km apart in SF (well within 3km radii overlap)
   @sf_lat 37.7749
   @sf_lng -122.4194
@@ -69,16 +73,14 @@ defmodule Fence.Integration.MergeGeofencesTest do
 
       # Assert MergedGeofence exists for this group
       merged =
-        Fence.Repo.all(
-          from(mg in Fence.Geofences.MergedGeofence, where: mg.group_id == ^group_id)
-        )
+        Repo.all(from(mg in MergedGeofence, where: mg.group_id == ^group_id))
 
       assert length(merged) == 1
       merged_record = hd(merged)
 
       # Both geofences should be linked to the merged geofence
-      gf1 = Fence.Geofences.get_geofence(gf1_id)
-      gf2 = Fence.Geofences.get_geofence(gf2_id)
+      gf1 = Geofences.get_geofence(gf1_id)
+      gf2 = Geofences.get_geofence(gf2_id)
 
       assert gf1.merged_geofence_id == merged_record.id
       assert gf2.merged_geofence_id == merged_record.id
@@ -122,16 +124,16 @@ defmodule Fence.Integration.MergeGeofencesTest do
 
       # No MergedGeofence records for this group
       merged_count =
-        Fence.Repo.aggregate(
-          from(mg in Fence.Geofences.MergedGeofence, where: mg.group_id == ^group_id),
+        Repo.aggregate(
+          from(mg in MergedGeofence, where: mg.group_id == ^group_id),
           :count
         )
 
       assert merged_count == 0
 
       # Both geofences have nil merged_geofence_id
-      gf1 = Fence.Geofences.get_geofence(gf1_id)
-      gf2 = Fence.Geofences.get_geofence(gf2_id)
+      gf1 = Geofences.get_geofence(gf1_id)
+      gf2 = Geofences.get_geofence(gf2_id)
 
       assert gf1.merged_geofence_id == nil
       assert gf2.merged_geofence_id == nil
@@ -187,16 +189,14 @@ defmodule Fence.Integration.MergeGeofencesTest do
 
       # All three should end up in one MergedGeofence (transitive closure via union-find)
       merged =
-        Fence.Repo.all(
-          from(mg in Fence.Geofences.MergedGeofence, where: mg.group_id == ^group_id)
-        )
+        Repo.all(from(mg in MergedGeofence, where: mg.group_id == ^group_id))
 
       assert length(merged) == 1
       merged_id = hd(merged).id
 
-      gf_a = Fence.Geofences.get_geofence(gf_a_id)
-      gf_b = Fence.Geofences.get_geofence(gf_b_id)
-      gf_c = Fence.Geofences.get_geofence(gf_c_id)
+      gf_a = Geofences.get_geofence(gf_a_id)
+      gf_b = Geofences.get_geofence(gf_b_id)
+      gf_c = Geofences.get_geofence(gf_c_id)
 
       assert gf_a.merged_geofence_id == merged_id
       assert gf_b.merged_geofence_id == merged_id
@@ -242,9 +242,7 @@ defmodule Fence.Integration.MergeGeofencesTest do
 
       # Verify they merged
       merged_before =
-        Fence.Repo.all(
-          from(mg in Fence.Geofences.MergedGeofence, where: mg.group_id == ^group_id)
-        )
+        Repo.all(from(mg in MergedGeofence, where: mg.group_id == ^group_id))
 
       assert length(merged_before) == 1
 
@@ -256,18 +254,16 @@ defmodule Fence.Integration.MergeGeofencesTest do
 
       # Directly call merge engine to ensure re-merge runs
       # (Oban unique constraint may prevent the re-enqueued job from inserting)
-      Fence.Geofences.MergeEngine.merge_group_geofences(group_id)
+      MergeEngine.merge_group_geofences(group_id)
 
       # Only one geofence left — no merge needed
       merged_after =
-        Fence.Repo.all(
-          from(mg in Fence.Geofences.MergedGeofence, where: mg.group_id == ^group_id)
-        )
+        Repo.all(from(mg in MergedGeofence, where: mg.group_id == ^group_id))
 
-      assert length(merged_after) == 0
+      assert merged_after == []
 
       # Remaining geofence has nil merged_geofence_id
-      gf2 = Fence.Geofences.get_geofence(gf2_id)
+      gf2 = Geofences.get_geofence(gf2_id)
       assert gf2.merged_geofence_id == nil
     end
   end

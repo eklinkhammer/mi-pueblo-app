@@ -43,8 +43,10 @@ defmodule Fence.Repo.Migrations.CreateGeofences do
     create table(:geofence_subscriptions, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
+
       add :geofence_id, references(:geofences, type: :binary_id, on_delete: :delete_all),
         null: false
+
       add :notify_on_entry, :boolean, default: true
       add :notify_on_exit, :boolean, default: true
       add :blacklisted_user_ids, {:array, :binary_id}, default: []
@@ -59,6 +61,7 @@ defmodule Fence.Repo.Migrations.CreateGeofences do
     create table(:geofence_opt_outs, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
+
       add :geofence_id, references(:geofences, type: :binary_id, on_delete: :delete_all),
         null: false
 

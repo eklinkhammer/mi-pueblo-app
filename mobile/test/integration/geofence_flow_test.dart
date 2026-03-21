@@ -10,10 +10,7 @@ import 'helpers/mock_api_setup.dart';
 void main() {
   late MockApiClient mockApi;
 
-  setUpAll(() {
-    registerFallbacks();
-    registerGoogleMapsMock();
-  });
+  setUpAll(registerFallbacks);
 
   setUp(() {
     mockApi = MockApiClient();
@@ -130,7 +127,7 @@ void main() {
 
       // After deletion, geofences list refreshes to empty
       when(() => mockApi.getGeofences(any()))
-          .thenAnswer((_) async => fakeResponse({'geofences': []}));
+          .thenAnswer((_) async => fakeResponse(<String, dynamic>{'geofences': <Map<String, dynamic>>[]}));
 
       // Confirm delete
       await tester.tap(find.widgetWithText(FilledButton, 'Delete'));

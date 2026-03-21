@@ -10,7 +10,9 @@ defmodule Fence.Integration.CrossGroupTest do
   @sf_lng -122.4194
 
   describe "user in two groups triggers events in both" do
-    test "Alice in Group1 and Group2, entering geofence fires events on both channels", %{conn: conn} do
+    test "Alice in Group1 and Group2, entering geofence fires events on both channels", %{
+      conn: conn
+    } do
       {_alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
       {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       {_carol, token_c, _} = register_via_api(conn, %{"display_name" => "Carol"})

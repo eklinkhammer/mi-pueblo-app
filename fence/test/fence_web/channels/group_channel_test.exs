@@ -39,11 +39,12 @@ defmodule FenceWeb.GroupChannelTest do
     test "reports location via channel", %{socket: socket, group: group} do
       {:ok, _, socket} = subscribe_and_join(socket, "group:#{group.id}", %{})
 
-      ref = push(socket, "location:update", %{
-        "latitude" => 37.7749,
-        "longitude" => -122.4194,
-        "accuracy" => 5.0
-      })
+      ref =
+        push(socket, "location:update", %{
+          "latitude" => 37.7749,
+          "longitude" => -122.4194,
+          "accuracy" => 5.0
+        })
 
       assert_reply ref, :ok
     end

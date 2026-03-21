@@ -1,23 +1,23 @@
 defmodule FenceWeb.GeofenceController do
   use FenceWeb, :controller
 
-  alias Fence.{Groups, Geofences}
+  alias Fence.{Geofences, Groups}
 
   def index(conn, %{"id" => group_id}) do
     user = conn.assigns.current_user
 
-    with true <- Groups.is_member?(user.id, group_id) do
+    if Groups.member?(user.id, group_id) do
       geofences = Geofences.list_group_geofences(group_id)
       json(conn, %{geofences: Enum.map(geofences, &geofence_json/1)})
     else
-      false -> forbidden(conn)
+      forbidden(conn)
     end
   end
 
   def create(conn, %{"id" => group_id} = params) do
     user = conn.assigns.current_user
 
-    with true <- Groups.is_member?(user.id, group_id) do
+    if Groups.member?(user.id, group_id) do
       attrs =
         params
         |> Map.put("group_id", group_id)
@@ -36,14 +36,14 @@ defmodule FenceWeb.GeofenceController do
           |> json(%{error: inspect(reason)})
       end
     else
-      false -> forbidden(conn)
+      forbidden(conn)
     end
   end
 
   def show(conn, %{"gid" => group_id, "fid" => geofence_id}) do
     user = conn.assigns.current_user
 
-    with true <- Groups.is_member?(user.id, group_id),
+    with true <- Groups.member?(user.id, group_id),
          %{} = geofence <- Geofences.get_geofence(geofence_id),
          true <- geofence.group_id == group_id do
       json(conn, %{geofence: geofence_json(geofence)})
@@ -56,14 +56,18 @@ defmodule FenceWeb.GeofenceController do
   def update(conn, %{"gid" => group_id, "fid" => geofence_id} = params) do
     user = conn.assigns.current_user
 
-    with true <- Groups.is_member?(user.id, group_id),
+    with true <- Groups.member?(user.id, group_id),
          %{} = geofence <- Geofences.get_geofence(geofence_id),
          true <- geofence.group_id == group_id,
          {:ok, geofence} <- Geofences.update_geofence(geofence, params) do
       json(conn, %{geofence: geofence_json(geofence)})
     else
-      nil -> not_found(conn)
-      false -> forbidden(conn)
+      nil ->
+        not_found(conn)
+
+      false ->
+        forbidden(conn)
+
       {:error, reason} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -74,7 +78,7 @@ defmodule FenceWeb.GeofenceController do
   def delete(conn, %{"gid" => group_id, "fid" => geofence_id}) do
     user = conn.assigns.current_user
 
-    with true <- Groups.is_member?(user.id, group_id),
+    with true <- Groups.member?(user.id, group_id),
          %{} = geofence <- Geofences.get_geofence(geofence_id),
          true <- geofence.group_id == group_id,
          {:ok, _} <- Geofences.delete_geofence(geofence) do

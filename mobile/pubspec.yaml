@@ -18,7 +18,8 @@ dependencies:
   web_socket_channel: ^3.0.2
 
   # Maps
-  google_maps_flutter: ^2.12.1
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
 
   # Storage
   flutter_secure_storage: ^9.2.4
@@ -42,7 +43,7 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  very_good_analysis: ^7.0.0
   mocktail: ^1.0.4
 
 flutter:

@@ -12,7 +12,10 @@ defmodule FenceWeb.AuthControllerTest do
       }
 
       conn = post(conn, "/api/v1/auth/register", params)
-      assert %{"user" => user, "access_token" => _, "refresh_token" => _} = json_response(conn, 201)
+
+      assert %{"user" => user, "access_token" => _, "refresh_token" => _} =
+               json_response(conn, 201)
+
       assert user["email"] == params["email"]
       assert user["display_name"] == params["display_name"]
       assert user["id"]

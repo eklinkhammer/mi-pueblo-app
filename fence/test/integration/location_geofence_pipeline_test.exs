@@ -82,8 +82,13 @@ defmodule Fence.Integration.LocationGeofencePipelineTest do
 
       # Verify push_log entry
       import Ecto.Query
-      logs = Fence.Repo.all(from p in Fence.Notifications.PushLog, where: p.geofence_id == ^geofence_id)
-      assert length(logs) > 0
+
+      logs =
+        Fence.Repo.all(
+          from p in Fence.Notifications.PushLog, where: p.geofence_id == ^geofence_id
+        )
+
+      assert logs != []
       assert hd(logs).event == "entered"
     end
   end
@@ -119,6 +124,7 @@ defmodule Fence.Integration.LocationGeofencePipelineTest do
 
       # Pre-seed A as inside the geofence
       user_a = Fence.Repo.get_by(Fence.Accounts.User, display_name: "Alice")
+
       Fence.Locations.update_geofence_state(
         user_a.id,
         MapSet.new([geofence_id]),
@@ -188,11 +194,12 @@ defmodule Fence.Integration.LocationGeofencePipelineTest do
       _socket_b = join_group_channel(socket_b, group_id)
 
       # A sends location via channel push
-      ref = push(socket_a, "location:update", %{
-        "latitude" => @sf_lat,
-        "longitude" => @sf_lng,
-        "accuracy" => 10.0
-      })
+      ref =
+        push(socket_a, "location:update", %{
+          "latitude" => @sf_lat,
+          "longitude" => @sf_lng,
+          "accuracy" => 10.0
+        })
 
       assert_reply ref, :ok
 

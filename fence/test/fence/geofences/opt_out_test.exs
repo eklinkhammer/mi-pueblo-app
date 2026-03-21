@@ -5,7 +5,12 @@ defmodule Fence.Geofences.OptOutTest do
 
   describe "changeset/2" do
     test "valid attrs" do
-      changeset = OptOut.changeset(%OptOut{}, %{user_id: Ecto.UUID.generate(), geofence_id: Ecto.UUID.generate()})
+      changeset =
+        OptOut.changeset(%OptOut{}, %{
+          user_id: Ecto.UUID.generate(),
+          geofence_id: Ecto.UUID.generate()
+        })
+
       assert changeset.valid?
     end
 

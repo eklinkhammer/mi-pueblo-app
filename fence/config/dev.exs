@@ -24,7 +24,18 @@ config :fence, FenceWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "LpohN5qZPM6exIngyVaN9EwwbSOiAOmhZYzZ1d4sfoE6atIFhMF8MCSW3Wr9fX8o",
-  watchers: []
+  watchers: [
+    esbuild: {Esbuild, :install_and_run, [:fence, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:fence, ~w(--watch)]}
+  ]
+
+config :fence, FenceWeb.Endpoint,
+  live_reload: [
+    patterns: [
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"lib/fence_web/(controllers|live|components)/.*(ex|heex)$"
+    ]
+  ]
 
 # ## SSL Support
 #

@@ -22,7 +22,9 @@ defmodule FenceWeb.LocationControllerTest do
     end
 
     test "returns 401 without auth" do
-      conn = build_conn() |> post("/api/v1/location", %{"latitude" => 37.0, "longitude" => -122.0})
+      conn =
+        build_conn() |> post("/api/v1/location", %{"latitude" => 37.0, "longitude" => -122.0})
+
       assert json_response(conn, 401)
     end
   end

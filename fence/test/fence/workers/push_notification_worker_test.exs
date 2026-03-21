@@ -3,8 +3,8 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
 
   use Oban.Testing, repo: Fence.Repo
 
-  alias Fence.Workers.PushNotificationWorker
   alias Fence.{Geofences, Notifications}
+  alias Fence.Workers.PushNotificationWorker
   import Fence.Factory
 
   setup do

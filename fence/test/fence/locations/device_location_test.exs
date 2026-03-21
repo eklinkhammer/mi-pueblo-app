@@ -5,11 +5,13 @@ defmodule Fence.Locations.DeviceLocationTest do
 
   describe "changeset/2" do
     test "valid attrs" do
-      changeset = DeviceLocation.changeset(%DeviceLocation{}, %{
-        "user_id" => Ecto.UUID.generate(),
-        "latitude" => 37.7749,
-        "longitude" => -122.4194
-      })
+      changeset =
+        DeviceLocation.changeset(%DeviceLocation{}, %{
+          "user_id" => Ecto.UUID.generate(),
+          "latitude" => 37.7749,
+          "longitude" => -122.4194
+        })
+
       assert changeset.valid?
     end
 
@@ -19,27 +21,33 @@ defmodule Fence.Locations.DeviceLocationTest do
     end
 
     test "put_point from string keys" do
-      changeset = DeviceLocation.changeset(%DeviceLocation{}, %{
-        "user_id" => Ecto.UUID.generate(),
-        "latitude" => 37.7749,
-        "longitude" => -122.4194
-      })
+      changeset =
+        DeviceLocation.changeset(%DeviceLocation{}, %{
+          "user_id" => Ecto.UUID.generate(),
+          "latitude" => 37.7749,
+          "longitude" => -122.4194
+        })
+
       point = get_change(changeset, :point)
       assert %Geo.Point{coordinates: {-122.4194, 37.7749}, srid: 4326} = point
     end
 
     test "put_point from atom keys" do
-      changeset = DeviceLocation.changeset(%DeviceLocation{}, %{
-        user_id: Ecto.UUID.generate(),
-        latitude: 40.7128,
-        longitude: -74.0060
-      })
+      changeset =
+        DeviceLocation.changeset(%DeviceLocation{}, %{
+          user_id: Ecto.UUID.generate(),
+          latitude: 40.7128,
+          longitude: -74.0060
+        })
+
       point = get_change(changeset, :point)
       assert %Geo.Point{coordinates: {-74.0060, 40.7128}, srid: 4326} = point
     end
 
     test "no point when lat/lng missing" do
-      changeset = DeviceLocation.changeset(%DeviceLocation{}, %{"user_id" => Ecto.UUID.generate()})
+      changeset =
+        DeviceLocation.changeset(%DeviceLocation{}, %{"user_id" => Ecto.UUID.generate()})
+
       refute get_change(changeset, :point)
     end
   end

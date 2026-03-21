@@ -9,6 +9,19 @@ defmodule FenceWeb.Router do
     plug FenceWeb.AuthPlug
   end
 
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {FenceWeb.Layouts, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+  end
+
+  pipeline :web_authenticated do
+    plug FenceWeb.ShareTokenPlug
+  end
+
   scope "/api/v1", FenceWeb do
     pipe_through :api
 
@@ -51,6 +64,16 @@ defmodule FenceWeb.Router do
     # Location
     post "/location", LocationController, :report
     get "/groups/:id/locations", LocationController, :group_locations
+  end
+
+  scope "/web", FenceWeb do
+    pipe_through [:browser, :web_authenticated]
+
+    live_session :authenticated, on_mount: [{FenceWeb.WebAuth, :ensure_authenticated}] do
+      live "/map", MapLive
+      live "/groups/:group_id/geofences/new", GeofenceCreateLive
+      live "/groups/:group_id/geofences/:id", GeofenceDetailLive
+    end
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

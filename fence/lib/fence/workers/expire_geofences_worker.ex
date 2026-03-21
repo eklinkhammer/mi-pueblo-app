@@ -2,8 +2,8 @@ defmodule Fence.Workers.ExpireGeofencesWorker do
   use Oban.Worker, queue: :maintenance, max_attempts: 3
 
   import Ecto.Query
-  alias Fence.Repo
   alias Fence.Geofences.Geofence
+  alias Fence.Repo
 
   require Logger
 

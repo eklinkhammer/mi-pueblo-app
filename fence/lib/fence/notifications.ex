@@ -1,7 +1,7 @@
 defmodule Fence.Notifications do
   import Ecto.Query
-  alias Fence.Repo
   alias Fence.Notifications.PushLog
+  alias Fence.Repo
 
   def log_push(attrs) do
     %PushLog{}

@@ -16,17 +16,23 @@ defmodule Fence.Locations.UserGeofenceStateTest do
     end
 
     test "requires user_id" do
-      changeset = UserGeofenceState.changeset(%UserGeofenceState{}, Map.delete(@valid_attrs, :user_id))
+      changeset =
+        UserGeofenceState.changeset(%UserGeofenceState{}, Map.delete(@valid_attrs, :user_id))
+
       assert %{user_id: ["can't be blank"]} = errors_on(changeset)
     end
 
     test "requires geofence_id" do
-      changeset = UserGeofenceState.changeset(%UserGeofenceState{}, Map.delete(@valid_attrs, :geofence_id))
+      changeset =
+        UserGeofenceState.changeset(%UserGeofenceState{}, Map.delete(@valid_attrs, :geofence_id))
+
       assert %{geofence_id: ["can't be blank"]} = errors_on(changeset)
     end
 
     test "requires entered_at" do
-      changeset = UserGeofenceState.changeset(%UserGeofenceState{}, Map.delete(@valid_attrs, :entered_at))
+      changeset =
+        UserGeofenceState.changeset(%UserGeofenceState{}, Map.delete(@valid_attrs, :entered_at))
+
       assert %{entered_at: ["can't be blank"]} = errors_on(changeset)
     end
   end

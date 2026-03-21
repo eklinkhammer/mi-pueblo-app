@@ -27,38 +27,35 @@ defmodule Fence.Workers.PushNotificationWorker do
   end
 
   defp send_if_eligible(subscription, triggering_user, geofence, event) do
-    cond do
-      # Don't notify the triggering user about themselves
-      subscription.user_id == triggering_user.id ->
-        :skip
+    if should_skip?(subscription, triggering_user, event) do
+      :skip
+    else
+      send_or_throttle(subscription, triggering_user, geofence, event)
+    end
+  end
 
-      # Check event type preference
-      event == "entered" and not subscription.notify_on_entry ->
-        :skip
+  defp should_skip?(subscription, triggering_user, event) do
+    subscription.user_id == triggering_user.id or
+      (event == "entered" and not subscription.notify_on_entry) or
+      (event == "exited" and not subscription.notify_on_exit) or
+      triggering_user.id in (subscription.blacklisted_user_ids || [])
+  end
 
-      event == "exited" and not subscription.notify_on_exit ->
-        :skip
-
-      # Check blacklist
-      triggering_user.id in (subscription.blacklisted_user_ids || []) ->
-        :skip
-
-      # Check throttle
-      Notifications.should_throttle?(
-        subscription.user_id,
-        geofence.id,
-        subscription.throttle_seconds
-      ) ->
-        Notifications.log_push(%{
-          recipient_id: subscription.user_id,
-          triggering_user_id: triggering_user.id,
-          geofence_id: geofence.id,
-          event: event,
-          status: "throttled"
-        })
-
-      true ->
-        send_push(subscription.user_id, triggering_user, geofence, event)
+  defp send_or_throttle(subscription, triggering_user, geofence, event) do
+    if Notifications.should_throttle?(
+         subscription.user_id,
+         geofence.id,
+         subscription.throttle_seconds
+       ) do
+      Notifications.log_push(%{
+        recipient_id: subscription.user_id,
+        triggering_user_id: triggering_user.id,
+        geofence_id: geofence.id,
+        event: event,
+        status: "throttled"
+      })
+    else
+      send_push(subscription.user_id, triggering_user, geofence, event)
     end
   end
 

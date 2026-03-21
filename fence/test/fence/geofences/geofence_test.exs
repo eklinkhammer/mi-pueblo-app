@@ -39,7 +39,9 @@ defmodule Fence.Geofences.GeofenceTest do
     end
 
     test "validates name max length 200" do
-      changeset = Geofence.changeset(%Geofence{}, %{@valid_attrs | "name" => String.duplicate("a", 201)})
+      changeset =
+        Geofence.changeset(%Geofence{}, %{@valid_attrs | "name" => String.duplicate("a", 201)})
+
       assert %{name: [_]} = errors_on(changeset)
     end
 

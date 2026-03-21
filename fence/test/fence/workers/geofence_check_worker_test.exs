@@ -3,8 +3,8 @@ defmodule Fence.Workers.GeofenceCheckWorkerTest do
 
   use Oban.Testing, repo: Fence.Repo
 
-  alias Fence.Workers.GeofenceCheckWorker
   alias Fence.Locations
+  alias Fence.Workers.GeofenceCheckWorker
   import Fence.Factory
 
   describe "perform/1" do

@@ -37,7 +37,9 @@ defmodule Fence.Groups.Invite do
       changeset
     else
       # Default: 7 days from now
-      expires = DateTime.utc_now() |> DateTime.add(7 * 24 * 3600, :second) |> DateTime.truncate(:second)
+      expires =
+        DateTime.utc_now() |> DateTime.add(7 * 24 * 3600, :second) |> DateTime.truncate(:second)
+
       put_change(changeset, :expires_at, expires)
     end
   end

@@ -8,7 +8,7 @@ defmodule FenceWeb.GroupChannel do
   def join("group:" <> group_id, _params, socket) do
     user_id = socket.assigns.user_id
 
-    if Groups.is_member?(user_id, group_id) do
+    if Groups.member?(user_id, group_id) do
       send(self(), :after_join)
       {:ok, assign(socket, :group_id, group_id)}
     else

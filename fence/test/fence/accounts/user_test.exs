@@ -32,7 +32,9 @@ defmodule Fence.Accounts.UserTest do
     end
 
     test "validates email format rejects spaces" do
-      changeset = User.registration_changeset(%User{}, %{@valid_attrs | email: "user @example.com"})
+      changeset =
+        User.registration_changeset(%User{}, %{@valid_attrs | email: "user @example.com"})
+
       assert %{email: ["has invalid format"]} = errors_on(changeset)
     end
 

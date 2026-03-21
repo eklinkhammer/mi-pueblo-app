@@ -26,7 +26,7 @@ defmodule FenceWeb.GroupController do
     user = conn.assigns.current_user
 
     with %{} = group <- Groups.get_group(id),
-         true <- Groups.is_member?(user.id, group.id) do
+         true <- Groups.member?(user.id, group.id) do
       json(conn, %{group: group_json(group)})
     else
       nil -> not_found(conn)
@@ -38,12 +38,16 @@ defmodule FenceWeb.GroupController do
     user = conn.assigns.current_user
 
     with %{} = group <- Groups.get_group(id),
-         true <- Groups.is_admin?(user.id, group.id),
+         true <- Groups.admin?(user.id, group.id),
          {:ok, group} <- Groups.update_group(group, params) do
       json(conn, %{group: group_json(group)})
     else
-      nil -> not_found(conn)
-      false -> forbidden(conn)
+      nil ->
+        not_found(conn)
+
+      false ->
+        forbidden(conn)
+
       {:error, changeset} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -55,7 +59,7 @@ defmodule FenceWeb.GroupController do
     user = conn.assigns.current_user
 
     with %{} = group <- Groups.get_group(id),
-         true <- Groups.is_admin?(user.id, group.id),
+         true <- Groups.admin?(user.id, group.id),
          {:ok, _} <- Groups.delete_group(group) do
       send_resp(conn, :no_content, "")
     else
@@ -86,7 +90,7 @@ defmodule FenceWeb.GroupController do
     user = conn.assigns.current_user
 
     with %{} = _group <- Groups.get_group(id),
-         true <- Groups.is_member?(user.id, id) do
+         true <- Groups.member?(user.id, id) do
       memberships = Groups.list_members(id)
 
       json(conn, %{
@@ -110,7 +114,7 @@ defmodule FenceWeb.GroupController do
   def remove_member(conn, %{"id" => group_id, "user_id" => target_user_id}) do
     user = conn.assigns.current_user
 
-    with true <- Groups.is_admin?(user.id, group_id),
+    with true <- Groups.admin?(user.id, group_id),
          {:ok, _} <- Groups.remove_member(group_id, target_user_id) do
       send_resp(conn, :no_content, "")
     else
@@ -122,13 +126,15 @@ defmodule FenceWeb.GroupController do
   def create_invite(conn, %{"id" => group_id}) do
     user = conn.assigns.current_user
 
-    with true <- Groups.is_admin?(user.id, group_id),
+    with true <- Groups.admin?(user.id, group_id),
          {:ok, invite} <- Groups.create_invite(group_id, user.id) do
       conn
       |> put_status(:created)
       |> json(%{invite: %{code: invite.code, expires_at: invite.expires_at}})
     else
-      false -> forbidden(conn)
+      false ->
+        forbidden(conn)
+
       {:error, _} ->
         conn |> put_status(:unprocessable_entity) |> json(%{error: "Could not create invite"})
     end

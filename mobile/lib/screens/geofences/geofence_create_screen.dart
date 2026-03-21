@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/providers/geofences_provider.dart';
 
@@ -53,7 +54,7 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
       if (mounted) {
         context.go('/groups/${widget.groupId}');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed: $e')),
@@ -103,34 +104,44 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(37.7749, -122.4194),
-                zoom: 14,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: const LatLng(37.7749, -122.4194),
+                initialZoom: 14,
+                onTap: (tapPosition, latLng) {
+                  setState(() => _selectedLocation = latLng);
+                },
               ),
-              onTap: (latLng) {
-                setState(() => _selectedLocation = latLng);
-              },
-              markers: _selectedLocation != null
-                  ? {
-                      Marker(
-                        markerId: const MarkerId('selected'),
-                        position: _selectedLocation!,
-                      ),
-                    }
-                  : {},
-              circles: _selectedLocation != null
-                  ? {
-                      Circle(
-                        circleId: const CircleId('radius'),
-                        center: _selectedLocation!,
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.fence.app',
+                ),
+                if (_selectedLocation != null)
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: _selectedLocation!,
                         radius: radius,
-                        fillColor: Colors.blue.withValues(alpha: 0.1),
-                        strokeColor: Colors.blue,
-                        strokeWidth: 2,
+                        useRadiusInMeter: true,
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderColor: Colors.blue,
+                        borderStrokeWidth: 2,
                       ),
-                    }
-                  : {},
+                    ],
+                  ),
+                if (_selectedLocation != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _selectedLocation!,
+                        width: 40,
+                        height: 40,
+                        child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ),
         ],

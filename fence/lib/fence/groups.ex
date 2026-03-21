@@ -1,7 +1,7 @@
 defmodule Fence.Groups do
   import Ecto.Query
+  alias Fence.Groups.{Group, Invite, Membership}
   alias Fence.Repo
-  alias Fence.Groups.{Group, Membership, Invite}
 
   def create_group(user, attrs) do
     Repo.transaction(fn ->
@@ -53,14 +53,14 @@ defmodule Fence.Groups do
     Repo.get_by(Membership, user_id: user_id, group_id: group_id)
   end
 
-  def is_admin?(user_id, group_id) do
+  def admin?(user_id, group_id) do
     from(m in Membership,
       where: m.user_id == ^user_id and m.group_id == ^group_id and m.role == "admin"
     )
     |> Repo.exists?()
   end
 
-  def is_member?(user_id, group_id) do
+  def member?(user_id, group_id) do
     from(m in Membership,
       where: m.user_id == ^user_id and m.group_id == ^group_id
     )

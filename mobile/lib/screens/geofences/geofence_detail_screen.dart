@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/providers/geofences_provider.dart';
 
@@ -45,32 +46,43 @@ class GeofenceDetailScreen extends ConsumerWidget {
             children: [
               SizedBox(
                 height: 250,
-                child: GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target:
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter:
                         LatLng(geofence.latitude, geofence.longitude),
-                    zoom: 15,
+                    initialZoom: 15,
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.none,
+                    ),
                   ),
-                  circles: {
-                    Circle(
-                      circleId: CircleId(geofence.id),
-                      center:
-                          LatLng(geofence.latitude, geofence.longitude),
-                      radius: geofence.radiusMeters,
-                      fillColor: Colors.blue.withValues(alpha: 0.15),
-                      strokeColor: Colors.blue,
-                      strokeWidth: 2,
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.fence.app',
                     ),
-                  },
-                  markers: {
-                    Marker(
-                      markerId: MarkerId(geofence.id),
-                      position:
-                          LatLng(geofence.latitude, geofence.longitude),
+                    CircleLayer(
+                      circles: [
+                        CircleMarker(
+                          point: LatLng(geofence.latitude, geofence.longitude),
+                          radius: geofence.radiusMeters,
+                          useRadiusInMeter: true,
+                          color: Colors.blue.withValues(alpha: 0.15),
+                          borderColor: Colors.blue,
+                          borderStrokeWidth: 2,
+                        ),
+                      ],
                     ),
-                  },
-                  zoomControlsEnabled: false,
-                  scrollGesturesEnabled: false,
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: LatLng(geofence.latitude, geofence.longitude),
+                          width: 40,
+                          height: 40,
+                          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               ListTile(
@@ -114,7 +126,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
                 leading: const Icon(Icons.visibility_off),
                 title: const Text('Opt out of this geofence'),
                 subtitle: const Text(
-                    'Your location won\'t trigger notifications for this fence'),
+                    "Your location won't trigger notifications for this fence"),
                 onTap: () => _optOut(context, ref),
               ),
             ],
@@ -138,7 +150,9 @@ class GeofenceDetailScreen extends ConsumerWidget {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.upsertSubscription(geofenceId, data);
       ref.invalidate(geofenceSubscriptionProvider(geofenceId));
-    } catch (_) {}
+    } on Exception catch (_) {
+      // Silently fail
+    }
   }
 
   Future<void> _optOut(BuildContext context, WidgetRef ref) async {
@@ -150,7 +164,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
           const SnackBar(content: Text('Opted out successfully')),
         );
       }
-    } catch (_) {
+    } on Exception catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Already opted out')),
@@ -178,7 +192,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       try {
         final apiClient = ref.read(apiClientProvider);
         await apiClient.deleteGeofence(groupId, geofenceId);
@@ -186,7 +200,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
         if (context.mounted) {
           context.go('/groups/$groupId');
         }
-      } catch (e) {
+      } on Exception catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed: $e')),

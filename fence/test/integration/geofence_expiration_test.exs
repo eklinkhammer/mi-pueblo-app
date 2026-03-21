@@ -7,6 +7,13 @@ defmodule Fence.Integration.GeofenceExpirationTest do
 
   import Ecto.Query
 
+  alias Fence.Accounts.User
+  alias Fence.Geofences
+  alias Fence.Geofences.Geofence
+  alias Fence.Locations
+  alias Fence.Repo
+  alias Fence.Workers.ExpireGeofencesWorker
+
   @sf_lat 37.7749
   @sf_lng -122.4194
 
@@ -50,18 +57,18 @@ defmodule Fence.Integration.GeofenceExpirationTest do
       # Expire the Oakland geofence by setting expires_at to the past
       past = DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)
 
-      from(g in Fence.Geofences.Geofence, where: g.id == ^oak_id)
-      |> Fence.Repo.update_all(set: [expires_at: past])
+      from(g in Geofence, where: g.id == ^oak_id)
+      |> Repo.update_all(set: [expires_at: past])
 
       # Run the expire worker
-      Fence.Workers.ExpireGeofencesWorker.new(%{}) |> Oban.insert()
+      ExpireGeofencesWorker.new(%{}) |> Oban.insert()
       Oban.drain_queue(Oban, queue: :maintenance)
 
       # Oakland should be deleted
-      assert Fence.Geofences.get_geofence(oak_id) == nil
+      assert Geofences.get_geofence(oak_id) == nil
 
       # SF should remain
-      assert Fence.Geofences.get_geofence(sf_id) != nil
+      assert Geofences.get_geofence(sf_id) != nil
 
       # HTTP list endpoint confirms
       list_resp =
@@ -100,8 +107,8 @@ defmodule Fence.Integration.GeofenceExpirationTest do
       # Expire it
       past = DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)
 
-      from(g in Fence.Geofences.Geofence, where: g.id == ^geofence_id)
-      |> Fence.Repo.update_all(set: [expires_at: past])
+      from(g in Geofence, where: g.id == ^geofence_id)
+      |> Repo.update_all(set: [expires_at: past])
 
       # Bob joins channel
       socket_b = connect_user_socket(token_b)
@@ -125,8 +132,8 @@ defmodule Fence.Integration.GeofenceExpirationTest do
       refute_broadcast "geofence:entered", _any, 100
 
       # No user_geofence_state entries
-      alice_user = Fence.Repo.get_by(Fence.Accounts.User, display_name: "Alice")
-      state_ids = Fence.Locations.get_user_geofence_ids(alice_user.id)
+      alice_user = Repo.get_by(User, display_name: "Alice")
+      state_ids = Locations.get_user_geofence_ids(alice_user.id)
       assert MapSet.size(state_ids) == 0
     end
   end
@@ -173,21 +180,21 @@ defmodule Fence.Integration.GeofenceExpirationTest do
       drain_oban()
 
       # Verify Alice is inside the geofence
-      alice_user = Fence.Repo.get_by(Fence.Accounts.User, display_name: "Alice")
-      state_ids = Fence.Locations.get_user_geofence_ids(alice_user.id)
+      alice_user = Repo.get_by(User, display_name: "Alice")
+      state_ids = Locations.get_user_geofence_ids(alice_user.id)
       assert MapSet.member?(state_ids, geofence_id)
 
       # Now expire the geofence and run the worker
       past = DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)
 
-      from(g in Fence.Geofences.Geofence, where: g.id == ^geofence_id)
-      |> Fence.Repo.update_all(set: [expires_at: past])
+      from(g in Geofence, where: g.id == ^geofence_id)
+      |> Repo.update_all(set: [expires_at: past])
 
-      Fence.Workers.ExpireGeofencesWorker.new(%{}) |> Oban.insert()
+      ExpireGeofencesWorker.new(%{}) |> Oban.insert()
       Oban.drain_queue(Oban, queue: :maintenance)
 
       # Geofence should be deleted
-      assert Fence.Geofences.get_geofence(geofence_id) == nil
+      assert Geofences.get_geofence(geofence_id) == nil
 
       # Alice reports same location again
       conn_a
@@ -204,7 +211,7 @@ defmodule Fence.Integration.GeofenceExpirationTest do
       # The geofence_check_worker will see current_ids as empty,
       # and the old state entry for the deleted geofence will trigger an "exit"
       # but PushNotificationWorker will skip it (geofence is nil)
-      new_state_ids = Fence.Locations.get_user_geofence_ids(alice_user.id)
+      new_state_ids = Locations.get_user_geofence_ids(alice_user.id)
       refute MapSet.member?(new_state_ids, geofence_id)
     end
   end

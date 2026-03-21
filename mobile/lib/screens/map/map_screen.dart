@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/locations_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
@@ -57,16 +58,19 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     return Stack(
       children: [
-        GoogleMap(
-          onMapCreated: (_) {},
-          initialCameraPosition: const CameraPosition(
-            target: LatLng(37.7749, -122.4194), // Default SF
-            zoom: 12,
+        FlutterMap(
+          options: const MapOptions(
+            initialCenter: LatLng(37.7749, -122.4194),
+            initialZoom: 12,
           ),
-          markers: _buildMarkers(locationsAsync),
-          circles: _buildCircles(geofencesAsync),
-          myLocationEnabled: true,
-          myLocationButtonEnabled: true,
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.fence.app',
+            ),
+            _buildCircleLayer(geofencesAsync),
+            _buildMarkerLayer(locationsAsync),
+          ],
         ),
         // Legend overlay
         Positioned(
@@ -100,39 +104,42 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  Set<Marker> _buildMarkers(AsyncValue<List<MemberLocation>> locationsAsync) {
-    return locationsAsync.when(
+  MarkerLayer _buildMarkerLayer(AsyncValue<List<MemberLocation>> locationsAsync) {
+    final markers = locationsAsync.when(
       data: (locations) => locations
           .where((l) => l.latitude != null && l.longitude != null)
           .map((l) => Marker(
-                markerId: MarkerId(l.userId),
-                position: LatLng(l.latitude!, l.longitude!),
-                infoWindow: InfoWindow(
-                  title: l.displayName,
-                  snippet: _timeAgo(l.updatedAt),
+                point: LatLng(l.latitude!, l.longitude!),
+                width: 40,
+                height: 40,
+                child: Tooltip(
+                  message: '${l.displayName}\n${_timeAgo(l.updatedAt)}',
+                  child: const Icon(Icons.location_on, color: Colors.red, size: 40),
                 ),
               ))
-          .toSet(),
-      loading: () => {},
-      error: (_, _) => {},
+          .toList(),
+      loading: () => <Marker>[],
+      error: (_, _) => <Marker>[],
     );
+    return MarkerLayer(markers: markers);
   }
 
-  Set<Circle> _buildCircles(AsyncValue<List<Geofence>> geofencesAsync) {
-    return geofencesAsync.when(
+  CircleLayer _buildCircleLayer(AsyncValue<List<Geofence>> geofencesAsync) {
+    final circles = geofencesAsync.when(
       data: (geofences) => geofences
-          .map((g) => Circle(
-                circleId: CircleId(g.id),
-                center: LatLng(g.latitude, g.longitude),
+          .map((g) => CircleMarker(
+                point: LatLng(g.latitude, g.longitude),
                 radius: g.radiusMeters,
-                fillColor: Colors.blue.withValues(alpha: 0.1),
-                strokeColor: Colors.blue.withValues(alpha: 0.5),
-                strokeWidth: 2,
+                useRadiusInMeter: true,
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderColor: Colors.blue.withValues(alpha: 0.5),
+                borderStrokeWidth: 2,
               ))
-          .toSet(),
-      loading: () => {},
-      error: (_, _) => {},
+          .toList(),
+      loading: () => <CircleMarker>[],
+      error: (_, _) => <CircleMarker>[],
     );
+    return CircleLayer(circles: circles);
   }
 
   String _timeAgo(DateTime dateTime) {

@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet overrides for LiveView compatibility */
+.leaflet-container {
+  z-index: 0;
+}
+
+/* Ensure map container fills parent */
+[phx-hook="LeafletMap"] {
+  width: 100%;
+  height: 100%;
+}

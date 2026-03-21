@@ -1,8 +1,12 @@
 defmodule Fence.Workers.GeofenceCheckWorker do
   use Oban.Worker, queue: :geofence_checks, max_attempts: 3
 
-  alias Fence.Locations
+  alias Fence.{Accounts, Groups, Locations}
+  alias Fence.Locations.DeviceLocation
+  alias Fence.Repo
+  alias Fence.Workers.PushNotificationWorker
 
+  @dialyzer {:nowarn_function, perform: 1}
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"user_id" => user_id, "location_id" => location_id}}) do
     # Get current geofence state
@@ -21,13 +25,13 @@ defmodule Fence.Workers.GeofenceCheckWorker do
     # Enqueue notifications for each entry/exit
     for geofence_id <- entered_ids do
       %{user_id: user_id, geofence_id: geofence_id, event: "entered"}
-      |> Fence.Workers.PushNotificationWorker.new()
+      |> PushNotificationWorker.new()
       |> Oban.insert()
     end
 
     for geofence_id <- exited_ids do
       %{user_id: user_id, geofence_id: geofence_id, event: "exited"}
-      |> Fence.Workers.PushNotificationWorker.new()
+      |> PushNotificationWorker.new()
       |> Oban.insert()
     end
 
@@ -38,12 +42,12 @@ defmodule Fence.Workers.GeofenceCheckWorker do
   end
 
   defp broadcast_location_update(user_id, location_id) do
-    location = Fence.Repo.get(Fence.Locations.DeviceLocation, location_id)
+    location = Repo.get(DeviceLocation, location_id)
 
     if location do
       # Get all groups the user belongs to
-      groups = Fence.Groups.list_user_groups(user_id)
-      user = Fence.Accounts.get_user(user_id)
+      groups = Groups.list_user_groups(user_id)
+      user = Accounts.get_user(user_id)
 
       {lng, lat} =
         case location.point do

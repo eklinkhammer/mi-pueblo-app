@@ -44,14 +44,18 @@ defmodule Fence.AccountsTest do
     end
 
     test "rejects non-existent email" do
-      assert {:error, :invalid_credentials} = Accounts.authenticate("nope@example.com", "password123")
+      assert {:error, :invalid_credentials} =
+               Accounts.authenticate("nope@example.com", "password123")
     end
   end
 
   describe "generate_tokens/1" do
     test "returns access and refresh tokens" do
       user = create_user()
-      assert {:ok, %{access_token: access, refresh_token: refresh}} = Accounts.generate_tokens(user)
+
+      assert {:ok, %{access_token: access, refresh_token: refresh}} =
+               Accounts.generate_tokens(user)
+
       assert is_binary(access)
       assert is_binary(refresh)
     end
@@ -100,7 +104,9 @@ defmodule Fence.AccountsTest do
 
     test "rejects invalid update" do
       user = create_user()
-      assert {:error, _} = Accounts.update_user(user, %{"display_name" => String.duplicate("a", 101)})
+
+      assert {:error, _} =
+               Accounts.update_user(user, %{"display_name" => String.duplicate("a", 101)})
     end
   end
 

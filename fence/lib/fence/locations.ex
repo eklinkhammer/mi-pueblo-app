@@ -1,7 +1,8 @@
 defmodule Fence.Locations do
   import Ecto.Query
-  alias Fence.Repo
   alias Fence.Locations.{DeviceLocation, UserGeofenceState}
+  alias Fence.Repo
+  alias Fence.Workers.GeofenceCheckWorker
 
   def report_location(user_id, attrs) do
     location_attrs = Map.put(attrs, "user_id", user_id)
@@ -15,7 +16,7 @@ defmodule Fence.Locations do
       {:ok, location} ->
         # Enqueue geofence check
         %{user_id: user_id, location_id: location.id}
-        |> Fence.Workers.GeofenceCheckWorker.new()
+        |> GeofenceCheckWorker.new()
         |> Oban.insert()
 
         {:ok, location}
@@ -66,6 +67,7 @@ defmodule Fence.Locations do
     |> MapSet.new()
   end
 
+  # sobelow_skip ["SQL.Query"]
   def find_containing_geofences(user_id, location_id) do
     # Use PostGIS to find all active geofences containing this point
     now = DateTime.utc_now()

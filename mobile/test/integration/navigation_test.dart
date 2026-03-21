@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 
 import '../helpers/mocks.dart';
 import '../helpers/test_data.dart';
@@ -9,10 +8,7 @@ import 'helpers/mock_api_setup.dart';
 void main() {
   late MockApiClient mockApi;
 
-  setUpAll(() {
-    registerFallbacks();
-    registerGoogleMapsMock();
-  });
+  setUpAll(registerFallbacks);
 
   setUp(() {
     mockApi = MockApiClient();

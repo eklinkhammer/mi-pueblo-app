@@ -27,7 +27,9 @@ defmodule Fence.Geofences.SubscriptionTest do
     end
 
     test "validates throttle_seconds >= 0" do
-      changeset = Subscription.changeset(%Subscription{}, Map.put(@valid_attrs, :throttle_seconds, -1))
+      changeset =
+        Subscription.changeset(%Subscription{}, Map.put(@valid_attrs, :throttle_seconds, -1))
+
       assert %{throttle_seconds: [_]} = errors_on(changeset)
     end
 

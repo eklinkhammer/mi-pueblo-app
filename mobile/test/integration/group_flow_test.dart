@@ -10,10 +10,7 @@ import 'helpers/mock_api_setup.dart';
 void main() {
   late MockApiClient mockApi;
 
-  setUpAll(() {
-    registerFallbacks();
-    registerGoogleMapsMock();
-  });
+  setUpAll(registerFallbacks);
 
   setUp(() {
     mockApi = MockApiClient();

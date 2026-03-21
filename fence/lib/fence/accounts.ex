@@ -1,7 +1,7 @@
 defmodule Fence.Accounts do
   import Ecto.Query
+  alias Fence.Accounts.{ShareToken, Token, User}
   alias Fence.Repo
-  alias Fence.Accounts.{User, Token}
 
   def register_user(attrs) do
     %User{}
@@ -66,5 +66,42 @@ defmodule Fence.Accounts do
   def get_device_tokens(user_id) do
     from(dt in Fence.Accounts.DeviceToken, where: dt.user_id == ^user_id)
     |> Repo.all()
+  end
+
+  # Share tokens
+
+  def create_share_token(user_id, opts \\ []) do
+    days = Keyword.get(opts, :days, 30)
+    label = Keyword.get(opts, :label)
+    expires_at = DateTime.utc_now() |> DateTime.add(days * 86_400) |> DateTime.truncate(:second)
+
+    %ShareToken{}
+    |> ShareToken.changeset(%{user_id: user_id, label: label, expires_at: expires_at})
+    |> Repo.insert()
+  end
+
+  def get_user_by_share_token(token) do
+    now = DateTime.utc_now()
+
+    query =
+      from st in ShareToken,
+        where: st.token == ^token and st.expires_at > ^now,
+        join: u in User,
+        on: u.id == st.user_id,
+        select: u
+
+    Repo.one(query)
+  end
+
+  def list_share_tokens(user_id) do
+    from(st in ShareToken, where: st.user_id == ^user_id, order_by: [desc: :inserted_at])
+    |> Repo.all()
+  end
+
+  def delete_share_token(id) do
+    case Repo.get(ShareToken, id) do
+      nil -> {:error, :not_found}
+      token -> Repo.delete(token)
+    end
   end
 end

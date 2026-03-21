@@ -1,5 +1,5 @@
 defmodule Fence.Factory do
-  alias Fence.{Accounts, Groups, Geofences}
+  alias Fence.{Accounts, Geofences, Groups}
 
   def unique_email do
     "user#{System.unique_integer([:positive])}@example.com"
@@ -35,7 +35,8 @@ defmodule Fence.Factory do
       "longitude" => -122.4194,
       "group_id" => group.id,
       "created_by_id" => user.id,
-      "expires_at" => DateTime.utc_now() |> DateTime.add(7 * 24 * 3600) |> DateTime.truncate(:second)
+      "expires_at" =>
+        DateTime.utc_now() |> DateTime.add(7 * 24 * 3600) |> DateTime.truncate(:second)
     }
 
     {:ok, geofence} = Geofences.create_geofence(Map.merge(default_attrs, attrs))

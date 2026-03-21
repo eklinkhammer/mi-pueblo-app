@@ -1,7 +1,8 @@
 defmodule Fence.Geofences do
   import Ecto.Query
+  alias Fence.Geofences.{Geofence, OptOut, Subscription}
   alias Fence.Repo
-  alias Fence.Geofences.{Geofence, Subscription, OptOut}
+  alias Fence.Workers.MergeGeofencesWorker
 
   def create_geofence(attrs) do
     result =
@@ -86,7 +87,14 @@ defmodule Fence.Geofences do
     |> Subscription.changeset(attrs)
     |> Repo.insert(
       on_conflict:
-        {:replace, [:notify_on_entry, :notify_on_exit, :blacklisted_user_ids, :throttle_seconds, :updated_at]},
+        {:replace,
+         [
+           :notify_on_entry,
+           :notify_on_exit,
+           :blacklisted_user_ids,
+           :throttle_seconds,
+           :updated_at
+         ]},
       conflict_target: [:user_id, :geofence_id],
       returning: true
     )
@@ -124,16 +132,19 @@ defmodule Fence.Geofences do
   # PostGIS boundary computation
 
   defp compute_boundary(geofence_id) do
-    Repo.query!("""
-    UPDATE geofences
-    SET boundary = ST_Buffer(center::geography, radius_meters)::geometry
-    WHERE id = $1
-    """, [Ecto.UUID.dump!(geofence_id)])
+    Repo.query!(
+      """
+      UPDATE geofences
+      SET boundary = ST_Buffer(center::geography, radius_meters)::geometry
+      WHERE id = $1
+      """,
+      [Ecto.UUID.dump!(geofence_id)]
+    )
   end
 
   defp enqueue_merge(group_id) do
     %{group_id: group_id}
-    |> Fence.Workers.MergeGeofencesWorker.new(unique: [period: 5])
+    |> MergeGeofencesWorker.new(unique: [period: 5])
     |> Oban.insert()
   end
 end

@@ -1,6 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -16,16 +14,6 @@ import '../../helpers/test_data.dart';
 /// Register fallback values for mocktail argument matchers.
 void registerFallbacks() {
   registerFallbackValue(<String, dynamic>{});
-}
-
-/// Register a fake method channel handler for GoogleMap to prevent crashes
-/// in headless `flutter test`.
-void registerGoogleMapsMock() {
-  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      .setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/google_maps_flutter'),
-    (call) async => null,
-  );
 }
 
 /// Stub auth-related methods for an unauthenticated start.
@@ -128,11 +116,11 @@ Future<void> pumpAppWithMocks(
   final locService = locationService ?? MockLocationService();
 
   // Stub location service methods to avoid crashes
-  when(() => locService.requestPermissions()).thenAnswer((_) async => true);
-  when(() => locService.getCurrentPosition()).thenAnswer((_) async => null);
-  when(() => locService.startTracking()).thenReturn(null);
-  when(() => locService.stopTracking()).thenReturn(null);
-  when(() => locService.dispose()).thenReturn(null);
+  when(locService.requestPermissions).thenAnswer((_) async => true);
+  when(locService.getCurrentPosition).thenAnswer((_) async => null);
+  when(locService.startTracking).thenReturn(null);
+  when(locService.stopTracking).thenReturn(null);
+  when(locService.dispose).thenReturn(null);
 
   await tester.pumpWidget(
     ProviderScope(
