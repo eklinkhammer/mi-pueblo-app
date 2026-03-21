@@ -16,8 +16,8 @@ config :fence, FenceWeb.Endpoint,
   secret_key_base: "MAyWe3TiAROH/hwvhrod3YfUqbmTxuWqRXxVOMv6Qa0R+w5gemc6dxHv5vPPCnmR",
   server: false
 
-# Oban inline mode for tests
-config :fence, Oban, testing: :inline
+# Oban manual mode for tests - prevents cascading worker execution
+config :fence, Oban, testing: :manual
 
 # Print only warnings and errors during test
 config :logger, level: :warning
