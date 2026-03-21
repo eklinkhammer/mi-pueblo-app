@@ -14,7 +14,7 @@ config :fence, Fence.Repo,
 config :fence, FenceWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "MAyWe3TiAROH/hwvhrod3YfUqbmTxuWqRXxVOMv6Qa0R+w5gemc6dxHv5vPPCnmR",
-  server: false
+  server: System.get_env("PHX_SERVER") == "true"
 
 # Oban manual mode for tests - prevents cascading worker execution
 config :fence, Oban, testing: :manual

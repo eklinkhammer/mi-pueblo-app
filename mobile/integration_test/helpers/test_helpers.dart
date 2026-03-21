@@ -1,0 +1,49 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fence/main.dart';
+
+/// Pumps the full app with optional Riverpod overrides.
+Future<void> pumpApp(
+  WidgetTester tester, {
+  List<Override> overrides = const [],
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: overrides,
+      child: const FenceApp(),
+    ),
+  );
+  // Allow async initialization (auth check, etc.)
+  await tester.pumpAndSettle(const Duration(seconds: 2));
+}
+
+/// A controllable fake location service for integration tests.
+/// Avoids needing real device location or native mock APIs.
+/// Not a subclass of LocationService — use via Riverpod provider override.
+class FakeLocationService {
+  double latitude;
+  double longitude;
+  double accuracy;
+
+  FakeLocationService({
+    this.latitude = 37.7749,
+    this.longitude = -122.4194,
+    this.accuracy = 10.0,
+  });
+
+  void setPosition(double lat, double lng, {double acc = 10.0}) {
+    latitude = lat;
+    longitude = lng;
+    accuracy = acc;
+  }
+
+  Future<bool> requestPermissions() async => true;
+  void startTracking() {}
+  void stopTracking() {}
+  void dispose() {}
+}
+
+/// Generates a unique email for test isolation.
+String uniqueTestEmail() =>
+    'test_${DateTime.now().millisecondsSinceEpoch}_${UniqueKey().hashCode}@example.com';
