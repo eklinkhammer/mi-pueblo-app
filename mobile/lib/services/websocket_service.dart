@@ -20,7 +20,11 @@ class WebSocketService {
   int _ref = 0;
   bool _connected = false;
 
-  WebSocketService(this._apiClient);
+  WebSocketService(this._apiClient, {WebSocketChannel? channel}) {
+    if (channel != null) {
+      _channel = channel;
+    }
+  }
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
   bool get isConnected => _connected;
@@ -29,10 +33,12 @@ class WebSocketService {
     final token = await _apiClient.getAccessToken();
     if (token == null) return;
 
-    final uri = Uri.parse('${AppConfig.wsBaseUrl}?token=$token&vsn=2.0.0');
-
     try {
-      _channel = WebSocketChannel.connect(uri);
+      if (_channel == null) {
+        final uri =
+            Uri.parse('${AppConfig.wsBaseUrl}?token=$token&vsn=2.0.0');
+        _channel = WebSocketChannel.connect(uri);
+      }
       _connected = true;
 
       _channel!.stream.listen(
