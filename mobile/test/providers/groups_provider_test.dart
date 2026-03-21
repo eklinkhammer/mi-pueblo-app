@@ -109,6 +109,50 @@ void main() {
     });
   });
 
+  group('groupsProvider error paths', () {
+    test('createGroup propagates API error', () async {
+      when(() => mockApi.getGroups()).thenAnswer(
+          (_) async => fakeResponse({'groups': [groupJson]}));
+      when(() => mockApi.createGroup(any()))
+          .thenThrow(Exception('server error'));
+
+      await container.read(groupsProvider.future);
+
+      await expectLater(
+        container.read(groupsProvider.notifier).createGroup('Test'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('joinGroup propagates API error', () async {
+      when(() => mockApi.getGroups()).thenAnswer(
+          (_) async => fakeResponse({'groups': [groupJson]}));
+      when(() => mockApi.joinGroup(any()))
+          .thenThrow(Exception('invalid code'));
+
+      await container.read(groupsProvider.future);
+
+      await expectLater(
+        container.read(groupsProvider.notifier).joinGroup('BAD'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('deleteGroup propagates API error', () async {
+      when(() => mockApi.getGroups()).thenAnswer(
+          (_) async => fakeResponse({'groups': [groupJson]}));
+      when(() => mockApi.deleteGroup(any()))
+          .thenThrow(Exception('not found'));
+
+      await container.read(groupsProvider.future);
+
+      await expectLater(
+        container.read(groupsProvider.notifier).deleteGroup('bad-id'),
+        throwsA(isA<Exception>()),
+      );
+    });
+  });
+
   group('groupMembersProvider', () {
     test('fetches and parses members', () async {
       when(() => mockApi.getMembers(any())).thenAnswer((_) async =>

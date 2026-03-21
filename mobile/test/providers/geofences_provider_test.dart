@@ -46,6 +46,16 @@ void main() {
 
       expect(geofences, isEmpty);
     });
+
+    test('propagates API error', () async {
+      when(() => mockApi.getGeofences(any()))
+          .thenThrow(Exception('network error'));
+
+      expect(
+        () => container.read(geofencesProvider('group-id').future),
+        throwsA(isA<Exception>()),
+      );
+    });
   });
 
   group('geofenceSubscriptionProvider', () {
@@ -69,6 +79,17 @@ void main() {
           .read(geofenceSubscriptionProvider('geofence-id').future);
 
       expect(sub, isNull);
+    });
+
+    test('propagates API error', () async {
+      when(() => mockApi.getSubscription(any()))
+          .thenThrow(Exception('server error'));
+
+      expect(
+        () =>
+            container.read(geofenceSubscriptionProvider('geofence-id').future),
+        throwsA(isA<Exception>()),
+      );
     });
   });
 }

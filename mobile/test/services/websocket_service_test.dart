@@ -192,6 +192,23 @@ void main() {
       expect(decoded[4], isA<Map>()); // payload
     });
 
+    test('sendLocationUpdate sends correct Phoenix message format', () async {
+      when(() => mockApi.getAccessToken())
+          .thenAnswer((_) async => 'token');
+
+      await service.connect();
+      service.joinGroup('g1');
+      service.sendLocationUpdate('g1', {'lat': 37.7, 'lng': -122.4});
+
+      final sent = fakeChannel.sink.messages;
+      final decoded = jsonDecode(sent.last as String) as List;
+
+      expect(decoded[2], 'group:g1');
+      expect(decoded[3], 'location:update');
+      expect(decoded[4]['lat'], 37.7);
+      expect(decoded[4]['lng'], -122.4);
+    });
+
     test('ref increments with each message', () async {
       when(() => mockApi.getAccessToken())
           .thenAnswer((_) async => 'token');
@@ -210,6 +227,24 @@ void main() {
       for (var i = 1; i < refs.length; i++) {
         expect(refs[i], greaterThan(refs[i - 1]));
       }
+    });
+  });
+
+  group('connect edge cases', () {
+    test('connect does nothing when no access token', () async {
+      when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
+
+      await service.connect();
+
+      expect(service.isConnected, isFalse);
+      expect(fakeChannel.sink.messages, isEmpty);
+    });
+
+    test('sendLocationUpdate does nothing when disconnected', () {
+      // Don't call connect - service is disconnected
+      service.sendLocationUpdate('g1', {'lat': 0.0});
+
+      expect(fakeChannel.sink.messages, isEmpty);
     });
   });
 }

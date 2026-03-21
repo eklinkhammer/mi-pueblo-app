@@ -114,6 +114,60 @@ void main() {
     });
   });
 
+  group('AuthState', () {
+    test('copyWith preserves fields correctly', () {
+      const original = AuthState(
+        status: AuthStatus.authenticated,
+        user: null,
+        error: 'some error',
+      );
+
+      final updated = original.copyWith(status: AuthStatus.unauthenticated);
+
+      expect(updated.status, AuthStatus.unauthenticated);
+      expect(updated.user, isNull);
+      // copyWith with no error param clears the error (error defaults to null)
+      expect(updated.error, isNull);
+    });
+
+    test('copyWith with explicit error preserves it', () {
+      const original = AuthState(status: AuthStatus.unknown);
+
+      final updated =
+          original.copyWith(status: AuthStatus.unauthenticated, error: 'bad');
+
+      expect(updated.error, 'bad');
+      expect(updated.status, AuthStatus.unauthenticated);
+    });
+
+    test('error cleared on subsequent state update', () async {
+      when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
+      when(() => mockApi.login(any(), any())).thenThrow(Exception('bad'));
+      when(() => mockApi.register(any(), any(), any()))
+          .thenThrow(Exception('also bad'));
+
+      final notifier = createNotifier();
+      await Future<void>.delayed(Duration.zero);
+
+      // First action sets error
+      await notifier.login('a@b.com', 'wrong');
+      expect(notifier.state.error, 'Invalid email or password');
+
+      // Second action sets different error, previous cleared
+      await notifier.register('a@b.com', 'pass', 'Name');
+      expect(notifier.state.error, 'Registration failed');
+    });
+  });
+
+  group('AuthState defaults', () {
+    test('has correct default values', () {
+      const state = AuthState();
+      expect(state.status, AuthStatus.unknown);
+      expect(state.user, isNull);
+      expect(state.error, isNull);
+    });
+  });
+
   group('logout', () {
     test('clears state to unauthenticated', () async {
       when(() => mockApi.getAccessToken())

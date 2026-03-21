@@ -46,5 +46,33 @@ void main() {
 
       expect(locations, isEmpty);
     });
+
+    test('propagates API error', () async {
+      when(() => mockApi.getGroupLocations(any()))
+          .thenThrow(Exception('network error'));
+
+      expect(
+        () => container.read(groupLocationsProvider('group-id').future),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('handles locations with all-null optional fields', () async {
+      when(() => mockApi.getGroupLocations(any())).thenAnswer((_) async =>
+          fakeResponse({
+            'locations': [memberLocationNullsJson],
+          }));
+
+      final locations =
+          await container.read(groupLocationsProvider('group-id').future);
+
+      expect(locations, hasLength(1));
+      expect(locations.first.displayName, 'Bob');
+      expect(locations.first.latitude, isNull);
+      expect(locations.first.longitude, isNull);
+      expect(locations.first.accuracy, isNull);
+      expect(locations.first.speed, isNull);
+      expect(locations.first.batteryLevel, isNull);
+    });
   });
 }
