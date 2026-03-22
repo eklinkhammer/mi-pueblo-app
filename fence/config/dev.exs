@@ -24,6 +24,7 @@ config :fence, FenceWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "LpohN5qZPM6exIngyVaN9EwwbSOiAOmhZYzZ1d4sfoE6atIFhMF8MCSW3Wr9fX8o",
+  live_view: [signing_salt: "GJ8hIkMqejs9SAMB"],
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:fence, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:fence, ~w(--watch)]}

@@ -66,6 +66,21 @@ defmodule FenceWeb.Router do
     get "/groups/:id/locations", LocationController, :group_locations
   end
 
+  scope "/", FenceWeb do
+    pipe_through :browser
+
+    live "/", LandingLive
+  end
+
+  scope "/web", FenceWeb do
+    pipe_through :browser
+
+    live "/register", RegisterLive
+    live "/login", LoginLive
+    post "/auth/register", WebAuthController, :register
+    post "/auth/login", WebAuthController, :login
+  end
+
   scope "/web", FenceWeb do
     pipe_through [:browser, :web_authenticated]
 
