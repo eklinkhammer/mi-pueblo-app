@@ -75,6 +75,10 @@ defmodule Fence.MixProject do
       # LiveView test support
       {:lazy_html, ">= 0.1.0", only: :test},
 
+      # Assets
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+
       # Static analysis
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
@@ -91,10 +95,16 @@ defmodule Fence.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup"],
+      setup: ["deps.get", "assets.setup", "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+      "assets.deploy": [
+        "tailwind fence --minify",
+        "esbuild fence --minify",
+        "phx.digest"
+      ],
       precommit: [
         "compile --warnings-as-errors",
         "deps.unlock --unused",

@@ -79,6 +79,7 @@ defmodule FenceWeb.Router do
     live "/login", LoginLive
     post "/auth/register", WebAuthController, :register
     post "/auth/login", WebAuthController, :login
+    post "/auth/logout", WebAuthController, :logout
   end
 
   scope "/web", FenceWeb do

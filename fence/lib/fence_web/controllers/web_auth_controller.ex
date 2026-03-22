@@ -42,4 +42,10 @@ defmodule FenceWeb.WebAuthController do
         |> redirect(to: ~p"/web/login")
     end
   end
+
+  def logout(conn, _params) do
+    conn
+    |> clear_session()
+    |> redirect(to: ~p"/")
+  end
 end
