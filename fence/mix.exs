@@ -72,6 +72,9 @@ defmodule Fence.MixProject do
       # CORS
       {:cors_plug, "~> 3.0"},
 
+      # LiveView test support
+      {:lazy_html, ">= 0.1.0", only: :test},
+
       # Static analysis
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

@@ -54,4 +54,9 @@ defmodule Fence.Factory do
     conn
     |> Plug.Conn.put_req_header("authorization", "Bearer #{token}")
   end
+
+  def create_share_token(user) do
+    {:ok, share_token} = Accounts.create_share_token(user.id)
+    share_token
+  end
 end

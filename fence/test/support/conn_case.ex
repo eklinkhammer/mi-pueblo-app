@@ -27,6 +27,7 @@ defmodule FenceWeb.ConnCase do
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
+      import Phoenix.LiveViewTest
       import FenceWeb.ConnCase
     end
   end
@@ -34,5 +35,13 @@ defmodule FenceWeb.ConnCase do
   setup tags do
     Fence.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
+  end
+
+  defmacro live_authed(conn, user, path) do
+    quote do
+      {:ok, st} = Fence.Accounts.create_share_token(unquote(user).id)
+      sep = if String.contains?(unquote(path), "?"), do: "&", else: "?"
+      live(unquote(conn), "#{unquote(path)}#{sep}token=#{st.token}")
+    end
   end
 end
