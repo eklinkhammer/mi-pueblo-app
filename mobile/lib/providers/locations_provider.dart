@@ -7,8 +7,9 @@ final groupLocationsProvider =
   (ref, groupId) async {
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.getGroupLocations(groupId);
-    return (response.data['locations'] as List)
-        .map((l) => MemberLocation.fromJson(l))
+    final data = response.data!;
+    return (data['locations'] as List<dynamic>)
+        .map((l) => MemberLocation.fromJson(l as Map<String, dynamic>))
         .toList();
   },
 );

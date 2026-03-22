@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:fence/providers/auth_provider.dart';
-import 'package:fence/services/api_client.dart';
 import '../helpers/mocks.dart';
 import '../helpers/fakes.dart';
 import '../helpers/test_data.dart';

@@ -14,21 +14,23 @@ class GroupsNotifier extends AsyncNotifier<List<Group>> {
   Future<List<Group>> _fetchGroups() async {
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.getGroups();
-    final groups = (response.data['groups'] as List)
-        .map((g) => Group.fromJson(g))
+    final data = response.data!;
+    final groups = (data['groups'] as List<dynamic>)
+        .map((g) => Group.fromJson(g as Map<String, dynamic>))
         .toList();
     return groups;
   }
 
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _fetchGroups());
+    state = const AsyncValue<List<Group>>.loading();
+    state = await AsyncValue.guard(_fetchGroups);
   }
 
   Future<Group> createGroup(String name) async {
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.createGroup(name);
-    final group = Group.fromJson(response.data['group']);
+    final data = response.data!;
+    final group = Group.fromJson(data['group'] as Map<String, dynamic>);
     await refresh();
     return group;
   }
@@ -36,7 +38,8 @@ class GroupsNotifier extends AsyncNotifier<List<Group>> {
   Future<Group> joinGroup(String inviteCode) async {
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.joinGroup(inviteCode);
-    final group = Group.fromJson(response.data['group']);
+    final data = response.data!;
+    final group = Group.fromJson(data['group'] as Map<String, dynamic>);
     await refresh();
     return group;
   }
@@ -52,7 +55,8 @@ final groupMembersProvider =
     FutureProvider.family<List<GroupMember>, String>((ref, groupId) async {
   final apiClient = ref.read(apiClientProvider);
   final response = await apiClient.getMembers(groupId);
-  return (response.data['members'] as List)
-      .map((m) => GroupMember.fromJson(m))
+  final data = response.data!;
+  return (data['members'] as List<dynamic>)
+      .map((m) => GroupMember.fromJson(m as Map<String, dynamic>))
       .toList();
 });

@@ -11,8 +11,8 @@ void main() {
       overrides: [
         groupsProvider.overrideWith(() => _FakeGroupsNotifier(groupsState)),
       ],
-      child: MaterialApp(
-        home: const GroupListScreen(),
+      child: const MaterialApp(
+        home: GroupListScreen(),
       ),
     );
   }

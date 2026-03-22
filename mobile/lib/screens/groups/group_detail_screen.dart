@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -99,43 +100,44 @@ class GroupDetailScreen extends ConsumerWidget {
     try {
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.createInvite(groupId);
-      final code = response.data['invite']['code'] as String;
+      final data = response.data!;
+      final invite = data['invite'] as Map<String, dynamic>;
+      final code = invite['code'] as String;
 
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Invite Code'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SelectableText(
-                  code,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                const Text('Share this code with family members'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: code));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Copied to clipboard')),
-                  );
-                },
-                child: const Text('Copy'),
+      if (!context.mounted) return;
+      unawaited(showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Invite Code'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SelectableText(
+                code,
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Done'),
-              ),
+              const SizedBox(height: 8),
+              const Text('Share this code with family members'),
             ],
           ),
-        );
-      }
-    } catch (e) {
+          actions: [
+            TextButton(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: code));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Copied to clipboard')),
+                );
+              },
+              child: const Text('Copy'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      ));
+    } on Exception catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to create invite: $e')),

@@ -17,10 +17,10 @@ class LocationService {
   LocationService(this._apiClient);
 
   Future<bool> requestPermissions() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return false;
 
-    LocationPermission permission = await Geolocator.checkPermission();
+    var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return false;
@@ -39,7 +39,7 @@ class LocationService {
           distanceFilter: 0,
         ),
       );
-    } catch (e) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -58,12 +58,10 @@ class LocationService {
         accuracy: LocationAccuracy.medium,
         distanceFilter: AppConfig.locationDistanceFilter,
       ),
-    ).listen((position) {
-      _reportPosition(position);
-    });
+    ).listen(_reportPosition);
 
     // Report initial position
-    _reportCurrentLocation();
+    unawaited(_reportCurrentLocation());
   }
 
   void stopTracking() {
@@ -88,7 +86,7 @@ class LocationService {
         'speed': position.speed,
         'bearing': position.heading,
       });
-    } catch (_) {
+    } on Exception catch (_) {
       // Silently fail - will retry on next interval
     }
   }

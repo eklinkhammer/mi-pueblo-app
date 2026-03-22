@@ -26,7 +26,7 @@ class FakeSink implements WebSocketSink {
   Future<dynamic> get done => Future.value();
 
   @override
-  Future<dynamic> addStream(Stream stream) => Future.value();
+  Future<dynamic> addStream(Stream<dynamic> stream) => Future.value();
 }
 
 class FakeChannel extends Fake implements WebSocketChannel {
@@ -134,7 +134,8 @@ void main() {
       expect(messages, hasLength(1));
       expect(messages.first['topic'], 'group:abc');
       expect(messages.first['event'], 'location:update');
-      expect(messages.first['payload']['lat'], 37.7);
+      final payload = messages.first['payload'] as Map<String, dynamic>;
+      expect(payload['lat'], 37.7);
     });
   });
 
@@ -189,7 +190,7 @@ void main() {
       expect(decoded[1], isA<String>()); // ref (stringified int)
       expect(decoded[2], 'group:test-group'); // topic
       expect(decoded[3], 'phx_join'); // event
-      expect(decoded[4], isA<Map>()); // payload
+      expect(decoded[4], isA<Map<String, dynamic>>()); // payload
     });
 
     test('sendLocationUpdate sends correct Phoenix message format', () async {
@@ -205,8 +206,9 @@ void main() {
 
       expect(decoded[2], 'group:g1');
       expect(decoded[3], 'location:update');
-      expect(decoded[4]['lat'], 37.7);
-      expect(decoded[4]['lng'], -122.4);
+      final payload = decoded[4] as Map<String, dynamic>;
+      expect(payload['lat'], 37.7);
+      expect(payload['lng'], -122.4);
     });
 
     test('ref increments with each message', () async {

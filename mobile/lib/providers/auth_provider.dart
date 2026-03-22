@@ -40,9 +40,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       final response = await _apiClient.getMe();
-      final user = User.fromJson(response.data['user']);
+      final data = response.data!;
+      final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-    } catch (_) {
+    } on Exception catch (_) {
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
   }
@@ -52,13 +53,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final response =
           await _apiClient.register(email, password, displayName);
+      final data = response.data!;
       await _apiClient.setTokens(
-        response.data['access_token'],
-        response.data['refresh_token'],
+        data['access_token'] as String,
+        data['refresh_token'] as String,
       );
-      final user = User.fromJson(response.data['user']);
+      final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-    } catch (e) {
+    } on Exception catch (_) {
       state = state.copyWith(error: 'Registration failed');
     }
   }
@@ -66,13 +68,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> login(String email, String password) async {
     try {
       final response = await _apiClient.login(email, password);
+      final data = response.data!;
       await _apiClient.setTokens(
-        response.data['access_token'],
-        response.data['refresh_token'],
+        data['access_token'] as String,
+        data['refresh_token'] as String,
       );
-      final user = User.fromJson(response.data['user']);
+      final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-    } catch (e) {
+    } on Exception catch (_) {
       state = state.copyWith(error: 'Invalid email or password');
     }
   }

@@ -46,7 +46,7 @@ class WebSocketService {
           final message = jsonDecode(data as String);
           _handleMessage(message);
         },
-        onError: (error) {
+        onError: (Object error) {
           _connected = false;
           _scheduleReconnect();
         },
@@ -62,7 +62,7 @@ class WebSocketService {
       for (final topic in _joinedTopics.toList()) {
         _sendJoin(topic);
       }
-    } catch (e) {
+    } on Exception catch (_) {
       _connected = false;
       _scheduleReconnect();
     }
@@ -127,9 +127,7 @@ class WebSocketService {
   void _scheduleReconnect() {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(const Duration(seconds: 5), () {
-      connect();
-    });
+    _reconnectTimer = Timer(const Duration(seconds: 5), connect);
   }
 
   void dispose() {

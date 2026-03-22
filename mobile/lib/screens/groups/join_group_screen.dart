@@ -30,7 +30,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       if (mounted) {
         context.go('/groups/${group.id}');
       }
-    } catch (e) {
+    } on Exception catch (_) {
       setState(() => _error = 'Invalid or expired invite code');
     } finally {
       if (mounted) setState(() => _loading = false);

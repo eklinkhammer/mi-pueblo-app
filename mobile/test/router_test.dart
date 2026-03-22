@@ -6,8 +6,8 @@ import 'package:fence/router.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'helpers/mocks.dart';
 
-Response<dynamic> _fakeResponse(dynamic data) {
-  return Response(
+Response<Map<String, dynamic>> _fakeResponse(Map<String, dynamic> data) {
+  return Response<Map<String, dynamic>>(
     data: data,
     statusCode: 200,
     requestOptions: RequestOptions(path: '/fake'),

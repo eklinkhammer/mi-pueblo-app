@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/providers/auth_provider.dart';
@@ -53,15 +54,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () async {
               final locationService = ref.read(locationServiceProvider);
               final granted = await locationService.requestPermissions();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(granted
-                        ? 'Location permission granted'
-                        : 'Location permission denied'),
-                  ),
-                );
-              }
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(granted
+                      ? 'Location permission granted'
+                      : 'Location permission denied'),
+                ),
+              );
             },
           ),
 
@@ -89,8 +89,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ],
                 ),
               );
-              if (confirmed == true) {
-                ref.read(authProvider.notifier).logout();
+              if (confirmed ?? false) {
+                unawaited(ref.read(authProvider.notifier).logout());
               }
             },
           ),

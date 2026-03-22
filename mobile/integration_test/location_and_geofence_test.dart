@@ -20,11 +20,10 @@ void main() {
       );
       final token = userData['access_token'] as String;
 
-      final group = await backend.createGroup(
+      await backend.createGroup(
         token: token,
         name: 'Geofence Test Group',
       );
-      final groupId = group['id'] as String;
 
       await pumpApp(tester);
 

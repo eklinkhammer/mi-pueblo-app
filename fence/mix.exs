@@ -10,7 +10,11 @@ defmodule Fence.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      dialyzer: [plt_local_path: "priv/plts", plt_core_path: "priv/plts"],
+      dialyzer: [
+        plt_local_path: "priv/plts",
+        plt_core_path: "priv/plts",
+        plt_add_apps: [:mix]
+      ],
       listeners: [Phoenix.CodeReloader]
     ]
   end

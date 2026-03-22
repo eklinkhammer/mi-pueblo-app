@@ -25,7 +25,7 @@ class _GroupCreateScreenState extends ConsumerState<GroupCreateScreen> {
       if (mounted) {
         context.go('/groups/${group.id}');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed: $e')),

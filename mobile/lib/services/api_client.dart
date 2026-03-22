@@ -34,7 +34,7 @@ class ApiClient {
             // Retry the request
             final token = await _storage.read(key: 'access_token');
             error.requestOptions.headers['Authorization'] = 'Bearer $token';
-            final response = await _dio.fetch(error.requestOptions);
+            final response = await _dio.fetch<Map<String, dynamic>>(error.requestOptions);
             handler.resolve(response);
             return;
           }
@@ -51,14 +51,15 @@ class ApiClient {
 
       final response = await Dio(BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
-      )).post('/auth/refresh', data: {'refresh_token': refreshToken});
+      )).post<Map<String, dynamic>>('/auth/refresh', data: {'refresh_token': refreshToken});
 
+      final data = response.data!;
       await _storage.write(
-          key: 'access_token', value: response.data['access_token']);
+          key: 'access_token', value: data['access_token'] as String);
       await _storage.write(
-          key: 'refresh_token', value: response.data['refresh_token']);
+          key: 'refresh_token', value: data['refresh_token'] as String);
       return true;
-    } catch (_) {
+    } on Exception catch (_) {
       return false;
     }
   }
@@ -76,95 +77,113 @@ class ApiClient {
   Future<String?> getAccessToken() => _storage.read(key: 'access_token');
 
   // Auth
-  Future<Response> register(
+  Future<Response<Map<String, dynamic>>> register(
       String email, String password, String displayName) {
-    return _dio.post('/auth/register', data: {
+    return _dio.post<Map<String, dynamic>>('/auth/register', data: {
       'email': email,
       'password': password,
       'display_name': displayName,
     });
   }
 
-  Future<Response> login(String email, String password) {
-    return _dio.post('/auth/login', data: {
+  Future<Response<Map<String, dynamic>>> login(String email, String password) {
+    return _dio.post<Map<String, dynamic>>('/auth/login', data: {
       'email': email,
       'password': password,
     });
   }
 
-  Future<Response> getMe() => _dio.get('/me');
+  Future<Response<Map<String, dynamic>>> getMe() =>
+      _dio.get<Map<String, dynamic>>('/me');
 
-  Future<Response> updateMe(Map<String, dynamic> data) =>
-      _dio.put('/me', data: data);
+  Future<Response<Map<String, dynamic>>> updateMe(
+          Map<String, dynamic> data) =>
+      _dio.put<Map<String, dynamic>>('/me', data: data);
 
-  Future<Response> registerDeviceToken(String token, String platform) {
-    return _dio.post('/me/device-token', data: {
+  Future<Response<Map<String, dynamic>>> registerDeviceToken(
+      String token, String platform) {
+    return _dio.post<Map<String, dynamic>>('/me/device-token', data: {
       'token': token,
       'platform': platform,
     });
   }
 
   // Groups
-  Future<Response> getGroups() => _dio.get('/groups');
+  Future<Response<Map<String, dynamic>>> getGroups() =>
+      _dio.get<Map<String, dynamic>>('/groups');
 
-  Future<Response> createGroup(String name) =>
-      _dio.post('/groups', data: {'name': name});
+  Future<Response<Map<String, dynamic>>> createGroup(String name) =>
+      _dio.post<Map<String, dynamic>>('/groups', data: {'name': name});
 
-  Future<Response> getGroup(String id) => _dio.get('/groups/$id');
+  Future<Response<Map<String, dynamic>>> getGroup(String id) =>
+      _dio.get<Map<String, dynamic>>('/groups/$id');
 
-  Future<Response> updateGroup(String id, Map<String, dynamic> data) =>
-      _dio.put('/groups/$id', data: data);
+  Future<Response<Map<String, dynamic>>> updateGroup(
+          String id, Map<String, dynamic> data) =>
+      _dio.put<Map<String, dynamic>>('/groups/$id', data: data);
 
-  Future<Response> deleteGroup(String id) => _dio.delete('/groups/$id');
+  Future<Response<Map<String, dynamic>>> deleteGroup(String id) =>
+      _dio.delete<Map<String, dynamic>>('/groups/$id');
 
-  Future<Response> joinGroup(String inviteCode) =>
-      _dio.post('/groups/join', data: {'invite_code': inviteCode});
+  Future<Response<Map<String, dynamic>>> joinGroup(String inviteCode) =>
+      _dio.post<Map<String, dynamic>>('/groups/join',
+          data: {'invite_code': inviteCode});
 
-  Future<Response> getMembers(String groupId) =>
-      _dio.get('/groups/$groupId/members');
+  Future<Response<Map<String, dynamic>>> getMembers(String groupId) =>
+      _dio.get<Map<String, dynamic>>('/groups/$groupId/members');
 
-  Future<Response> removeMember(String groupId, String userId) =>
-      _dio.delete('/groups/$groupId/members/$userId');
+  Future<Response<Map<String, dynamic>>> removeMember(
+          String groupId, String userId) =>
+      _dio.delete<Map<String, dynamic>>('/groups/$groupId/members/$userId');
 
-  Future<Response> createInvite(String groupId) =>
-      _dio.post('/groups/$groupId/invites');
+  Future<Response<Map<String, dynamic>>> createInvite(String groupId) =>
+      _dio.post<Map<String, dynamic>>('/groups/$groupId/invites');
 
   // Geofences
-  Future<Response> getGeofences(String groupId) =>
-      _dio.get('/groups/$groupId/geofences');
+  Future<Response<Map<String, dynamic>>> getGeofences(String groupId) =>
+      _dio.get<Map<String, dynamic>>('/groups/$groupId/geofences');
 
-  Future<Response> createGeofence(
-      String groupId, Map<String, dynamic> data) =>
-      _dio.post('/groups/$groupId/geofences', data: data);
+  Future<Response<Map<String, dynamic>>> createGeofence(
+          String groupId, Map<String, dynamic> data) =>
+      _dio.post<Map<String, dynamic>>('/groups/$groupId/geofences', data: data);
 
-  Future<Response> getGeofence(String groupId, String geofenceId) =>
-      _dio.get('/groups/$groupId/geofences/$geofenceId');
+  Future<Response<Map<String, dynamic>>> getGeofence(
+          String groupId, String geofenceId) =>
+      _dio.get<Map<String, dynamic>>('/groups/$groupId/geofences/$geofenceId');
 
-  Future<Response> updateGeofence(
-      String groupId, String geofenceId, Map<String, dynamic> data) =>
-      _dio.put('/groups/$groupId/geofences/$geofenceId', data: data);
+  Future<Response<Map<String, dynamic>>> updateGeofence(
+          String groupId, String geofenceId, Map<String, dynamic> data) =>
+      _dio.put<Map<String, dynamic>>(
+          '/groups/$groupId/geofences/$geofenceId',
+          data: data);
 
-  Future<Response> deleteGeofence(String groupId, String geofenceId) =>
-      _dio.delete('/groups/$groupId/geofences/$geofenceId');
+  Future<Response<Map<String, dynamic>>> deleteGeofence(
+          String groupId, String geofenceId) =>
+      _dio.delete<Map<String, dynamic>>(
+          '/groups/$groupId/geofences/$geofenceId');
 
   // Subscriptions
-  Future<Response> getSubscription(String geofenceId) =>
-      _dio.get('/geofences/$geofenceId/subscription');
+  Future<Response<Map<String, dynamic>>> getSubscription(
+          String geofenceId) =>
+      _dio.get<Map<String, dynamic>>('/geofences/$geofenceId/subscription');
 
-  Future<Response> upsertSubscription(
-      String geofenceId, Map<String, dynamic> data) =>
-      _dio.put('/geofences/$geofenceId/subscription', data: data);
+  Future<Response<Map<String, dynamic>>> upsertSubscription(
+          String geofenceId, Map<String, dynamic> data) =>
+      _dio.put<Map<String, dynamic>>(
+          '/geofences/$geofenceId/subscription',
+          data: data);
 
-  Future<Response> createOptOut(String geofenceId) =>
-      _dio.post('/geofences/$geofenceId/opt-out');
+  Future<Response<Map<String, dynamic>>> createOptOut(String geofenceId) =>
+      _dio.post<Map<String, dynamic>>('/geofences/$geofenceId/opt-out');
 
-  Future<Response> deleteOptOut(String geofenceId) =>
-      _dio.delete('/geofences/$geofenceId/opt-out');
+  Future<Response<Map<String, dynamic>>> deleteOptOut(String geofenceId) =>
+      _dio.delete<Map<String, dynamic>>('/geofences/$geofenceId/opt-out');
 
   // Location
-  Future<Response> reportLocation(Map<String, dynamic> data) =>
-      _dio.post('/location', data: data);
+  Future<Response<Map<String, dynamic>>> reportLocation(
+          Map<String, dynamic> data) =>
+      _dio.post<Map<String, dynamic>>('/location', data: data);
 
-  Future<Response> getGroupLocations(String groupId) =>
-      _dio.get('/groups/$groupId/locations');
+  Future<Response<Map<String, dynamic>>> getGroupLocations(String groupId) =>
+      _dio.get<Map<String, dynamic>>('/groups/$groupId/locations');
 }

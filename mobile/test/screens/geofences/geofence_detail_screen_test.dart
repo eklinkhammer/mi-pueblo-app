@@ -23,12 +23,12 @@ final _testGeofence = Geofence(
   insertedAt: DateTime(2025),
 );
 
-final _testSubscription = GeofenceSubscription(
+const _testSubscription = GeofenceSubscription(
   id: 'sub-1',
   geofenceId: _testGeofenceId,
   notifyOnEntry: true,
   notifyOnExit: false,
-  blacklistedUserIds: [],
+  blacklistedUserIds: <String>[],
   throttleSeconds: 300,
 );
 

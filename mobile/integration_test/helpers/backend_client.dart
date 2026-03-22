@@ -22,12 +22,12 @@ class BackendTestClient {
     required String password,
     required String displayName,
   }) async {
-    final response = await _dio.post('/auth/register', data: {
+    final response = await _dio.post<Map<String, dynamic>>('/auth/register', data: {
       'email': email,
       'password': password,
       'display_name': displayName,
     });
-    return response.data as Map<String, dynamic>;
+    return response.data!;
   }
 
   /// Create a group. Returns the group data.
@@ -35,12 +35,12 @@ class BackendTestClient {
     required String token,
     required String name,
   }) async {
-    final response = await _dio.post(
+    final response = await _dio.post<Map<String, dynamic>>(
       '/groups',
       data: {'name': name},
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
-    return response.data['group'] as Map<String, dynamic>;
+    return response.data!['group'] as Map<String, dynamic>;
   }
 
   /// Create an invite for a group. Returns the invite data (code, expires_at).
@@ -48,11 +48,11 @@ class BackendTestClient {
     required String token,
     required String groupId,
   }) async {
-    final response = await _dio.post(
+    final response = await _dio.post<Map<String, dynamic>>(
       '/groups/$groupId/invites',
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
-    return response.data['invite'] as Map<String, dynamic>;
+    return response.data!['invite'] as Map<String, dynamic>;
   }
 
   /// Join a group by invite code. Returns the group data.
@@ -60,12 +60,12 @@ class BackendTestClient {
     required String token,
     required String inviteCode,
   }) async {
-    final response = await _dio.post(
+    final response = await _dio.post<Map<String, dynamic>>(
       '/groups/join',
       data: {'invite_code': inviteCode},
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
-    return response.data['group'] as Map<String, dynamic>;
+    return response.data!['group'] as Map<String, dynamic>;
   }
 
   /// Create a geofence. Returns the geofence data.
@@ -77,7 +77,7 @@ class BackendTestClient {
     required double longitude,
     required double radiusMeters,
   }) async {
-    final response = await _dio.post(
+    final response = await _dio.post<Map<String, dynamic>>(
       '/groups/$groupId/geofences',
       data: {
         'name': name,
@@ -87,6 +87,6 @@ class BackendTestClient {
       },
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
-    return response.data['geofence'] as Map<String, dynamic>;
+    return response.data!['geofence'] as Map<String, dynamic>;
   }
 }
