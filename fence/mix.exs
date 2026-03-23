@@ -72,6 +72,9 @@ defmodule Fence.MixProject do
       # CORS
       {:cors_plug, "~> 3.0"},
 
+      # HTTP client (geocoding)
+      {:req, "~> 0.5"},
+
       # LiveView test support
       {:lazy_html, ">= 0.1.0", only: :test},
 

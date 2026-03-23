@@ -13,6 +13,7 @@ defmodule Fence.Application do
       {DNSCluster, query: Application.get_env(:fence, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Fence.PubSub},
       {Oban, Application.fetch_env!(:fence, Oban)},
+      Fence.Geocoding,
       FenceWeb.Presence,
       FenceWeb.Endpoint
     ]

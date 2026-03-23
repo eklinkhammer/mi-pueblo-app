@@ -41,9 +41,7 @@ defmodule FenceWeb.GeofenceCreateLiveTest do
 
       render_change(view, :validate, %{"name" => "Office", "radius" => "300"})
 
-      view
-      |> element("form")
-      |> render_submit()
+      render_click(view, "create")
 
       # Should redirect to /web/map
       assert_redirect(view, "/web/map")
@@ -59,10 +57,7 @@ defmodule FenceWeb.GeofenceCreateLiveTest do
 
       render_hook(view, "map_clicked", %{"lat" => 37.7749, "lng" => -122.4194})
 
-      html =
-        view
-        |> element("form")
-        |> render_submit()
+      html = render_click(view, "create")
 
       assert html =~ "Name is required"
     end
@@ -72,10 +67,7 @@ defmodule FenceWeb.GeofenceCreateLiveTest do
 
       render_change(view, :validate, %{"name" => "Test", "radius" => "200"})
 
-      html =
-        view
-        |> element("form")
-        |> render_submit()
+      html = render_click(view, "create")
 
       assert html =~ "Tap the map to select a location"
     end

@@ -1,7 +1,7 @@
 defmodule FenceWeb.MapLive do
   use FenceWeb, :live_view
 
-  alias Fence.{Geofences, Groups, Locations}
+  alias Fence.{Geocoding, Geofences, Groups, Locations}
 
   @refresh_interval :timer.seconds(10)
 
@@ -15,6 +15,9 @@ defmodule FenceWeb.MapLive do
       |> assign(:selected_group_id, nil)
       |> assign(:locations, [])
       |> assign(:geofences, [])
+      |> assign(:new_group_name, "")
+      |> assign(:search_results, [])
+      |> assign(:searching, false)
 
     {:ok, socket}
   end
@@ -35,8 +38,63 @@ defmodule FenceWeb.MapLive do
     {:noreply, socket}
   end
 
+  def handle_event("create_group", %{"name" => name}, socket) do
+    user = socket.assigns.current_user
+
+    case Groups.create_group(user, %{"name" => String.trim(name)}) do
+      {:ok, group} ->
+        groups = Groups.list_user_groups(user.id)
+
+        socket =
+          socket
+          |> assign(:groups, groups)
+          |> assign(:selected_group_id, group.id)
+          |> assign(:new_group_name, "")
+          |> load_data(group.id)
+          |> put_flash(:info, "Group \"#{group.name}\" created!")
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not create group")}
+    end
+  end
+
   def handle_event("geofence_clicked", %{"id" => id, "group_id" => group_id}, socket) do
     {:noreply, push_navigate(socket, to: ~p"/web/groups/#{group_id}/geofences/#{id}")}
+  end
+
+  def handle_event("address_search", %{"query" => query}, socket) do
+    query = String.trim(query)
+
+    if query == "" do
+      {:noreply, socket}
+    else
+      socket = assign(socket, :searching, true)
+
+      case Geocoding.search(query) do
+        {:ok, results} ->
+          {:noreply, assign(socket, search_results: results, searching: false)}
+
+        {:error, _} ->
+          {:noreply,
+           socket
+           |> assign(:searching, false)
+           |> put_flash(:error, "Address search failed")}
+      end
+    end
+  end
+
+  def handle_event("select_search_result", %{"lat" => lat, "lng" => lng}, socket) do
+    {lat, _} = Float.parse(lat)
+    {lng, _} = Float.parse(lng)
+
+    socket =
+      socket
+      |> assign(:search_results, [])
+      |> push_event("set_view", %{lat: lat, lng: lng, zoom: 16})
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -145,16 +203,39 @@ defmodule FenceWeb.MapLive do
         </div>
       </div>
 
-      <div :if={@selected_group_id == nil} class="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
+      <div :if={@groups == [] and @selected_group_id == nil} class="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <p class="text-gray-500 mb-4">Create a group to get started</p>
+        <form phx-submit="create_group" class="flex items-center gap-2">
+          <input
+            type="text"
+            name="name"
+            placeholder="Group name"
+            required
+            value={@new_group_name}
+            class="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+          />
+          <button
+            type="submit"
+            class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 transition"
+          >
+            Create
+          </button>
+        </form>
+      </div>
+
+      <div :if={@groups != [] and @selected_group_id == nil} class="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
         <p class="text-gray-500">Select a group to view the map</p>
       </div>
 
-      <div :if={@selected_group_id} class="flex gap-4">
+      <div :if={@selected_group_id} class="space-y-2">
+        <.search_bar searching={@searching} results={@search_results} />
+        <div class="flex gap-4">
         <div
           id="map"
           phx-hook="LeafletMap"
           data-interactive="false"
-          class="h-[500px] flex-1 rounded-lg border border-gray-200"
+          style="height:500px"
+          class="flex-1 rounded-lg border border-gray-200"
           phx-update="ignore"
         >
         </div>
@@ -177,6 +258,7 @@ defmodule FenceWeb.MapLive do
             <span class="text-gray-500 ml-1">{round_radius(gf.radius)}m</span>
           </div>
           <div :if={@geofences == []} class="text-sm text-gray-400">No geofences</div>
+        </div>
         </div>
       </div>
     </div>

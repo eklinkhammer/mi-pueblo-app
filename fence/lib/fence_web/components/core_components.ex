@@ -76,6 +76,43 @@ defmodule FenceWeb.CoreComponents do
     """
   end
 
+  attr :searching, :boolean, default: false
+  attr :results, :list, default: []
+
+  def search_bar(assigns) do
+    ~H"""
+    <div class="relative">
+      <form phx-submit="address_search" class="flex gap-2">
+        <input
+          type="text"
+          name="query"
+          placeholder="Search address..."
+          class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+          autocomplete="off"
+        />
+        <button
+          type="submit"
+          disabled={@searching}
+          class="rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-700 disabled:opacity-50"
+        >
+          {if @searching, do: "...", else: "Search"}
+        </button>
+      </form>
+      <ul :if={@results != []} class="absolute z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto">
+        <li
+          :for={result <- @results}
+          phx-click="select_search_result"
+          phx-value-lat={result.lat}
+          phx-value-lng={result.lng}
+          class="cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+        >
+          {result.display_name}
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
   defp field_errors(assigns) do
     ~H"""
     <div :for={msg <- @errors} class="mt-1 text-sm text-red-600">

@@ -1,7 +1,7 @@
 defmodule FenceWeb.GeofenceCreateLive do
   use FenceWeb, :live_view
 
-  alias Fence.Geofences
+  alias Fence.{Geocoding, Geofences}
 
   @impl true
   def mount(%{"group_id" => group_id}, _session, socket) do
@@ -13,6 +13,8 @@ defmodule FenceWeb.GeofenceCreateLive do
       |> assign(:selected_lat, nil)
       |> assign(:selected_lng, nil)
       |> assign(:saving, false)
+      |> assign(:search_results, [])
+      |> assign(:searching, false)
 
     {:ok, socket}
   end
@@ -47,6 +49,43 @@ defmodule FenceWeb.GeofenceCreateLive do
       else
         socket
       end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("address_search", %{"query" => query}, socket) do
+    query = String.trim(query)
+
+    if query == "" do
+      {:noreply, socket}
+    else
+      socket = assign(socket, :searching, true)
+
+      case Geocoding.search(query) do
+        {:ok, results} ->
+          {:noreply, assign(socket, search_results: results, searching: false)}
+
+        {:error, _} ->
+          {:noreply,
+           socket
+           |> assign(:searching, false)
+           |> put_flash(:error, "Address search failed")}
+      end
+    end
+  end
+
+  def handle_event("select_search_result", %{"lat" => lat, "lng" => lng}, socket) do
+    {lat, _} = Float.parse(lat)
+    {lng, _} = Float.parse(lng)
+
+    socket =
+      socket
+      |> assign(search_results: [], selected_lat: lat, selected_lng: lng)
+      |> push_event("set_selected_location", %{
+        lat: lat,
+        lng: lng,
+        radius: socket.assigns.radius
+      })
 
     {:noreply, socket}
   end
@@ -112,7 +151,7 @@ defmodule FenceWeb.GeofenceCreateLive do
         <h1 class="text-2xl font-bold">Create Geofence</h1>
       </div>
 
-      <form phx-change="validate" phx-submit="create" class="space-y-4">
+      <form phx-change="validate" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input
@@ -134,14 +173,19 @@ defmodule FenceWeb.GeofenceCreateLive do
             class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
+      </form>
 
-        <p class="text-sm text-gray-500">Click the map to place the geofence center</p>
+      <div class="space-y-4">
+        <p class="text-sm text-gray-500">Search for an address or click the map to place the geofence center</p>
+
+        <.search_bar searching={@searching} results={@search_results} />
 
         <div
           id="create-map"
           phx-hook="LeafletMap"
           data-interactive="true"
-          class="h-[400px] rounded-lg border border-gray-200"
+          style="height:400px"
+          class="rounded-lg border border-gray-200"
           phx-update="ignore"
         >
         </div>
@@ -151,13 +195,13 @@ defmodule FenceWeb.GeofenceCreateLive do
         </div>
 
         <button
-          type="submit"
+          phx-click="create"
           disabled={@saving}
           class="rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {if @saving, do: "Creating...", else: "Create Geofence"}
         </button>
-      </form>
+      </div>
     </div>
     """
   end
