@@ -59,9 +59,14 @@ defmodule FenceWeb.GeofenceCreateLive do
     if query == "" do
       {:noreply, socket}
     else
-      socket = assign(socket, :searching, true)
+      result =
+        try do
+          Geocoding.search(query)
+        catch
+          :exit, _ -> {:error, :timeout}
+        end
 
-      case Geocoding.search(query) do
+      case result do
         {:ok, results} ->
           {:noreply, assign(socket, search_results: results, searching: false)}
 

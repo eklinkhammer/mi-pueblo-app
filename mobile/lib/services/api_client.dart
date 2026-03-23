@@ -179,6 +179,10 @@ class ApiClient {
   Future<Response<Map<String, dynamic>>> deleteOptOut(String geofenceId) =>
       _dio.delete<Map<String, dynamic>>('/geofences/$geofenceId/opt-out');
 
+  // Geocoding
+  Future<Response<Map<String, dynamic>>> geocode(String query) =>
+      _dio.get<Map<String, dynamic>>('/geocode', queryParameters: {'q': query});
+
   // Location
   Future<Response<Map<String, dynamic>>> reportLocation(
           Map<String, dynamic> data) =>

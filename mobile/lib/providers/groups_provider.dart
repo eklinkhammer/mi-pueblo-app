@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/models/group.dart';
+import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/services/api_client.dart';
 
 final groupsProvider =
@@ -8,6 +9,10 @@ final groupsProvider =
 class GroupsNotifier extends AsyncNotifier<List<Group>> {
   @override
   Future<List<Group>> build() async {
+    final auth = ref.watch(authProvider);
+    if (auth.status != AuthStatus.authenticated) {
+      return [];
+    }
     return _fetchGroups();
   }
 

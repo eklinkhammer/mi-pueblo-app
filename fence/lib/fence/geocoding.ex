@@ -49,7 +49,9 @@ defmodule Fence.Geocoding do
         url: @nominatim_url,
         headers: [{"user-agent", "Fence/1.0 (family location sharing app)"}],
         params: [q: query, format: "jsonv2", limit: 5],
-        retry: false
+        retry: false,
+        connect_options: [timeout: 5_000],
+        receive_timeout: 5_000
       ] ++ state.req_options
 
     case Req.get(req_options) do

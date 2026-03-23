@@ -28,10 +28,14 @@ defmodule FenceWeb.MapLive do
   end
 
   @impl true
+  def handle_event("select_group", %{"group_id" => ""}, socket) do
+    {:noreply, assign(socket, selected_group_id: nil, search_results: [])}
+  end
+
   def handle_event("select_group", %{"group_id" => group_id}, socket) do
     socket =
       socket
-      |> assign(:selected_group_id, group_id)
+      |> assign(selected_group_id: group_id, search_results: [])
       |> load_data(group_id)
       |> schedule_refresh()
 
@@ -70,9 +74,14 @@ defmodule FenceWeb.MapLive do
     if query == "" do
       {:noreply, socket}
     else
-      socket = assign(socket, :searching, true)
+      result =
+        try do
+          Geocoding.search(query)
+        catch
+          :exit, _ -> {:error, :timeout}
+        end
 
-      case Geocoding.search(query) do
+      case result do
         {:ok, results} ->
           {:noreply, assign(socket, search_results: results, searching: false)}
 

@@ -64,6 +64,9 @@ defmodule FenceWeb.Router do
     # Location
     post "/location", LocationController, :report
     get "/groups/:id/locations", LocationController, :group_locations
+
+    # Geocoding
+    get "/geocode", GeocodingController, :search
   end
 
   scope "/", FenceWeb do
