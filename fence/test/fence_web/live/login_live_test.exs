@@ -2,6 +2,7 @@ defmodule FenceWeb.LoginLiveTest do
   use FenceWeb.ConnCase, async: false
 
   import Fence.Factory
+  import FenceWeb.WebIntegrationHelpers, only: [extract_csrf_token: 1]
 
   describe "LoginLive" do
     test "mounts and renders login form", %{conn: conn} do
@@ -87,8 +88,4 @@ defmodule FenceWeb.LoginLiveTest do
     end
   end
 
-  defp extract_csrf_token(body) do
-    [_, token] = Regex.run(~r/name="_csrf_token"[^>]*value="([^"]+)"/, body)
-    token
-  end
 end
