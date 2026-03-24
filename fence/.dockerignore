@@ -1,5 +1,5 @@
-# The directory Mix will write compiled artifacts to.
-/_build/
+# Ignore .fetch files in case you like to edit your project deps locally.
+.fetch
 
 # If you run "mix test --cover", coverage assets end up here.
 /cover/
@@ -22,12 +22,31 @@ erl_crash.dump
 # Temporary files, for example, from tests.
 /tmp/
 
-# Dialyzer PLT files
-/priv/plts/
-
 # Ignore package tarball (built via "mix hex.build").
 fence-*.tar
 
-# Production env (contains secrets)
-.env.production
+# Ignore assets that are produced by build tools.
+/priv/static/assets/
 
+# Ignore digested assets cache.
+/priv/static/cache_manifest.json
+
+# In case you use Node.js/Webpack
+# to bundle your assets, ignore these.
+/assets/node_modules/
+
+# Compiled files
+/_build/
+
+# Dialyzer PLT files
+/priv/plts/
+
+# Local env files
+.env*
+!.env.production.example
+
+# Docker compose files
+docker-compose*.yml
+
+# Test files
+/test/

@@ -59,13 +59,25 @@ if config_env() == :prod do
   config :fence, FenceWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
-      # Enable IPv6 and bind on all interfaces.
-      # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
-      # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
-      # for details about using IPv6 vs IPv4 and loopback vs public addresses.
       ip: {0, 0, 0, 0, 0, 0, 0, 0}
     ],
-    secret_key_base: secret_key_base
+    secret_key_base: secret_key_base,
+    live_view: [signing_salt: "sFk3Vbx7"],
+    check_origin: [
+      "https://#{host}",
+      "https://*.#{host}"
+    ]
+
+  # JWT secret — override the dev default in production
+  jwt_secret =
+    System.get_env("JWT_SECRET") ||
+      raise """
+      environment variable JWT_SECRET is missing.
+      You can generate one by calling: openssl rand -base64 64
+      """
+
+  config :fence, Fence.Accounts.Token,
+    secret_key: jwt_secret
 
   # ## SSL Support
   #
