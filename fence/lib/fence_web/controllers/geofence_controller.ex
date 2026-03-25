@@ -160,6 +160,7 @@ defmodule FenceWeb.GeofenceController do
       radius_meters: geofence.radius_meters,
       expires_at: geofence.expires_at,
       group_id: geofence.group_id,
+      created_by_id: geofence.created_by_id,
       inserted_at: geofence.inserted_at
     }
   end

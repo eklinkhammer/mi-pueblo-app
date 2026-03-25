@@ -1,5 +1,6 @@
 defmodule Fence.Geofences do
   import Ecto.Query
+  require Logger
   alias Fence.Geofences.{Geofence, OptOut, Subscription}
   alias Fence.Repo
   alias Fence.Workers.MergeGeofencesWorker
@@ -19,6 +20,22 @@ defmodule Fence.Geofences do
     case result do
       {:ok, geofence} ->
         enqueue_merge(geofence.group_id)
+
+        case upsert_subscription(%{
+               "user_id" => geofence.created_by_id,
+               "geofence_id" => geofence.id,
+               "notify_on_entry" => true,
+               "notify_on_exit" => true
+             }) do
+          {:ok, _} ->
+            :ok
+
+          {:error, changeset} ->
+            Logger.warning(
+              "Failed to auto-subscribe creator #{geofence.created_by_id} to geofence #{geofence.id}: #{inspect(changeset.errors)}"
+            )
+        end
+
         {:ok, geofence}
 
       error ->

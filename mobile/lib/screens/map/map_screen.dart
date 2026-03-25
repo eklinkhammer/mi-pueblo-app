@@ -159,9 +159,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       children: [
         FlutterMap(
           mapController: _mapController,
-          options: const MapOptions(
-            initialCenter: LatLng(37.7749, -122.4194),
+          options: MapOptions(
+            initialCenter: const LatLng(37.7749, -122.4194),
             initialZoom: 12,
+            onTap: (tapPosition, latLng) => _handleMapTap(latLng, geofencesAsync),
           ),
           children: [
             TileLayer(
@@ -169,6 +170,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               userAgentPackageName: 'com.fence.app',
             ),
             _buildCircleLayer(geofencesAsync),
+            _buildGeofenceLabelLayer(geofencesAsync),
             _buildMarkerLayer(locationsAsync),
             _buildMyLocationMarker(),
           ],
@@ -268,6 +270,58 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
       ),
     ]);
+  }
+
+  void _handleMapTap(LatLng point, AsyncValue<List<Geofence>> geofencesAsync) {
+    final geofences = geofencesAsync.valueOrNull;
+    if (geofences == null) return;
+
+    final groupId = ref.read(selectedGroupIdProvider);
+    if (groupId == null) return;
+
+    const distance = Distance();
+    Geofence? smallest;
+    for (final g in geofences) {
+      final center = LatLng(g.latitude, g.longitude);
+      final meters = distance.as(LengthUnit.Meter, point, center);
+      if (meters <= g.radiusMeters) {
+        if (smallest == null || g.radiusMeters < smallest.radiusMeters) {
+          smallest = g;
+        }
+      }
+    }
+    if (smallest != null) {
+      context.go('/groups/$groupId/geofences/${smallest.id}');
+    }
+  }
+
+  MarkerLayer _buildGeofenceLabelLayer(AsyncValue<List<Geofence>> geofencesAsync) {
+    final markers = geofencesAsync.when(
+      data: (geofences) => geofences
+          .map((g) => Marker(
+                point: LatLng(g.latitude, g.longitude),
+                width: 120,
+                height: 24,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      g.name,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ))
+          .toList(),
+      loading: () => <Marker>[],
+      error: (_, _) => <Marker>[],
+    );
+    return MarkerLayer(markers: markers);
   }
 
   String _timeAgo(DateTime dateTime) {
