@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:fence/main.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/services/location_service.dart';
+import 'package:fence/services/websocket_service.dart';
 
 import '../../helpers/mocks.dart';
 import '../../helpers/fakes.dart';
@@ -114,6 +115,7 @@ Future<void> pumpAppWithMocks(
   List<Override> extraOverrides = const [],
 }) async {
   final locService = locationService ?? MockLocationService();
+  final mockWs = MockWebSocketService();
 
   // Stub location service methods to avoid crashes
   when(locService.requestPermissions).thenAnswer((_) async => true);
@@ -122,11 +124,19 @@ Future<void> pumpAppWithMocks(
   when(locService.stopTracking).thenReturn(null);
   when(locService.dispose).thenReturn(null);
 
+  // Stub WebSocket service methods
+  when(() => mockWs.connect()).thenAnswer((_) async {});
+  when(() => mockWs.joinGroup(any())).thenReturn(null);
+  when(mockWs.dispose).thenReturn(null);
+  when(() => mockWs.messages)
+      .thenAnswer((_) => const Stream<Map<String, dynamic>>.empty());
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         apiClientProvider.overrideWithValue(apiClient),
         locationServiceProvider.overrideWithValue(locService),
+        websocketServiceProvider.overrideWithValue(mockWs),
         ...extraOverrides,
       ],
       child: const FenceApp(),

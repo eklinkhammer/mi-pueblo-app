@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/services/api_client.dart';
 import '../helpers/mocks.dart';
@@ -11,11 +12,20 @@ void main() {
   late MockApiClient mockApi;
   late ProviderContainer container;
 
-  setUp(() {
+  setUp(() async {
     mockApi = MockApiClient();
+    when(() => mockApi.getAccessToken())
+        .thenAnswer((_) async => 'test-token');
+    when(() => mockApi.getMe()).thenAnswer(
+        (_) async => fakeResponse({'user': userJson}));
     container = ProviderContainer(
       overrides: [apiClientProvider.overrideWithValue(mockApi)],
     );
+    // Trigger auth check and pump until it settles to authenticated
+    container.read(authProvider);
+    while (container.read(authProvider).status == AuthStatus.unknown) {
+      await Future<void>.delayed(Duration.zero);
+    }
   });
 
   tearDown(() {
@@ -46,8 +56,8 @@ void main() {
     test('build() propagates error', () async {
       when(() => mockApi.getGroups()).thenThrow(Exception('network error'));
 
-      expect(
-        () => container.read(groupsProvider.future),
+      await expectLater(
+        container.read(groupsProvider.future),
         throwsA(isA<Exception>()),
       );
     });

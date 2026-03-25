@@ -7,7 +7,9 @@ import 'package:fence/services/api_client.dart';
 
 final websocketServiceProvider = Provider<WebSocketService>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  return WebSocketService(apiClient);
+  final service = WebSocketService(apiClient);
+  ref.onDispose(service.shutdown);
+  return service;
 });
 
 class WebSocketService {
@@ -28,6 +30,9 @@ class WebSocketService {
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
   bool get isConnected => _connected;
+
+  Set<String> get joinedGroupIds =>
+      _joinedTopics.map((t) => t.replaceFirst('group:', '')).toSet();
 
   Future<void> connect() async {
     final token = await _apiClient.getAccessToken();
@@ -134,6 +139,12 @@ class WebSocketService {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     _channel?.sink.close();
+    _channel = null;
+    _connected = false;
+  }
+
+  void shutdown() {
+    dispose();
     _messageController.close();
   }
 }
