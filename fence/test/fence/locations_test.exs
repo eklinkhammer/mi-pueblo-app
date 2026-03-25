@@ -52,7 +52,7 @@ defmodule Fence.LocationsTest do
       member = create_user(%{"display_name" => "Member"})
       group = create_group(admin)
 
-      {:ok, invite} = Fence.Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
 
       {:ok, _} =

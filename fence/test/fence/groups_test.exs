@@ -108,7 +108,7 @@ defmodule Fence.GroupsTest do
       group = create_group(admin)
 
       # Add member via invite
-      {:ok, invite} = Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Groups.join_by_invite_code(member.id, invite.code)
       assert Groups.member?(member.id, group.id)
 
@@ -123,13 +123,63 @@ defmodule Fence.GroupsTest do
     end
   end
 
-  describe "create_invite/2" do
+  describe "get_or_create_invite/2" do
     test "creates invite with generated code" do
       user = create_user()
       group = create_group(user)
-      assert {:ok, invite} = Groups.create_invite(group.id, user.id)
+      assert {:ok, invite} = Groups.get_or_create_invite(group.id, user.id)
       assert String.length(invite.code) == 8
       assert invite.expires_at
+    end
+
+    test "returns same invite on second call for same group" do
+      user = create_user()
+      group = create_group(user)
+      assert {:ok, invite1} = Groups.get_or_create_invite(group.id, user.id)
+      assert {:ok, invite2} = Groups.get_or_create_invite(group.id, user.id)
+      assert invite1.id == invite2.id
+    end
+
+    test "creates new invite after previous one expires" do
+      user = create_user()
+      group = create_group(user)
+
+      # Insert an already-expired invite directly
+      {:ok, expired} =
+        %Invite{}
+        |> Invite.changeset(%{
+          group_id: group.id,
+          created_by_id: user.id,
+          expires_at: DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)
+        })
+        |> Repo.insert()
+
+      assert {:ok, new_invite} = Groups.get_or_create_invite(group.id, user.id)
+      assert new_invite.id != expired.id
+    end
+
+    test "creates separate invites for different groups" do
+      user = create_user()
+      group1 = create_group(user, %{"name" => "Group 1"})
+      group2 = create_group(user, %{"name" => "Group 2"})
+
+      assert {:ok, invite1} = Groups.get_or_create_invite(group1.id, user.id)
+      assert {:ok, invite2} = Groups.get_or_create_invite(group2.id, user.id)
+      assert invite1.id != invite2.id
+    end
+
+    test "different admin reuses same group's invite" do
+      admin1 = create_user()
+      admin2 = create_user()
+      group = create_group(admin1)
+
+      # Make admin2 an admin too (join then we won't check role, just test reuse)
+      {:ok, invite_for_join} = Groups.get_or_create_invite(group.id, admin1.id)
+      {:ok, _} = Groups.join_by_invite_code(admin2.id, invite_for_join.code)
+
+      assert {:ok, invite1} = Groups.get_or_create_invite(group.id, admin1.id)
+      assert {:ok, invite2} = Groups.get_or_create_invite(group.id, admin2.id)
+      assert invite1.id == invite2.id
     end
   end
 
@@ -138,7 +188,7 @@ defmodule Fence.GroupsTest do
       admin = create_user()
       joiner = create_user()
       group = create_group(admin)
-      {:ok, invite} = Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
 
       assert {:ok, membership} = Groups.join_by_invite_code(joiner.id, invite.code)
       assert membership.group.id == group.id
@@ -149,7 +199,7 @@ defmodule Fence.GroupsTest do
       admin = create_user()
       joiner = create_user()
       group = create_group(admin)
-      {:ok, invite} = Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Groups.join_by_invite_code(joiner.id, invite.code)
 
       m = Groups.get_membership(joiner.id, group.id)
@@ -182,7 +232,7 @@ defmodule Fence.GroupsTest do
     test "rejects already member" do
       admin = create_user()
       group = create_group(admin)
-      {:ok, invite} = Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
 
       # Admin is already a member
       assert {:error, :already_member} = Groups.join_by_invite_code(admin.id, invite.code)

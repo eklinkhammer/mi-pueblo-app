@@ -74,10 +74,36 @@ defmodule Fence.Groups do
     end
   end
 
-  def create_invite(group_id, user_id) do
-    %Invite{}
-    |> Invite.changeset(%{group_id: group_id, created_by_id: user_id})
-    |> Repo.insert()
+  @doc """
+  Returns an existing unexpired invite for the group, or creates a new one.
+
+  The `user_id` is only used as `created_by_id` when a new invite is inserted;
+  if an unexpired invite already exists it is returned regardless of who created it.
+  """
+  def get_or_create_invite(group_id, user_id) do
+    Repo.transaction(fn ->
+      # Advisory lock keyed on group_id prevents concurrent duplicate inserts
+      lock_key = :erlang.phash2(group_id)
+      Repo.query!("SELECT pg_advisory_xact_lock($1)", [lock_key])
+
+      now = DateTime.utc_now()
+
+      query =
+        from i in Invite,
+          where: i.group_id == ^group_id and i.expires_at > ^now,
+          order_by: [desc: i.inserted_at],
+          limit: 1
+
+      case Repo.one(query) do
+        %Invite{} = existing ->
+          existing
+
+        nil ->
+          %Invite{}
+          |> Invite.changeset(%{group_id: group_id, created_by_id: user_id})
+          |> Repo.insert!()
+      end
+    end)
   end
 
   def join_by_invite_code(user_id, code) do

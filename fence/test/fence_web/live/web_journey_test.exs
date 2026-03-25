@@ -147,10 +147,10 @@ defmodule FenceWeb.WebJourneyTest do
           "/web/groups/#{group.id}/geofences/#{geofence.id}"
         )
 
-      # Toggle entry notification
+      # Toggle entry notification (auto-subscribe starts with true, so toggle turns it off)
       render_click(detail_view, "toggle_entry")
       sub = Geofences.get_subscription(user.id, geofence.id)
-      assert sub.notify_on_entry == true
+      assert sub.notify_on_entry == false
 
       # Toggle opt-out
       render_click(detail_view, "toggle_opt_out")
@@ -214,10 +214,10 @@ defmodule FenceWeb.WebJourneyTest do
 
       assert detail_html =~ "HQ"
 
-      # Step 5: Toggle notifications
+      # Step 5: Toggle notifications (auto-subscribe starts with true, toggle turns it off)
       render_click(detail_view, "toggle_entry")
       sub = Geofences.get_subscription(user.id, geofence.id)
-      assert sub.notify_on_entry == true
+      assert sub.notify_on_entry == false
     end
   end
 

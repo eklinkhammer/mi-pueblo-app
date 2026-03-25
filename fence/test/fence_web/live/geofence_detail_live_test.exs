@@ -52,10 +52,11 @@ defmodule FenceWeb.GeofenceDetailLiveTest do
       {:ok, view, _html} =
         live_authed(conn, user, "/web/groups/#{group.id}/geofences/#{geofence.id}")
 
+      # Auto-subscribe sets notify_on_entry to true; toggling turns it off
       render_click(view, "toggle_entry")
 
       sub = Geofences.get_subscription(user.id, geofence.id)
-      assert sub.notify_on_entry == true
+      assert sub.notify_on_entry == false
     end
 
     test "toggle_exit updates subscription in DB", %{
@@ -67,10 +68,11 @@ defmodule FenceWeb.GeofenceDetailLiveTest do
       {:ok, view, _html} =
         live_authed(conn, user, "/web/groups/#{group.id}/geofences/#{geofence.id}")
 
+      # Auto-subscribe sets notify_on_exit to true; toggling turns it off
       render_click(view, "toggle_exit")
 
       sub = Geofences.get_subscription(user.id, geofence.id)
-      assert sub.notify_on_exit == true
+      assert sub.notify_on_exit == false
     end
 
     test "toggle_opt_out on creates opt-out in DB", %{

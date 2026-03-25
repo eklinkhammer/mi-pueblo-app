@@ -127,7 +127,7 @@ defmodule FenceWeb.GroupController do
     user = conn.assigns.current_user
 
     with true <- Groups.admin?(user.id, group_id),
-         {:ok, invite} <- Groups.create_invite(group_id, user.id) do
+         {:ok, invite} <- Groups.get_or_create_invite(group_id, user.id) do
       conn
       |> put_status(:created)
       |> json(%{invite: %{code: invite.code, expires_at: invite.expires_at}})

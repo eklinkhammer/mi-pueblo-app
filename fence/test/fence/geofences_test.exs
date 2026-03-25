@@ -140,8 +140,9 @@ defmodule Fence.GeofencesTest do
     end
 
     test "get_subscription returns nil when none", %{user: user, group: group} do
+      other = create_user()
       geofence = create_geofence(group, user)
-      assert is_nil(Geofences.get_subscription(user.id, geofence.id))
+      assert is_nil(Geofences.get_subscription(other.id, geofence.id))
     end
 
     test "list_geofence_subscribers returns all subscribers", %{user: user, group: group} do

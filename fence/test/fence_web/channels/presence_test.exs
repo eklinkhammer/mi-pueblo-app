@@ -7,7 +7,7 @@ defmodule FenceWeb.PresenceTest do
   alias FenceWeb.Presence
 
   defp add_member_to_group(group, user) do
-    {:ok, invite} = Groups.create_invite(group.id, group.created_by_id)
+    {:ok, invite} = Groups.get_or_create_invite(group.id, group.created_by_id)
     {:ok, _membership} = Groups.join_by_invite_code(user.id, invite.code)
   end
 

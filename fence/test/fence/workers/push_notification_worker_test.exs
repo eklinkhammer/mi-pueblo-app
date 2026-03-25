@@ -16,7 +16,7 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
     subscriber = create_user(%{"display_name" => "Subscriber"})
     group = create_group(triggering_user)
 
-    {:ok, invite} = Fence.Groups.create_invite(group.id, triggering_user.id)
+    {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, triggering_user.id)
     {:ok, _} = Fence.Groups.join_by_invite_code(subscriber.id, invite.code)
 
     geofence = create_geofence(group, triggering_user)

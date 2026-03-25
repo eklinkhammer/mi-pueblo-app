@@ -22,7 +22,7 @@ defmodule FenceWeb.WebCrossUserTest do
     group = create_group(user_a, %{"name" => "Family"})
 
     # Add user_b to the group via invite
-    {:ok, invite} = Groups.create_invite(group.id, user_a.id)
+    {:ok, invite} = Groups.get_or_create_invite(group.id, user_a.id)
     {:ok, _membership} = Groups.join_by_invite_code(user_b.id, invite.code)
 
     %{user_a: user_a, user_b: user_b, group: group}

@@ -119,8 +119,14 @@ defmodule FenceWeb.GeofenceControllerTest do
 
   describe "subscriptions" do
     test "GET shows nil when no subscription", %{conn: conn, user: user} do
-      group = create_group(user)
-      geofence = create_geofence(group, user)
+      admin = create_user()
+      group = create_group(admin)
+
+      # Add user as a member so they can query, but they didn't create the geofence
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(user.id, invite.code)
+
+      geofence = create_geofence(group, admin)
 
       conn = get(conn, "/api/v1/geofences/#{geofence.id}/subscription")
       assert %{"subscription" => nil} = json_response(conn, 200)

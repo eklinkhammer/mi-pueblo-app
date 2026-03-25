@@ -75,7 +75,7 @@ defmodule FenceWeb.GroupControllerTest do
     test "non-admin member cannot update", %{conn: conn, user: admin} do
       member = create_user()
       group = create_group(admin)
-      {:ok, invite} = Fence.Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
 
       conn =
@@ -98,7 +98,7 @@ defmodule FenceWeb.GroupControllerTest do
     test "non-admin cannot delete", %{conn: conn, user: admin} do
       member = create_user()
       group = create_group(admin)
-      {:ok, invite} = Fence.Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
 
       conn =
@@ -115,7 +115,7 @@ defmodule FenceWeb.GroupControllerTest do
     test "joins group with valid invite code", %{conn: conn, user: admin} do
       joiner = create_user()
       group = create_group(admin)
-      {:ok, invite} = Fence.Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
 
       conn =
         conn
@@ -156,7 +156,7 @@ defmodule FenceWeb.GroupControllerTest do
 
     test "returns 409 for already member", %{conn: conn, user: user} do
       group = create_group(user)
-      {:ok, invite} = Fence.Groups.create_invite(group.id, user.id)
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, user.id)
 
       conn = post(conn, "/api/v1/groups/join", %{"invite_code" => invite.code})
       assert json_response(conn, 409)
@@ -185,7 +185,7 @@ defmodule FenceWeb.GroupControllerTest do
     test "admin can remove member", %{conn: conn, user: admin} do
       member = create_user()
       group = create_group(admin)
-      {:ok, invite} = Fence.Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
 
       conn = delete(conn, "/api/v1/groups/#{group.id}/members/#{member.id}")
@@ -196,9 +196,9 @@ defmodule FenceWeb.GroupControllerTest do
       member = create_user()
       other_member = create_user()
       group = create_group(admin)
-      {:ok, invite} = Fence.Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
-      {:ok, invite2} = Fence.Groups.create_invite(group.id, admin.id)
+      {:ok, invite2} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(other_member.id, invite2.code)
 
       conn =
@@ -223,7 +223,7 @@ defmodule FenceWeb.GroupControllerTest do
     test "non-admin cannot create invite", %{conn: conn, user: admin} do
       member = create_user()
       group = create_group(admin)
-      {:ok, invite} = Fence.Groups.create_invite(group.id, admin.id)
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
 
       conn =
