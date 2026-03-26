@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
+import 'package:fence/providers/selected_group_provider.dart';
 import 'package:fence/services/api_client.dart';
 
 class GroupDetailScreen extends ConsumerWidget {
@@ -43,6 +44,11 @@ class GroupDetailScreen extends ConsumerWidget {
                         leading: const CircleAvatar(child: Icon(Icons.person)),
                         title: Text(m.displayName),
                         subtitle: Text(m.role),
+                        onTap: () {
+                          ref.read(mapFocusUserProvider.notifier).state = m.id;
+                          ref.read(selectedGroupIdProvider.notifier).state = groupId;
+                          context.go('/map');
+                        },
                       ))
                   .toList(),
             ),

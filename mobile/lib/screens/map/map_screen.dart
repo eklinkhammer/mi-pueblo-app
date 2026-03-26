@@ -11,6 +11,7 @@ import 'package:fence/models/member_location.dart';
 import 'package:fence/models/geofence.dart';
 import 'package:fence/services/location_service.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:fence/utils/user_colors.dart';
 import 'package:fence/widgets/member_marker.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -52,6 +53,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         LatLng(_myPosition!.latitude, _myPosition!.longitude),
         15,
       );
+    }
+  }
+
+  void _focusOnMember(MemberLocation l) {
+    if (l.latitude != null && l.longitude != null) {
+      _mapController.move(LatLng(l.latitude!, l.longitude!), 15);
     }
   }
 
@@ -156,6 +163,23 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final locationsAsync = ref.watch(groupLocationsProvider(groupId));
     final geofencesAsync = ref.watch(geofencesProvider(groupId));
 
+    final focusUserId = ref.watch(mapFocusUserProvider);
+    if (focusUserId != null) {
+      ref.read(mapFocusUserProvider.notifier).state = null;
+      final locations = locationsAsync.valueOrNull;
+      if (locations != null) {
+        final target = locations.cast<MemberLocation?>().firstWhere(
+              (l) => l!.userId == focusUserId && l.latitude != null && l.longitude != null,
+              orElse: () => null,
+            );
+        if (target != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _mapController.move(LatLng(target.latitude!, target.longitude!), 15);
+          });
+        }
+      }
+    }
+
     return Stack(
       children: [
         FlutterMap(
@@ -189,27 +213,30 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: locations
-                            .map((l) => Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 2),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color: colorForUser(l.userId),
-                                          shape: BoxShape.circle,
+                            .map((l) => InkWell(
+                                  onTap: () => _focusOnMember(l),
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 2),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: colorForUser(l.userId),
+                                            shape: BoxShape.circle,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '${l.displayName} - ${_timeAgo(l.updatedAt)}',
-                                        style:
-                                            Theme.of(context).textTheme.bodySmall,
-                                      ),
-                                    ],
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '${l.displayName} - ${_timeAgo(l.updatedAt)}',
+                                          style:
+                                              Theme.of(context).textTheme.bodySmall,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ))
                             .toList(),
@@ -230,8 +257,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           .where((l) => l.latitude != null && l.longitude != null)
           .map((l) => Marker(
                 point: LatLng(l.latitude!, l.longitude!),
-                width: 80,
-                height: 56,
+                width: 60,
+                height: 48,
                 child: MemberMarker(
                   userId: l.userId,
                   displayName: l.displayName,
