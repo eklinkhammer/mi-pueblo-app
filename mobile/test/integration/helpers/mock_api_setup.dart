@@ -125,7 +125,7 @@ Future<void> pumpAppWithMocks(
   when(locService.dispose).thenReturn(null);
 
   // Stub WebSocket service methods
-  when(() => mockWs.connect()).thenAnswer((_) async {});
+  when(mockWs.connect).thenAnswer((_) async {});
   when(() => mockWs.joinGroup(any())).thenReturn(null);
   when(mockWs.dispose).thenReturn(null);
   when(() => mockWs.messages)

@@ -11,6 +11,7 @@ import 'package:fence/models/member_location.dart';
 import 'package:fence/models/geofence.dart';
 import 'package:fence/services/location_service.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:fence/widgets/member_marker.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -191,10 +192,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             .map((l) => Padding(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 2),
-                                  child: Text(
-                                    '${l.displayName} - ${_timeAgo(l.updatedAt)}',
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color: colorForUser(l.userId),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '${l.displayName} - ${_timeAgo(l.updatedAt)}',
+                                        style:
+                                            Theme.of(context).textTheme.bodySmall,
+                                      ),
+                                    ],
                                   ),
                                 ))
                             .toList(),
@@ -215,11 +230,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           .where((l) => l.latitude != null && l.longitude != null)
           .map((l) => Marker(
                 point: LatLng(l.latitude!, l.longitude!),
-                width: 40,
-                height: 40,
-                child: Tooltip(
-                  message: '${l.displayName}\n${_timeAgo(l.updatedAt)}',
-                  child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                width: 80,
+                height: 56,
+                child: MemberMarker(
+                  userId: l.userId,
+                  displayName: l.displayName,
+                  timeAgo: _timeAgo(l.updatedAt),
                 ),
               ))
           .toList(),
