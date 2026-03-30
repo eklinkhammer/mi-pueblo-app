@@ -11,6 +11,7 @@ import 'package:fence/providers/selected_group_provider.dart';
 import 'package:fence/models/member_location.dart';
 import 'package:fence/models/geofence.dart';
 import 'package:fence/models/app_location.dart';
+import 'package:fence/services/api_client.dart';
 import 'package:fence/services/location_service.dart';
 import 'package:fence/utils/user_colors.dart';
 import 'package:fence/widgets/member_marker.dart';
@@ -355,7 +356,97 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
     if (smallest != null) {
       context.go('/groups/$groupId/geofences/${smallest.id}');
+    } else {
+      _showCreateGeofenceSheet(point, groupId);
     }
+  }
+
+  void _showCreateGeofenceSheet(LatLng point, String groupId) {
+    final nameController = TextEditingController();
+    final radiusController = TextEditingController(text: '200');
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+        ),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Create Geofence',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+                autofocus: true,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: radiusController,
+                decoration: const InputDecoration(
+                  labelText: 'Radius (meters)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final n = double.tryParse(v ?? '');
+                  if (n == null || n <= 0) return 'Enter a positive number';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+                  final navigator = Navigator.of(sheetContext);
+                  try {
+                    await ref.read(apiClientProvider).createGeofence(groupId, {
+                      'name': nameController.text.trim(),
+                      'latitude': point.latitude,
+                      'longitude': point.longitude,
+                      'radius_meters':
+                          double.parse(radiusController.text.trim()),
+                    });
+                    ref.invalidate(geofencesProvider(groupId));
+                    navigator.pop();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Geofence created')),
+                      );
+                    }
+                  } on Exception catch (e) {
+                    navigator.pop();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to create geofence: $e')),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Create'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   MarkerLayer _buildGeofenceLabelLayer(AsyncValue<List<Geofence>> geofencesAsync) {
