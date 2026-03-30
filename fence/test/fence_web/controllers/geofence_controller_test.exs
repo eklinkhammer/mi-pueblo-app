@@ -9,6 +9,46 @@ defmodule FenceWeb.GeofenceControllerTest do
     %{conn: conn, user: user}
   end
 
+  describe "GET /api/v1/my-geofences" do
+    test "returns all active geofences across groups", %{conn: conn, user: user} do
+      group1 = create_group(user)
+      group2 = create_group(user, %{"name" => "Group 2"})
+      _geofence1 = create_geofence(group1, user)
+      _geofence2 = create_geofence(group2, user, %{"name" => "Fence 2"})
+
+      conn = get(conn, "/api/v1/my-geofences")
+      assert %{"geofences" => geofences} = json_response(conn, 200)
+      assert length(geofences) == 2
+    end
+
+    test "excludes expired geofences", %{conn: conn, user: user} do
+      group = create_group(user)
+      past = DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)
+      _expired = create_geofence(group, user, %{"name" => "Expired", "expires_at" => past})
+      _active = create_geofence(group, user, %{"name" => "Active"})
+
+      conn = get(conn, "/api/v1/my-geofences")
+      assert %{"geofences" => geofences} = json_response(conn, 200)
+      assert length(geofences) == 1
+      assert hd(geofences)["name"] == "Active"
+    end
+
+    test "excludes opted-out geofences", %{conn: conn, user: user} do
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+      {:ok, _} = Fence.Geofences.create_opt_out(user.id, geofence.id)
+
+      conn = get(conn, "/api/v1/my-geofences")
+      assert %{"geofences" => geofences} = json_response(conn, 200)
+      assert length(geofences) == 0
+    end
+
+    test "returns 401 without auth" do
+      conn = build_conn() |> get("/api/v1/my-geofences")
+      assert json_response(conn, 401)
+    end
+  end
+
   describe "GET /api/v1/groups/:id/geofences" do
     test "lists geofences for member", %{conn: conn, user: user} do
       group = create_group(user)

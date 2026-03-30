@@ -138,6 +138,106 @@ defmodule Fence.LocationsTest do
       assert MapSet.size(containing) == 0
     end
 
+    test "process_geofence_event verifies enter event with PostGIS" do
+      user = create_user()
+      group = create_group(user)
+
+      geofence =
+        create_geofence(group, user, %{
+          "name" => "SF Zone",
+          "latitude" => 37.7749,
+          "longitude" => -122.4194,
+          "radius_meters" => 5000.0
+        })
+
+      assert {:ok, %{verified: true}} =
+               Locations.process_geofence_event(user.id, %{
+                 "geofence_id" => geofence.id,
+                 "action" => "entered",
+                 "latitude" => 37.7749,
+                 "longitude" => -122.4194,
+                 "accuracy" => 10.0
+               })
+
+      # User should now be inside the geofence
+      ids = Locations.get_user_geofence_ids(user.id)
+      assert MapSet.member?(ids, geofence.id)
+    end
+
+    test "process_geofence_event rejects non-member" do
+      user = create_user()
+      other = create_user()
+      group = create_group(other)
+      geofence = create_geofence(group, other)
+
+      assert {:error, :forbidden} =
+               Locations.process_geofence_event(user.id, %{
+                 "geofence_id" => geofence.id,
+                 "action" => "entered",
+                 "latitude" => 37.7749,
+                 "longitude" => -122.4194,
+                 "accuracy" => 10.0
+               })
+    end
+
+    test "process_geofence_event rejects opted-out user" do
+      user = create_user()
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+      {:ok, _} = Fence.Geofences.create_opt_out(user.id, geofence.id)
+
+      assert {:error, :opted_out} =
+               Locations.process_geofence_event(user.id, %{
+                 "geofence_id" => geofence.id,
+                 "action" => "entered",
+                 "latitude" => 37.7749,
+                 "longitude" => -122.4194,
+                 "accuracy" => 10.0
+               })
+    end
+
+    test "process_geofence_event returns not_found for missing geofence" do
+      user = create_user()
+
+      assert {:error, :not_found} =
+               Locations.process_geofence_event(user.id, %{
+                 "geofence_id" => Ecto.UUID.generate(),
+                 "action" => "entered",
+                 "latitude" => 37.7749,
+                 "longitude" => -122.4194,
+                 "accuracy" => 10.0
+               })
+    end
+
+    test "process_geofence_event rejects invalid action" do
+      user = create_user()
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+
+      assert {:error, :invalid_action} =
+               Locations.process_geofence_event(user.id, %{
+                 "geofence_id" => geofence.id,
+                 "action" => "invalid",
+                 "latitude" => 37.7749,
+                 "longitude" => -122.4194,
+                 "accuracy" => 10.0
+               })
+    end
+
+    test "process_geofence_event rejects nil action" do
+      user = create_user()
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+
+      assert {:error, :invalid_action} =
+               Locations.process_geofence_event(user.id, %{
+                 "geofence_id" => geofence.id,
+                 "latitude" => 37.7749,
+                 "longitude" => -122.4194,
+                 "accuracy" => 10.0
+               })
+    end
+
     test "find_containing_geofences excludes opted-out geofences" do
       user = create_user()
       group = create_group(user)

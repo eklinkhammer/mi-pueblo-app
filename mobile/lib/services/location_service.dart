@@ -19,6 +19,9 @@ abstract class GeolocationBackend {
       {Map<String, dynamic> extras = const {}});
   void onLocation(void Function(bg.Location) callback);
   void onMotionChange(void Function(bg.Location) callback);
+  Future<void> addGeofences(List<bg.Geofence> geofences);
+  Future<void> removeGeofences([List<String>? identifiers]);
+  void onGeofence(void Function(bg.GeofenceEvent) callback);
 }
 
 /// Default implementation that delegates to the real plugin.
@@ -49,11 +52,35 @@ class BgGeolocationBackend implements GeolocationBackend {
   @override
   void onMotionChange(void Function(bg.Location) callback) =>
       bg.BackgroundGeolocation.onMotionChange(callback);
+
+  @override
+  Future<void> addGeofences(List<bg.Geofence> geofences) =>
+      bg.BackgroundGeolocation.addGeofences(geofences);
+
+  @override
+  Future<void> removeGeofences([List<String>? identifiers]) async {
+    if (identifiers == null) {
+      await bg.BackgroundGeolocation.removeGeofences();
+    } else {
+      for (final id in identifiers) {
+        await bg.BackgroundGeolocation.removeGeofence(id);
+      }
+    }
+  }
+
+  @override
+  void onGeofence(void Function(bg.GeofenceEvent) callback) =>
+      bg.BackgroundGeolocation.onGeofence(callback);
 }
+
+final geolocationBackendProvider = Provider<GeolocationBackend>((ref) {
+  return BgGeolocationBackend();
+});
 
 final locationServiceProvider = Provider<LocationService>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  return LocationService(apiClient);
+  final backend = ref.watch(geolocationBackendProvider);
+  return LocationService(apiClient, backend);
 });
 
 class LocationService {

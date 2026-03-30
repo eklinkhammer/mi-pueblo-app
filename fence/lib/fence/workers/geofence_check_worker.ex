@@ -1,9 +1,7 @@
 defmodule Fence.Workers.GeofenceCheckWorker do
   use Oban.Worker, queue: :geofence_checks, max_attempts: 3
 
-  alias Fence.{Accounts, Groups, Locations}
-  alias Fence.Locations.DeviceLocation
-  alias Fence.Repo
+  alias Fence.Locations
   alias Fence.Workers.PushNotificationWorker
 
   @dialyzer {:nowarn_function, perform: 1}
@@ -36,39 +34,8 @@ defmodule Fence.Workers.GeofenceCheckWorker do
     end
 
     # Broadcast location update to group channels
-    broadcast_location_update(user_id, location_id)
+    Locations.broadcast_location_update(user_id, location_id)
 
     :ok
-  end
-
-  defp broadcast_location_update(user_id, location_id) do
-    location = Repo.get(DeviceLocation, location_id)
-
-    if location do
-      # Get all groups the user belongs to
-      groups = Groups.list_user_groups(user_id)
-      user = Accounts.get_user(user_id)
-
-      {lng, lat} =
-        case location.point do
-          %Geo.Point{coordinates: coords} -> coords
-          _ -> {nil, nil}
-        end
-
-      payload = %{
-        user_id: user_id,
-        display_name: user && user.display_name,
-        latitude: lat,
-        longitude: lng,
-        accuracy: location.accuracy,
-        speed: location.speed,
-        battery_level: location.battery_level,
-        updated_at: location.inserted_at
-      }
-
-      for group <- groups do
-        FenceWeb.Endpoint.broadcast("group:#{group.id}", "location:updated", payload)
-      end
-    end
   end
 end

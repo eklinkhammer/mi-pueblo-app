@@ -1,8 +1,9 @@
 defmodule Fence.Locations do
   import Ecto.Query
+  alias Fence.{Accounts, Groups}
   alias Fence.Locations.{DeviceLocation, UserGeofenceState}
   alias Fence.Repo
-  alias Fence.Workers.GeofenceCheckWorker
+  alias Fence.Workers.{GeofenceCheckWorker, PushNotificationWorker}
 
   def report_location(user_id, attrs) do
     location_attrs = Map.put(attrs, "user_id", user_id)
@@ -119,5 +120,129 @@ defmodule Fence.Locations do
     end
 
     :ok
+  end
+
+  def broadcast_location_update(user_id, location_id) do
+    location = Repo.get(DeviceLocation, location_id)
+
+    if location do
+      groups = Groups.list_user_groups(user_id)
+      user = Accounts.get_user(user_id)
+
+      {lng, lat} =
+        case location.point do
+          %Geo.Point{coordinates: coords} -> coords
+          _ -> {nil, nil}
+        end
+
+      payload = %{
+        user_id: user_id,
+        display_name: user && user.display_name,
+        latitude: lat,
+        longitude: lng,
+        accuracy: location.accuracy,
+        speed: location.speed,
+        battery_level: location.battery_level,
+        updated_at: location.inserted_at
+      }
+
+      for group <- groups do
+        FenceWeb.Endpoint.broadcast("group:#{group.id}", "location:updated", payload)
+      end
+    end
+  end
+
+  # sobelow_skip ["SQL.Query"]
+  def process_geofence_event(user_id, attrs) do
+    geofence_id = attrs["geofence_id"]
+    action = attrs["action"]
+
+    if action not in ["entered", "exited"] do
+      {:error, :invalid_action}
+    else
+    with {:geofence, geofence} when not is_nil(geofence) <-
+           {:geofence, Fence.Geofences.get_geofence(geofence_id)},
+         {:expired, false} <-
+           {:expired, DateTime.compare(geofence.expires_at, DateTime.utc_now()) != :gt},
+         {:member, true} <-
+           {:member, Groups.member?(user_id, geofence.group_id)},
+         {:opted_out, false} <-
+           {:opted_out, Fence.Geofences.opted_out?(user_id, geofence_id)} do
+      # Insert device location record
+      location_attrs = Map.put(attrs, "user_id", user_id)
+
+      case %DeviceLocation{}
+           |> DeviceLocation.changeset(location_attrs)
+           |> Repo.insert() do
+        {:ok, location} ->
+          # Verify with PostGIS
+          verified = geofence_contains_location?(geofence_id, location.id)
+          accuracy = attrs["accuracy"] || 0.0
+          poor_accuracy = accuracy > 100.0
+
+          should_trust =
+            case action do
+              "entered" -> verified or poor_accuracy
+              "exited" -> not verified or poor_accuracy
+            end
+
+          if should_trust do
+            previous_ids = get_user_geofence_ids(user_id)
+
+            {entered_ids, exited_ids} =
+              case action do
+                "entered" ->
+                  if MapSet.member?(previous_ids, geofence_id),
+                    do: {MapSet.new(), MapSet.new()},
+                    else: {MapSet.new([geofence_id]), MapSet.new()}
+
+                "exited" ->
+                  if MapSet.member?(previous_ids, geofence_id),
+                    do: {MapSet.new(), MapSet.new([geofence_id])},
+                    else: {MapSet.new(), MapSet.new()}
+              end
+
+            update_geofence_state(user_id, entered_ids, exited_ids)
+
+            for gid <- entered_ids do
+              %{user_id: user_id, geofence_id: gid, event: "entered"}
+              |> PushNotificationWorker.new()
+              |> Oban.insert()
+            end
+
+            for gid <- exited_ids do
+              %{user_id: user_id, geofence_id: gid, event: "exited"}
+              |> PushNotificationWorker.new()
+              |> Oban.insert()
+            end
+          end
+
+          broadcast_location_update(user_id, location.id)
+          {:ok, %{verified: verified}}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    else
+      {:geofence, nil} -> {:error, :not_found}
+      {:expired, true} -> {:error, :expired}
+      {:member, false} -> {:error, :forbidden}
+      {:opted_out, true} -> {:error, :opted_out}
+    end
+    end
+  end
+
+  # sobelow_skip ["SQL.Query"]
+  defp geofence_contains_location?(geofence_id, location_id) do
+    query = """
+    SELECT ST_Contains(g.boundary, dl.point)
+    FROM geofences g, device_locations dl
+    WHERE g.id = $1 AND dl.id = $2
+    """
+
+    case Repo.query(query, [Ecto.UUID.dump!(geofence_id), Ecto.UUID.dump!(location_id)]) do
+      {:ok, %{rows: [[true]]}} -> true
+      _ -> false
+    end
   end
 end

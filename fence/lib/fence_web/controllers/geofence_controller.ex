@@ -3,6 +3,12 @@ defmodule FenceWeb.GeofenceController do
 
   alias Fence.{Geofences, Groups}
 
+  def my_geofences(conn, _params) do
+    user = conn.assigns.current_user
+    geofences = Geofences.list_user_active_geofences(user.id)
+    json(conn, %{geofences: Enum.map(geofences, &geofence_json/1)})
+  end
+
   def index(conn, %{"id" => group_id}) do
     user = conn.assigns.current_user
 
@@ -26,6 +32,8 @@ defmodule FenceWeb.GeofenceController do
 
       case Geofences.create_geofence(attrs) do
         {:ok, geofence} ->
+          broadcast_geofences_changed(group_id)
+
           conn
           |> put_status(:created)
           |> json(%{geofence: geofence_json(geofence)})
@@ -60,6 +68,7 @@ defmodule FenceWeb.GeofenceController do
          %{} = geofence <- Geofences.get_geofence(geofence_id),
          true <- geofence.group_id == group_id,
          {:ok, geofence} <- Geofences.update_geofence(geofence, params) do
+      broadcast_geofences_changed(group_id)
       json(conn, %{geofence: geofence_json(geofence)})
     else
       nil ->
@@ -82,6 +91,7 @@ defmodule FenceWeb.GeofenceController do
          %{} = geofence <- Geofences.get_geofence(geofence_id),
          true <- geofence.group_id == group_id,
          {:ok, _} <- Geofences.delete_geofence(geofence) do
+      broadcast_geofences_changed(group_id)
       send_resp(conn, :no_content, "")
     else
       nil -> not_found(conn)
@@ -201,6 +211,10 @@ defmodule FenceWeb.GeofenceController do
       |> DateTime.truncate(:second)
 
     Map.put(attrs, "expires_at", far_future)
+  end
+
+  defp broadcast_geofences_changed(group_id) do
+    FenceWeb.Endpoint.broadcast("group:#{group_id}", "geofences:changed", %{})
   end
 
   defp not_found(conn) do

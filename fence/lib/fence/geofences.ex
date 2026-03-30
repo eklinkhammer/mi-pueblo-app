@@ -146,6 +146,20 @@ defmodule Fence.Geofences do
     |> Repo.exists?()
   end
 
+  def list_user_active_geofences(user_id) do
+    now = DateTime.utc_now()
+
+    from(g in Geofence,
+      join: m in Fence.Groups.Membership,
+      on: m.group_id == g.group_id,
+      left_join: oo in OptOut,
+      on: oo.geofence_id == g.id and oo.user_id == ^user_id,
+      where: m.user_id == ^user_id and g.expires_at > ^now and is_nil(oo.id),
+      order_by: [desc: g.inserted_at]
+    )
+    |> Repo.all()
+  end
+
   # PostGIS boundary computation
 
   defp compute_boundary(geofence_id) do

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/providers/geofences_provider.dart';
+import 'package:fence/services/geofence_sync_service.dart';
 
 class GeofenceDetailScreen extends ConsumerWidget {
   final String groupId;
@@ -159,6 +161,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
     try {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.createOptOut(geofenceId);
+      unawaited(ref.read(geofenceSyncServiceProvider).syncGeofences());
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Opted out successfully')),
@@ -197,6 +200,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
         final apiClient = ref.read(apiClientProvider);
         await apiClient.deleteGeofence(groupId, geofenceId);
         ref.invalidate(geofencesProvider(groupId));
+        unawaited(ref.read(geofenceSyncServiceProvider).syncGeofences());
         if (context.mounted) {
           context.go('/groups/$groupId');
         }

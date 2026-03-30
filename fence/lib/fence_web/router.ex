@@ -49,6 +49,8 @@ defmodule FenceWeb.Router do
     post "/groups/:id/invites", GroupController, :create_invite
 
     # Geofences
+    get "/my-geofences", GeofenceController, :my_geofences
+    post "/geofence-events", GeofenceEventController, :create
     get "/groups/:id/geofences", GeofenceController, :index
     post "/groups/:id/geofences", GeofenceController, :create
     get "/groups/:gid/geofences/:fid", GeofenceController, :show

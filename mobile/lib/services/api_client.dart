@@ -188,6 +188,14 @@ class ApiClient {
           Map<String, dynamic> data) =>
       _dio.post<Map<String, dynamic>>('/location', data: data);
 
+  // Geofence monitoring
+  Future<Response<Map<String, dynamic>>> getMyGeofences() =>
+      _dio.get<Map<String, dynamic>>('/my-geofences');
+
+  Future<Response<Map<String, dynamic>>> reportGeofenceEvent(
+          Map<String, dynamic> data) =>
+      _dio.post<Map<String, dynamic>>('/geofence-events', data: data);
+
   Future<Response<Map<String, dynamic>>> getGroupLocations(String groupId) =>
       _dio.get<Map<String, dynamic>>('/groups/$groupId/locations');
 }
