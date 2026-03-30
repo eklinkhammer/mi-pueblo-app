@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fence/main.dart';
+import 'package:fence/models/app_location.dart';
+import 'package:fence/services/location_service.dart';
 
 /// Pumps the full app with optional Riverpod overrides.
 Future<void> pumpApp(
@@ -25,6 +28,7 @@ class FakeLocationService {
   double latitude;
   double longitude;
   double accuracy;
+  final _locationController = StreamController<AppLocation>.broadcast();
 
   FakeLocationService({
     this.latitude = 37.7749,
@@ -32,16 +36,19 @@ class FakeLocationService {
     this.accuracy = 10.0,
   });
 
+  Stream<AppLocation> get onLocation => _locationController.stream;
+
   void setPosition(double lat, double lng, {double acc = 10.0}) {
     latitude = lat;
     longitude = lng;
     accuracy = acc;
   }
 
-  Future<bool> requestPermissions() async => true;
-  void startTracking() {}
-  void stopTracking() {}
-  void dispose() {}
+  Future<PermissionStatus> requestPermissions() async =>
+      PermissionStatus.granted;
+  Future<void> startTracking() async {}
+  Future<void> stopTracking() async {}
+  void dispose() => _locationController.close();
 }
 
 /// Generates a unique email for test isolation.

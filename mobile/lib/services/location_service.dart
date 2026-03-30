@@ -1,8 +1,55 @@
 import 'dart:async';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
+    as bg;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/config.dart';
+import 'package:fence/models/app_location.dart';
 import 'package:fence/services/api_client.dart';
+
+enum PermissionStatus { granted, denied, notDetermined }
+
+/// Abstraction over [bg.BackgroundGeolocation] static methods so that
+/// [LocationService] can be unit-tested with a fake/mock backend.
+abstract class GeolocationBackend {
+  Future<int> requestPermission();
+  Future<bg.State> ready(bg.Config config);
+  Future<bg.State> start();
+  Future<bg.State> stop();
+  Future<bg.Location> getCurrentPosition(
+      {Map<String, dynamic> extras = const {}});
+  void onLocation(void Function(bg.Location) callback);
+  void onMotionChange(void Function(bg.Location) callback);
+}
+
+/// Default implementation that delegates to the real plugin.
+class BgGeolocationBackend implements GeolocationBackend {
+  @override
+  Future<int> requestPermission() =>
+      bg.BackgroundGeolocation.requestPermission();
+
+  @override
+  Future<bg.State> ready(bg.Config config) =>
+      bg.BackgroundGeolocation.ready(config);
+
+  @override
+  Future<bg.State> start() => bg.BackgroundGeolocation.start();
+
+  @override
+  Future<bg.State> stop() => bg.BackgroundGeolocation.stop();
+
+  @override
+  Future<bg.Location> getCurrentPosition(
+          {Map<String, dynamic> extras = const {}}) =>
+      bg.BackgroundGeolocation.getCurrentPosition(extras: extras);
+
+  @override
+  void onLocation(void Function(bg.Location) callback) =>
+      bg.BackgroundGeolocation.onLocation(callback);
+
+  @override
+  void onMotionChange(void Function(bg.Location) callback) =>
+      bg.BackgroundGeolocation.onMotionChange(callback);
+}
 
 final locationServiceProvider = Provider<LocationService>((ref) {
   final apiClient = ref.watch(apiClientProvider);
@@ -11,87 +58,120 @@ final locationServiceProvider = Provider<LocationService>((ref) {
 
 class LocationService {
   final ApiClient _apiClient;
-  StreamSubscription<Position>? _positionSubscription;
-  Timer? _periodicTimer;
+  final GeolocationBackend _backend;
+  Future<void>? _readyFuture;
+  bool _disposed = false;
+  final _locationController = StreamController<AppLocation>.broadcast();
 
-  LocationService(this._apiClient);
+  LocationService(this._apiClient, [GeolocationBackend? backend])
+      : _backend = backend ?? BgGeolocationBackend();
 
-  Future<bool> requestPermissions() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return false;
+  Stream<AppLocation> get onLocation => _locationController.stream;
 
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return false;
+  Future<PermissionStatus> requestPermissions() async {
+    final status = await _backend.requestPermission();
+    if (status == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS ||
+        status == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_WHEN_IN_USE) {
+      return PermissionStatus.granted;
     }
-
-    if (permission == LocationPermission.deniedForever) return false;
-
-    return true;
+    if (status == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_DENIED) {
+      return PermissionStatus.denied;
+    }
+    return PermissionStatus.notDetermined;
   }
 
-  Future<Position?> getCurrentPosition() async {
+  Future<void> _ensureConfigured() {
+    _readyFuture ??= _configure();
+    return _readyFuture!;
+  }
+
+  Future<void> _configure() async {
+    _backend.onLocation(_onLocation);
+    _backend.onMotionChange(_onMotionChange);
+
+    await _backend.ready(bg.Config(
+      desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+      distanceFilter: AppConfig.locationDistanceFilter.toDouble(),
+      locationUpdateInterval: AppConfig.locationIntervalMs,
+      stopOnTerminate: false,
+      startOnBoot: true,
+      enableHeadless: true,
+      autoSync: false,
+      foregroundService: true,
+      notification: bg.Notification(
+        title: 'Fence',
+        text: 'Location sharing active',
+      ),
+    ));
+  }
+
+  void _onLocation(bg.Location location) {
+    if (_disposed) return;
+    final appLoc = _toAppLocation(location);
+    _locationController.add(appLoc);
+    _reportAppLocation(appLoc);
+  }
+
+  void _onMotionChange(bg.Location location) {
+    if (_disposed) return;
+    final appLoc = _toAppLocation(location);
+    _locationController.add(appLoc);
+    _reportAppLocation(appLoc);
+  }
+
+  AppLocation _toAppLocation(bg.Location location) {
+    final coords = location.coords;
+    final battery = location.battery;
+    return AppLocation(
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      accuracy: coords.accuracy,
+      altitude: coords.altitude,
+      speed: coords.speed,
+      heading: coords.heading,
+      batteryLevel: battery.level,
+    );
+  }
+
+  Future<void> _reportAppLocation(AppLocation loc) async {
     try {
-      return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 0,
-        ),
+      await _apiClient.reportLocation({
+        'latitude': loc.latitude,
+        'longitude': loc.longitude,
+        'accuracy': loc.accuracy,
+        'altitude': loc.altitude,
+        'speed': loc.speed,
+        'bearing': loc.heading,
+        'battery_level': loc.batteryLevel,
+      });
+    } on Exception catch (_) {
+      // Silently fail - will retry on next event
+    }
+  }
+
+  Future<AppLocation?> getCurrentPosition() async {
+    try {
+      await _ensureConfigured();
+      final location = await _backend.getCurrentPosition(
+        extras: {},
       );
+      return _toAppLocation(location);
     } on Exception catch (_) {
       return null;
     }
   }
 
-  void startTracking() {
-    // Periodic location reporting
-    _periodicTimer?.cancel();
-    _periodicTimer = Timer.periodic(AppConfig.locationInterval, (_) async {
-      await _reportCurrentLocation();
-    });
-
-    // Also report on significant movement
-    _positionSubscription?.cancel();
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.medium,
-        distanceFilter: AppConfig.locationDistanceFilter,
-      ),
-    ).listen(_reportPosition);
-
-    // Report initial position
-    unawaited(_reportCurrentLocation());
+  Future<void> startTracking() async {
+    await _ensureConfigured();
+    await _backend.start();
   }
 
-  void stopTracking() {
-    _periodicTimer?.cancel();
-    _positionSubscription?.cancel();
-  }
-
-  Future<void> _reportCurrentLocation() async {
-    final position = await getCurrentPosition();
-    if (position != null) {
-      await _reportPosition(position);
-    }
-  }
-
-  Future<void> _reportPosition(Position position) async {
-    try {
-      await _apiClient.reportLocation({
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'accuracy': position.accuracy,
-        'altitude': position.altitude,
-        'speed': position.speed,
-        'bearing': position.heading,
-      });
-    } on Exception catch (_) {
-      // Silently fail - will retry on next interval
-    }
+  Future<void> stopTracking() async {
+    await _backend.stop();
   }
 
   void dispose() {
-    stopTracking();
+    _disposed = true;
+    _locationController.close();
   }
 }

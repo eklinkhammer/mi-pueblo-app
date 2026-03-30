@@ -33,6 +33,8 @@ void main() {
     mockApi = MockApiClient();
     mockLocationService = MockLocationService();
     when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
+    when(() => mockLocationService.startTracking()).thenAnswer((_) async {});
+    when(() => mockLocationService.stopTracking()).thenAnswer((_) async {});
   });
 
   Widget createApp() {

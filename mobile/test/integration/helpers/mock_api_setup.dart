@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:fence/main.dart';
 import 'package:fence/services/api_client.dart';
+import 'package:fence/models/app_location.dart';
 import 'package:fence/services/location_service.dart';
 import 'package:fence/services/websocket_service.dart';
 
@@ -118,10 +119,13 @@ Future<void> pumpAppWithMocks(
   final mockWs = MockWebSocketService();
 
   // Stub location service methods to avoid crashes
-  when(locService.requestPermissions).thenAnswer((_) async => true);
+  when(locService.requestPermissions)
+      .thenAnswer((_) async => PermissionStatus.granted);
   when(locService.getCurrentPosition).thenAnswer((_) async => null);
-  when(locService.startTracking).thenReturn(null);
-  when(locService.stopTracking).thenReturn(null);
+  when(locService.startTracking).thenAnswer((_) async {});
+  when(locService.stopTracking).thenAnswer((_) async {});
+  when(() => locService.onLocation)
+      .thenAnswer((_) => const Stream<AppLocation>.empty());
   when(locService.dispose).thenReturn(null);
 
   // Stub WebSocket service methods

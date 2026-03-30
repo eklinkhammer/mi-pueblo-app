@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
+    as bg;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/providers/websocket_provider.dart';
 import 'package:fence/router.dart';
+import 'package:fence/services/headless_task.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  bg.BackgroundGeolocation.registerHeadlessTask(headlessTask);
   runApp(const ProviderScope(child: FenceApp()));
 }
 

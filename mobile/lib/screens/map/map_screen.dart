@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -9,8 +10,8 @@ import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/providers/selected_group_provider.dart';
 import 'package:fence/models/member_location.dart';
 import 'package:fence/models/geofence.dart';
+import 'package:fence/models/app_location.dart';
 import 'package:fence/services/location_service.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:fence/utils/user_colors.dart';
 import 'package:fence/widgets/member_marker.dart';
 
@@ -25,7 +26,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   String? _centeredGroupId;
   final _mapController = MapController();
   bool _didAutoSelect = false;
-  Position? _myPosition;
+  AppLocation? _myPosition;
+  StreamSubscription<AppLocation>? _locationSubscription;
 
   @override
   void initState() {
@@ -33,13 +35,31 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     _loadMyLocation();
   }
 
+  @override
+  void dispose() {
+    _locationSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> _loadMyLocation() async {
     final locationService = ref.read(locationServiceProvider);
-    final hasPermission = await locationService.requestPermissions();
-    if (!hasPermission) return;
+    final permissionStatus = await locationService.requestPermissions();
+    if (permissionStatus != PermissionStatus.granted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(permissionStatus == PermissionStatus.denied
+              ? 'Location permission denied. Enable it in Settings.'
+              : 'Location permission required to show your position.'),
+        ));
+      }
+      return;
+    }
 
-    // Start background tracking so location gets reported to the API
-    locationService.startTracking();
+    await locationService.startTracking();
+
+    _locationSubscription = locationService.onLocation.listen((loc) {
+      if (mounted) setState(() => _myPosition = loc);
+    });
 
     final position = await locationService.getCurrentPosition();
     if (position != null && mounted) {

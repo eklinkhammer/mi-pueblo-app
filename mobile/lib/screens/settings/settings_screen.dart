@@ -35,13 +35,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: const Text('Location Sharing'),
             subtitle: const Text('Share your location with group members'),
             value: _locationSharing,
-            onChanged: (value) {
+            onChanged: (value) async {
               setState(() => _locationSharing = value);
               final locationService = ref.read(locationServiceProvider);
               if (value) {
-                locationService.startTracking();
+                await locationService.startTracking();
               } else {
-                locationService.stopTracking();
+                await locationService.stopTracking();
               }
             },
           ),
@@ -53,14 +53,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: const Text('Manage location access'),
             onTap: () async {
               final locationService = ref.read(locationServiceProvider);
-              final granted = await locationService.requestPermissions();
+              final status = await locationService.requestPermissions();
               if (!context.mounted) return;
+              final message = switch (status) {
+                PermissionStatus.granted =>
+                  'Location permission granted',
+                PermissionStatus.denied =>
+                  'Location permission denied. Enable it in device Settings.',
+                PermissionStatus.notDetermined =>
+                  'Location permission not determined. Please try again.',
+              };
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(granted
-                      ? 'Location permission granted'
-                      : 'Location permission denied'),
-                ),
+                SnackBar(content: Text(message)),
               );
             },
           ),

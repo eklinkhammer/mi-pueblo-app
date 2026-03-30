@@ -10,5 +10,6 @@ class AppConfig {
   );
 
   static const Duration locationInterval = Duration(minutes: 5);
+  static final int locationIntervalMs = locationInterval.inMilliseconds;
   static const int locationDistanceFilter = 50; // meters
 }
