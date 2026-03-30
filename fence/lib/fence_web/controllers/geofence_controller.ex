@@ -106,8 +106,23 @@ defmodule FenceWeb.GeofenceController do
   def upsert_subscription(conn, %{"id" => geofence_id} = params) do
     user = conn.assigns.current_user
 
+    existing = Geofences.get_subscription(user.id, geofence_id)
+
+    base =
+      if existing do
+        %{
+          "notify_on_entry" => existing.notify_on_entry,
+          "notify_on_exit" => existing.notify_on_exit,
+          "blacklisted_user_ids" => existing.blacklisted_user_ids,
+          "throttle_seconds" => existing.throttle_seconds
+        }
+      else
+        %{}
+      end
+
     attrs =
-      params
+      base
+      |> Map.merge(params)
       |> Map.put("user_id", user.id)
       |> Map.put("geofence_id", geofence_id)
 
