@@ -13,6 +13,21 @@ final geofencesProvider = FutureProvider.family<List<Geofence>, String>(
   },
 );
 
+final geofenceResidentsProvider =
+    FutureProvider.family<List<Resident>, ({String groupId, String geofenceId})>(
+  (ref, params) async {
+    final apiClient = ref.read(apiClientProvider);
+    final response =
+        await apiClient.getGeofence(params.groupId, params.geofenceId);
+    final data = response.data!;
+    final residents = data['residents'] as List<dynamic>?;
+    if (residents == null) return [];
+    return residents
+        .map((r) => Resident.fromJson(r as Map<String, dynamic>))
+        .toList();
+  },
+);
+
 final geofenceSubscriptionProvider =
     FutureProvider.family<GeofenceSubscription?, String>(
   (ref, geofenceId) async {

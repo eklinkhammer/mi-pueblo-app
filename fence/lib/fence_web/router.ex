@@ -57,6 +57,8 @@ defmodule FenceWeb.Router do
     get "/groups/:gid/geofences/:fid", GeofenceController, :show
     put "/groups/:gid/geofences/:fid", GeofenceController, :update
     delete "/groups/:gid/geofences/:fid", GeofenceController, :delete
+    post "/groups/:gid/geofences/:fid/claim-home", GeofenceController, :claim_home
+    delete "/groups/:gid/geofences/:fid/claim-home", GeofenceController, :unclaim_home
 
     # Geofence subscriptions & opt-outs
     get "/geofences/:id/subscription", GeofenceController, :show_subscription

@@ -317,6 +317,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get spanish => 'Español';
 
   @override
+  String get residents => 'Residentes';
+
+  @override
+  String get noResidents => 'Nadie ha marcado esto como hogar';
+
+  @override
+  String get claimAsHome => 'Marcar como hogar';
+
+  @override
+  String get unclaimHome => 'Desmarcar hogar';
+
+  @override
+  String get claimedAsHome => 'Marcado como hogar';
+
+  @override
+  String get homeUnclaimed => 'Hogar desmarcado';
+
+  @override
   String get errorUnauthorized => 'No autorizado';
 
   @override

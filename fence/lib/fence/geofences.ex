@@ -160,6 +160,41 @@ defmodule Fence.Geofences do
     |> Repo.all()
   end
 
+  # Home geofence (residents)
+
+  def claim_home(user_id, geofence_id, group_id) do
+    case Fence.Groups.get_membership(user_id, group_id) do
+      nil ->
+        {:error, :not_member}
+
+      membership ->
+        membership
+        |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: geofence_id})
+        |> Repo.update()
+    end
+  end
+
+  def unclaim_home(user_id, group_id) do
+    case Fence.Groups.get_membership(user_id, group_id) do
+      nil ->
+        {:error, :not_member}
+
+      membership ->
+        membership
+        |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: nil})
+        |> Repo.update()
+    end
+  end
+
+  def list_residents(geofence_id) do
+    from(m in Fence.Groups.Membership,
+      where: m.home_geofence_id == ^geofence_id,
+      join: u in assoc(m, :user),
+      select: %{id: u.id, display_name: u.display_name}
+    )
+    |> Repo.all()
+  end
+
   # PostGIS boundary computation
 
   defp compute_boundary(geofence_id) do

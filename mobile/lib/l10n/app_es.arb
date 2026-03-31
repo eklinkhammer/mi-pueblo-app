@@ -108,6 +108,13 @@
   "english": "English",
   "spanish": "Español",
 
+  "residents": "Residentes",
+  "noResidents": "Nadie ha marcado esto como hogar",
+  "claimAsHome": "Marcar como hogar",
+  "unclaimHome": "Desmarcar hogar",
+  "claimedAsHome": "Marcado como hogar",
+  "homeUnclaimed": "Hogar desmarcado",
+
   "errorUnauthorized": "No autorizado",
   "errorMissingFields": "Faltan campos obligatorios",
   "errorInvalidCredentials": "Correo o contraseña inválidos",

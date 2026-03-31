@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/services/api_client.dart';
+import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/services/geofence_sync_service.dart';
 
@@ -24,6 +25,9 @@ class GeofenceDetailScreen extends ConsumerWidget {
     final geofencesAsync = ref.watch(geofencesProvider(groupId));
     final subscriptionAsync =
         ref.watch(geofenceSubscriptionProvider(geofenceId));
+    final residentsAsync = ref.watch(
+        geofenceResidentsProvider((groupId: groupId, geofenceId: geofenceId)));
+    final currentUserId = ref.watch(authProvider).user?.id;
     final l10n = AppLocalizations.of(context);
 
     return geofencesAsync.when(
@@ -102,6 +106,48 @@ class GeofenceDetailScreen extends ConsumerWidget {
               const Divider(),
               Padding(
                 padding: const EdgeInsets.all(16),
+                child: Text(l10n.residents,
+                    style: Theme.of(context).textTheme.titleMedium),
+              ),
+              residentsAsync.when(
+                data: (residents) {
+                  final isResident = residents.any((r) => r.id == currentUserId);
+                  return Column(
+                    children: [
+                      if (residents.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(l10n.noResidents,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                        ),
+                      ...residents.map((r) => ListTile(
+                            leading: const Icon(Icons.person),
+                            title: Text(r.displayName),
+                          )),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: isResident
+                            ? OutlinedButton.icon(
+                                onPressed: () => _unclaimHome(context, ref),
+                                icon: const Icon(Icons.home_outlined),
+                                label: Text(l10n.unclaimHome),
+                              )
+                            : FilledButton.icon(
+                                onPressed: () => _claimHome(context, ref),
+                                icon: const Icon(Icons.home),
+                                label: Text(l10n.claimAsHome),
+                              ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text(l10n.errorWithMessage(e.toString())),
+              ),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: Text(l10n.notifications,
                     style: Theme.of(context).textTheme.titleMedium),
               ),
@@ -147,6 +193,48 @@ class GeofenceDetailScreen extends ConsumerWidget {
         body: Center(child: Text(l10n.errorWithMessage(e.toString()))),
       ),
     );
+  }
+
+  Future<void> _claimHome(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.claimHome(groupId, geofenceId);
+      ref.invalidate(
+          geofenceResidentsProvider((groupId: groupId, geofenceId: geofenceId)));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.claimedAsHome)),
+        );
+      }
+    } on Exception catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.failedWithError(e.toString()))),
+        );
+      }
+    }
+  }
+
+  Future<void> _unclaimHome(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.unclaimHome(groupId, geofenceId);
+      ref.invalidate(
+          geofenceResidentsProvider((groupId: groupId, geofenceId: geofenceId)));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.homeUnclaimed)),
+        );
+      }
+    } on Exception catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.failedWithError(e.toString()))),
+        );
+      }
+    }
   }
 
   Future<void> _updateSubscription(

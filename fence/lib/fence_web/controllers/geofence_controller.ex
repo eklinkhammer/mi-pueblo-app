@@ -54,10 +54,44 @@ defmodule FenceWeb.GeofenceController do
     with true <- Groups.member?(user.id, group_id),
          %{} = geofence <- Geofences.get_geofence(geofence_id),
          true <- geofence.group_id == group_id do
-      json(conn, %{geofence: geofence_json(geofence)})
+      residents = Geofences.list_residents(geofence_id)
+      json(conn, %{geofence: geofence_json(geofence), residents: residents})
     else
       nil -> not_found(conn)
       false -> forbidden(conn)
+    end
+  end
+
+  def claim_home(conn, %{"gid" => group_id, "fid" => geofence_id}) do
+    user = conn.assigns.current_user
+
+    with true <- Groups.member?(user.id, group_id),
+         %{} = geofence <- Geofences.get_geofence(geofence_id),
+         true <- geofence.group_id == group_id,
+         {:ok, _} <- Geofences.claim_home(user.id, geofence_id, group_id) do
+      broadcast_geofences_changed(group_id)
+      json(conn, %{ok: true})
+    else
+      nil -> not_found(conn)
+      false -> forbidden(conn)
+      {:error, _} -> conn |> put_status(:unprocessable_entity) |> json(%{error: %{code: "claim_failed", message: "Could not claim home"}})
+    end
+  end
+
+  def unclaim_home(conn, %{"gid" => group_id, "fid" => _geofence_id}) do
+    user = conn.assigns.current_user
+
+    if Groups.member?(user.id, group_id) do
+      case Geofences.unclaim_home(user.id, group_id) do
+        {:ok, _} ->
+          broadcast_geofences_changed(group_id)
+          json(conn, %{ok: true})
+
+        {:error, _} ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: %{code: "unclaim_failed", message: "Could not unclaim home"}})
+      end
+    else
+      forbidden(conn)
     end
   end
 

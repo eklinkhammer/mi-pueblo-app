@@ -153,6 +153,13 @@
   "english": "English",
   "spanish": "Spanish",
 
+  "residents": "Residents",
+  "noResidents": "No one has claimed this as home",
+  "claimAsHome": "Claim as Home",
+  "unclaimHome": "Unclaim Home",
+  "claimedAsHome": "Claimed as home",
+  "homeUnclaimed": "Home unclaimed",
+
   "errorUnauthorized": "Unauthorized",
   "errorMissingFields": "Missing required fields",
   "errorInvalidCredentials": "Invalid email or password",

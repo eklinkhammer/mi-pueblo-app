@@ -10,6 +10,7 @@ defmodule Fence.Groups.Membership do
 
     belongs_to :user, Fence.Accounts.User
     belongs_to :group, Fence.Groups.Group
+    belongs_to :home_geofence, Fence.Geofences.Geofence
 
     timestamps(type: :utc_datetime)
   end
@@ -22,5 +23,11 @@ defmodule Fence.Groups.Membership do
     |> unique_constraint([:user_id, :group_id])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:group_id)
+  end
+
+  def set_home_changeset(membership, attrs) do
+    membership
+    |> cast(attrs, [:home_geofence_id])
+    |> foreign_key_constraint(:home_geofence_id)
   end
 end

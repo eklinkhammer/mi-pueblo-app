@@ -656,6 +656,42 @@ abstract class AppLocalizations {
   /// **'Spanish'**
   String get spanish;
 
+  /// No description provided for @residents.
+  ///
+  /// In en, this message translates to:
+  /// **'Residents'**
+  String get residents;
+
+  /// No description provided for @noResidents.
+  ///
+  /// In en, this message translates to:
+  /// **'No one has claimed this as home'**
+  String get noResidents;
+
+  /// No description provided for @claimAsHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim as Home'**
+  String get claimAsHome;
+
+  /// No description provided for @unclaimHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Unclaim Home'**
+  String get unclaimHome;
+
+  /// No description provided for @claimedAsHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed as home'**
+  String get claimedAsHome;
+
+  /// No description provided for @homeUnclaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Home unclaimed'**
+  String get homeUnclaimed;
+
   /// No description provided for @errorUnauthorized.
   ///
   /// In en, this message translates to:

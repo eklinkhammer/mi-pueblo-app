@@ -205,6 +205,90 @@ defmodule FenceWeb.GeofenceControllerTest do
     end
   end
 
+  describe "claim home" do
+    test "POST claim-home sets home geofence", %{conn: conn, user: user} do
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+
+      conn = post(conn, "/api/v1/groups/#{group.id}/geofences/#{geofence.id}/claim-home")
+      assert json_response(conn, 200)["ok"] == true
+
+      # Verify resident appears in show
+      conn2 =
+        build_conn()
+        |> authed_conn(user)
+        |> get("/api/v1/groups/#{group.id}/geofences/#{geofence.id}")
+
+      assert %{"residents" => residents} = json_response(conn2, 200)
+      assert length(residents) == 1
+      assert hd(residents)["id"] == user.id
+    end
+
+    test "claiming new home unclaims old one", %{conn: conn, user: user} do
+      group = create_group(user)
+      geofence1 = create_geofence(group, user, %{"name" => "Home 1"})
+      geofence2 = create_geofence(group, user, %{"name" => "Home 2"})
+
+      # Claim first
+      post(conn, "/api/v1/groups/#{group.id}/geofences/#{geofence1.id}/claim-home")
+
+      # Claim second
+      conn2 =
+        build_conn()
+        |> authed_conn(user)
+        |> post("/api/v1/groups/#{group.id}/geofences/#{geofence2.id}/claim-home")
+
+      assert json_response(conn2, 200)["ok"] == true
+
+      # First should have no residents
+      conn3 =
+        build_conn()
+        |> authed_conn(user)
+        |> get("/api/v1/groups/#{group.id}/geofences/#{geofence1.id}")
+
+      assert %{"residents" => []} = json_response(conn3, 200)
+
+      # Second should have the user
+      conn4 =
+        build_conn()
+        |> authed_conn(user)
+        |> get("/api/v1/groups/#{group.id}/geofences/#{geofence2.id}")
+
+      assert %{"residents" => [resident]} = json_response(conn4, 200)
+      assert resident["id"] == user.id
+    end
+
+    test "DELETE unclaim-home removes home", %{conn: conn, user: user} do
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+
+      post(conn, "/api/v1/groups/#{group.id}/geofences/#{geofence.id}/claim-home")
+
+      conn2 =
+        build_conn()
+        |> authed_conn(user)
+        |> delete("/api/v1/groups/#{group.id}/geofences/#{geofence.id}/claim-home")
+
+      assert json_response(conn2, 200)["ok"] == true
+
+      conn3 =
+        build_conn()
+        |> authed_conn(user)
+        |> get("/api/v1/groups/#{group.id}/geofences/#{geofence.id}")
+
+      assert %{"residents" => []} = json_response(conn3, 200)
+    end
+
+    test "returns 403 for non-member", %{conn: conn} do
+      other = create_user()
+      group = create_group(other)
+      geofence = create_geofence(group, other)
+
+      conn = post(conn, "/api/v1/groups/#{group.id}/geofences/#{geofence.id}/claim-home")
+      assert json_response(conn, 403)
+    end
+  end
+
   describe "opt-outs" do
     test "POST creates opt-out", %{conn: conn, user: user} do
       group = create_group(user)

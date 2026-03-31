@@ -314,6 +314,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get spanish => 'Spanish';
 
   @override
+  String get residents => 'Residents';
+
+  @override
+  String get noResidents => 'No one has claimed this as home';
+
+  @override
+  String get claimAsHome => 'Claim as Home';
+
+  @override
+  String get unclaimHome => 'Unclaim Home';
+
+  @override
+  String get claimedAsHome => 'Claimed as home';
+
+  @override
+  String get homeUnclaimed => 'Home unclaimed';
+
+  @override
   String get errorUnauthorized => 'Unauthorized';
 
   @override

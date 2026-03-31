@@ -36,6 +36,20 @@ class Geofence {
   }
 }
 
+class Resident {
+  final String id;
+  final String displayName;
+
+  const Resident({required this.id, required this.displayName});
+
+  factory Resident.fromJson(Map<String, dynamic> json) {
+    return Resident(
+      id: json['id'] as String,
+      displayName: json['display_name'] as String,
+    );
+  }
+}
+
 class GeofenceSubscription {
   final String id;
   final String geofenceId;
