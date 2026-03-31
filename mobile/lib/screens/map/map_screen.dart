@@ -45,20 +45,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Future<void> _loadMyLocation() async {
     final locationService = ref.read(locationServiceProvider);
-    final permissionStatus = await locationService.requestPermissions();
-    if (permissionStatus != PermissionStatus.granted) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(permissionStatus == PermissionStatus.denied
-              ? l10n.locationPermissionDenied
-              : l10n.locationPermissionRequired),
-        ));
-      }
-      return;
-    }
-
-    await locationService.startTracking();
 
     _locationSubscription = locationService.onLocation.listen((loc) {
       if (mounted) setState(() => _myPosition = loc);
