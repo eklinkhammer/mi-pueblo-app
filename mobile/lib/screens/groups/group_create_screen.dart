@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/groups_provider.dart';
 
 class GroupCreateScreen extends ConsumerStatefulWidget {
@@ -27,8 +28,9 @@ class _GroupCreateScreenState extends ConsumerState<GroupCreateScreen> {
       }
     } on Exception catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e')),
+          SnackBar(content: Text(l10n.failedWithError(e.toString()))),
         );
       }
     } finally {
@@ -38,8 +40,9 @@ class _GroupCreateScreenState extends ConsumerState<GroupCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Group')),
+      appBar: AppBar(title: Text(l10n.createGroup)),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -47,10 +50,10 @@ class _GroupCreateScreenState extends ConsumerState<GroupCreateScreen> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Group Name',
-                border: OutlineInputBorder(),
-                hintText: 'e.g., The Smiths',
+              decoration: InputDecoration(
+                labelText: l10n.groupName,
+                border: const OutlineInputBorder(),
+                hintText: l10n.groupNameHint,
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _create(),
@@ -63,7 +66,7 @@ class _GroupCreateScreenState extends ConsumerState<GroupCreateScreen> {
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Create Group'),
+                  : Text(l10n.createGroup),
             ),
           ],
         ),

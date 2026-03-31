@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/providers/selected_group_provider.dart';
@@ -17,15 +18,16 @@ class GroupDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final membersAsync = ref.watch(groupMembersProvider(groupId));
     final geofencesAsync = ref.watch(geofencesProvider(groupId));
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Group'),
+        title: Text(l10n.group),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add),
             onPressed: () => _createInvite(context, ref),
-            tooltip: 'Invite',
+            tooltip: l10n.invite,
           ),
         ],
       ),
@@ -34,7 +36,7 @@ class GroupDetailScreen extends ConsumerWidget {
           // Members section
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('Members',
+            child: Text(l10n.members,
                 style: Theme.of(context).textTheme.titleMedium),
           ),
           membersAsync.when(
@@ -54,7 +56,8 @@ class GroupDetailScreen extends ConsumerWidget {
             ),
             loading: () =>
                 const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, _) =>
+                Center(child: Text(l10n.errorWithMessage(e.toString()))),
           ),
 
           const Divider(),
@@ -62,15 +65,15 @@ class GroupDetailScreen extends ConsumerWidget {
           // Geofences section
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('Geofences',
+            child: Text(l10n.geofences,
                 style: Theme.of(context).textTheme.titleMedium),
           ),
           geofencesAsync.when(
             data: (geofences) {
               if (geofences.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('No geofences yet'),
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(l10n.noGeofencesYet),
                 );
               }
               return Column(
@@ -80,7 +83,7 @@ class GroupDetailScreen extends ConsumerWidget {
                               const CircleAvatar(child: Icon(Icons.location_on)),
                           title: Text(g.name),
                           subtitle: Text(
-                              '${g.radiusMeters.round()}m radius'),
+                              l10n.radiusWithValue(g.radiusMeters.round())),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => context.go(
                               '/groups/$groupId/geofences/${g.id}'),
@@ -90,19 +93,21 @@ class GroupDetailScreen extends ConsumerWidget {
             },
             loading: () =>
                 const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, _) =>
+                Center(child: Text(l10n.errorWithMessage(e.toString()))),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/groups/$groupId/geofences/create'),
         icon: const Icon(Icons.add_location_alt),
-        label: const Text('Add Geofence'),
+        label: Text(l10n.addGeofence),
       ),
     );
   }
 
   Future<void> _createInvite(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.createInvite(groupId);
@@ -113,40 +118,43 @@ class GroupDetailScreen extends ConsumerWidget {
       if (!context.mounted) return;
       unawaited(showDialog<void>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Invite Code'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SelectableText(
-                code,
-                style: Theme.of(context).textTheme.headlineMedium,
+        builder: (dialogContext) {
+          final dl10n = AppLocalizations.of(dialogContext);
+          return AlertDialog(
+            title: Text(dl10n.inviteCode),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SelectableText(
+                  code,
+                  style: Theme.of(dialogContext).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(dl10n.shareCodeWithFamily),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: code));
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(content: Text(dl10n.copiedToClipboard)),
+                  );
+                },
+                child: Text(dl10n.copy),
               ),
-              const SizedBox(height: 8),
-              const Text('Share this code with family members'),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(dl10n.done),
+              ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: code));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Copied to clipboard')),
-                );
-              },
-              child: const Text('Copy'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Done'),
-            ),
-          ],
-        ),
+          );
+        },
       ));
     } on Exception catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create invite: $e')),
+          SnackBar(content: Text(l10n.failedToCreateInvite(e.toString()))),
         );
       }
     }

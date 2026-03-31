@@ -26,7 +26,7 @@ defmodule FenceWeb.AuthController do
   def register(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: "Missing required fields: email, password, display_name"})
+    |> json(%{error: %{code: "missing_fields", message: "Missing required fields: email, password, display_name"}})
   end
 
   def login(conn, %{"email" => email, "password" => password}) do
@@ -43,7 +43,7 @@ defmodule FenceWeb.AuthController do
       {:error, :invalid_credentials} ->
         conn
         |> put_status(:unauthorized)
-        |> json(%{error: "Invalid email or password"})
+        |> json(%{error: %{code: "invalid_credentials", message: "Invalid email or password"}})
     end
   end
 
@@ -58,7 +58,7 @@ defmodule FenceWeb.AuthController do
       {:error, _} ->
         conn
         |> put_status(:unauthorized)
-        |> json(%{error: "Invalid refresh token"})
+        |> json(%{error: %{code: "invalid_refresh_token", message: "Invalid refresh token"}})
     end
   end
 
@@ -97,6 +97,7 @@ defmodule FenceWeb.AuthController do
       id: user.id,
       email: user.email,
       display_name: user.display_name,
+      locale: user.locale,
       inserted_at: user.inserted_at
     }
   end

@@ -41,7 +41,7 @@ defmodule FenceWeb.GeofenceController do
         {:error, reason} ->
           conn
           |> put_status(:unprocessable_entity)
-          |> json(%{error: inspect(reason)})
+          |> json(%{error: %{code: "validation_failed", message: inspect(reason)}})
       end
     else
       forbidden(conn)
@@ -80,7 +80,7 @@ defmodule FenceWeb.GeofenceController do
       {:error, reason} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> json(%{error: inspect(reason)})
+        |> json(%{error: %{code: "validation_failed", message: inspect(reason)}})
     end
   end
 
@@ -154,7 +154,7 @@ defmodule FenceWeb.GeofenceController do
 
     case Geofences.create_opt_out(user.id, geofence_id) do
       {:ok, _} -> json(conn, %{ok: true})
-      {:error, _} -> conn |> put_status(:conflict) |> json(%{error: "Already opted out"})
+      {:error, _} -> conn |> put_status(:conflict) |> json(%{error: %{code: "already_opted_out", message: "Already opted out"}})
     end
   end
 
@@ -218,11 +218,11 @@ defmodule FenceWeb.GeofenceController do
   end
 
   defp not_found(conn) do
-    conn |> put_status(:not_found) |> json(%{error: "Not found"})
+    conn |> put_status(:not_found) |> json(%{error: %{code: "not_found", message: "Not found"}})
   end
 
   defp forbidden(conn) do
-    conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    conn |> put_status(:forbidden) |> json(%{error: %{code: "forbidden", message: "Forbidden"}})
   end
 
   defp format_errors(changeset) do

@@ -4,22 +4,24 @@ import 'package:fence/services/api_client.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
+enum AuthErrorKey { registrationFailed, invalidCredentials }
+
 class AuthState {
   final AuthStatus status;
   final User? user;
-  final String? error;
+  final AuthErrorKey? errorKey;
 
   const AuthState({
     this.status = AuthStatus.unknown,
     this.user,
-    this.error,
+    this.errorKey,
   });
 
-  AuthState copyWith({AuthStatus? status, User? user, String? error}) {
+  AuthState copyWith({AuthStatus? status, User? user, AuthErrorKey? errorKey}) {
     return AuthState(
       status: status ?? this.status,
       user: user ?? this.user,
-      error: error,
+      errorKey: errorKey,
     );
   }
 }
@@ -61,7 +63,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
     } on Exception catch (_) {
-      state = state.copyWith(error: 'Registration failed');
+      state = state.copyWith(errorKey: AuthErrorKey.registrationFailed);
     }
   }
 
@@ -76,7 +78,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
     } on Exception catch (_) {
-      state = state.copyWith(error: 'Invalid email or password');
+      state = state.copyWith(errorKey: AuthErrorKey.invalidCredentials);
     }
   }
 

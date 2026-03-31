@@ -278,7 +278,7 @@ defmodule Fence.Integration.ProfileAndMiscTest do
         |> post("/api/v1/groups/join", %{"invite_code" => invite_code})
         |> json_response(410)
 
-      assert resp["error"] =~ "expired"
+      assert resp["error"]["code"] == "invite_code_expired"
     end
   end
 

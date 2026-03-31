@@ -1,5 +1,6 @@
 defmodule Fence.Workers.PushNotificationWorker do
   use Oban.Worker, queue: :notifications, max_attempts: 3
+  use Gettext, backend: FenceWeb.Gettext
 
   alias Fence.{Accounts, Geofences, Notifications}
 
@@ -61,14 +62,15 @@ defmodule Fence.Workers.PushNotificationWorker do
 
   defp send_push(recipient_id, triggering_user, geofence, event) do
     tokens = Accounts.get_device_tokens(recipient_id)
+    recipient = Accounts.get_user(recipient_id)
+    locale = (recipient && recipient.locale) || "en"
 
-    title = "#{triggering_user.display_name} #{event} #{geofence.name}"
-
-    body =
-      case event do
-        "entered" -> "#{triggering_user.display_name} has arrived at #{geofence.name}"
-        "exited" -> "#{triggering_user.display_name} has left #{geofence.name}"
-      end
+    {title, body} =
+      Gettext.with_locale(FenceWeb.Gettext, locale, fn ->
+        t = localized_title(triggering_user.display_name, geofence.name, event)
+        b = localized_body(triggering_user.display_name, geofence.name, event)
+        {t, b}
+      end)
 
     for token <- tokens do
       send_fcm(token.token, title, body, %{
@@ -85,6 +87,34 @@ defmodule Fence.Workers.PushNotificationWorker do
       event: event,
       status: "sent"
     })
+  end
+
+  defp localized_title(user_name, geofence_name, "entered") do
+    gettext("%{user_name} entered %{geofence_name}",
+      user_name: user_name,
+      geofence_name: geofence_name
+    )
+  end
+
+  defp localized_title(user_name, geofence_name, "exited") do
+    gettext("%{user_name} exited %{geofence_name}",
+      user_name: user_name,
+      geofence_name: geofence_name
+    )
+  end
+
+  defp localized_body(user_name, geofence_name, "entered") do
+    gettext("%{user_name} has arrived at %{geofence_name}",
+      user_name: user_name,
+      geofence_name: geofence_name
+    )
+  end
+
+  defp localized_body(user_name, geofence_name, "exited") do
+    gettext("%{user_name} has left %{geofence_name}",
+      user_name: user_name,
+      geofence_name: geofence_name
+    )
   end
 
   defp send_fcm(device_token, title, body, data) do

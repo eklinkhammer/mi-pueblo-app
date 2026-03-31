@@ -87,6 +87,8 @@ void setupGeofenceStubs(MockApiClient mock,
   final geofenceList = geofences ?? [];
   when(() => mock.getGeofences(any()))
       .thenAnswer((_) async => fakeResponse({'geofences': geofenceList}));
+  when(() => mock.getMyGeofences())
+      .thenAnswer((_) async => fakeResponse({'geofences': geofenceList}));
   when(() => mock.createGeofence(any(), any()))
       .thenAnswer((_) async => fakeResponse({'geofence': geofenceJson}));
   when(() => mock.deleteGeofence(any(), any()))

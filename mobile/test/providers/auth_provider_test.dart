@@ -70,7 +70,7 @@ void main() {
           'test-access-token', 'test-refresh-token')).called(1);
     });
 
-    test('failure → error message', () async {
+    test('failure → error key set', () async {
       when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
       when(() => mockApi.login(any(), any())).thenThrow(Exception('bad'));
 
@@ -79,7 +79,7 @@ void main() {
 
       await notifier.login('alice@example.com', 'wrong');
 
-      expect(notifier.state.error, 'Invalid email or password');
+      expect(notifier.state.errorKey, AuthErrorKey.invalidCredentials);
     });
   });
 
@@ -99,7 +99,7 @@ void main() {
       expect(notifier.state.user!.email, 'alice@example.com');
     });
 
-    test('failure → error message', () async {
+    test('failure → error key set', () async {
       when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
       when(() => mockApi.register(any(), any(), any()))
           .thenThrow(Exception('conflict'));
@@ -109,7 +109,7 @@ void main() {
 
       await notifier.register('alice@example.com', 'pass', 'Alice');
 
-      expect(notifier.state.error, 'Registration failed');
+      expect(notifier.state.errorKey, AuthErrorKey.registrationFailed);
     });
   });
 
@@ -118,24 +118,25 @@ void main() {
       const original = AuthState(
         status: AuthStatus.authenticated,
         user: null,
-        error: 'some error',
+        errorKey: AuthErrorKey.invalidCredentials,
       );
 
       final updated = original.copyWith(status: AuthStatus.unauthenticated);
 
       expect(updated.status, AuthStatus.unauthenticated);
       expect(updated.user, isNull);
-      // copyWith with no error param clears the error (error defaults to null)
-      expect(updated.error, isNull);
+      // copyWith with no errorKey param clears the error (errorKey defaults to null)
+      expect(updated.errorKey, isNull);
     });
 
-    test('copyWith with explicit error preserves it', () {
+    test('copyWith with explicit errorKey preserves it', () {
       const original = AuthState(status: AuthStatus.unknown);
 
-      final updated =
-          original.copyWith(status: AuthStatus.unauthenticated, error: 'bad');
+      final updated = original.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorKey: AuthErrorKey.registrationFailed);
 
-      expect(updated.error, 'bad');
+      expect(updated.errorKey, AuthErrorKey.registrationFailed);
       expect(updated.status, AuthStatus.unauthenticated);
     });
 
@@ -150,11 +151,11 @@ void main() {
 
       // First action sets error
       await notifier.login('a@b.com', 'wrong');
-      expect(notifier.state.error, 'Invalid email or password');
+      expect(notifier.state.errorKey, AuthErrorKey.invalidCredentials);
 
       // Second action sets different error, previous cleared
       await notifier.register('a@b.com', 'pass', 'Name');
-      expect(notifier.state.error, 'Registration failed');
+      expect(notifier.state.errorKey, AuthErrorKey.registrationFailed);
     });
   });
 
@@ -163,7 +164,7 @@ void main() {
       const state = AuthState();
       expect(state.status, AuthStatus.unknown);
       expect(state.user, isNull);
-      expect(state.error, isNull);
+      expect(state.errorKey, isNull);
     });
   });
 

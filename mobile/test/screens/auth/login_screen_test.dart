@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/screens/auth/login_screen.dart';
 import '../../helpers/mocks.dart';
@@ -32,14 +33,18 @@ void main() {
           return notifier;
         }),
       ],
-      child: const MaterialApp(home: LoginScreen()),
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const LoginScreen(),
+      ),
     );
   }
 
   group('LoginScreen', () {
     testWidgets('renders email and password fields', (tester) async {
       await tester.pumpWidget(createApp());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.widgetWithText(TextField, 'Email'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'Password'), findsOneWidget);
@@ -47,19 +52,19 @@ void main() {
 
     testWidgets('renders Sign In button', (tester) async {
       await tester.pumpWidget(createApp());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.widgetWithText(FilledButton, 'Sign In'), findsOneWidget);
     });
 
     testWidgets('shows error message when error is set', (tester) async {
       await tester.pumpWidget(createApp());
-      await tester.pump(); // let _checkAuth complete
+      await tester.pumpAndSettle();
 
       notifier.setTestState(
         const AuthState(
           status: AuthStatus.unauthenticated,
-          error: 'Invalid email or password',
+          errorKey: AuthErrorKey.invalidCredentials,
         ),
       );
       await tester.pump(); // rebuild with error
@@ -69,7 +74,7 @@ void main() {
 
     testWidgets('shows Create an account link', (tester) async {
       await tester.pumpWidget(createApp());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('Create an account'), findsOneWidget);
     });

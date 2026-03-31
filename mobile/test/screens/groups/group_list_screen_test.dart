@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/models/group.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/screens/groups/group_list_screen.dart';
@@ -12,6 +13,8 @@ void main() {
         groupsProvider.overrideWith(() => _FakeGroupsNotifier(groupsState)),
       ],
       child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: GroupListScreen(),
       ),
     );

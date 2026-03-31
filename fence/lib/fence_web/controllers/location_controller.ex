@@ -45,7 +45,7 @@ defmodule FenceWeb.LocationController do
           end)
       })
     else
-      conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+      conn |> put_status(:forbidden) |> json(%{error: %{code: "forbidden", message: "Forbidden"}})
     end
   end
 

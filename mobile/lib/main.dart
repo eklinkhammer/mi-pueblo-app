@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/geofence_sync_provider.dart';
+import 'package:fence/providers/locale_provider.dart';
 import 'package:fence/providers/websocket_provider.dart';
 import 'package:fence/router.dart';
 import 'package:fence/services/headless_task.dart';
@@ -21,6 +23,7 @@ class FenceApp extends ConsumerWidget {
     ref.watch(websocketManagerProvider);
     ref.watch(geofenceSyncManagerProvider);
     final router = ref.watch(routerProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       title: 'Fence',
@@ -34,6 +37,9 @@ class FenceApp extends ConsumerWidget {
         useMaterial3: true,
         brightness: Brightness.dark,
       ),
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/providers/geofences_provider.dart';
 
@@ -46,8 +47,9 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
       setState(() => _searchResults = results);
     } on Exception catch (_) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Address search failed')),
+          SnackBar(content: Text(l10n.addressSearchFailed)),
         );
       }
     } finally {
@@ -66,9 +68,10 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
   }
 
   Future<void> _create() async {
+    final l10n = AppLocalizations.of(context);
     if (_nameController.text.trim().isEmpty || _selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please set a name and select a location')),
+        SnackBar(content: Text(l10n.setNameAndLocation)),
       );
       return;
     }
@@ -76,7 +79,7 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
     final radius = double.tryParse(_radiusController.text);
     if (radius == null || radius <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid radius')),
+        SnackBar(content: Text(l10n.enterValidRadius)),
       );
       return;
     }
@@ -100,7 +103,7 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e')),
+          SnackBar(content: Text(l10n.failedWithError(e.toString()))),
         );
       }
     } finally {
@@ -110,10 +113,11 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final radius = double.tryParse(_radiusController.text) ?? 200;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Geofence')),
+      appBar: AppBar(title: Text(l10n.createGeofence)),
       body: Column(
         children: [
           Padding(
@@ -122,18 +126,18 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
               children: [
                 TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(),
-                    hintText: 'e.g., Home, School, Office',
+                  decoration: InputDecoration(
+                    labelText: l10n.name,
+                    border: const OutlineInputBorder(),
+                    hintText: l10n.nameHint,
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _radiusController,
-                  decoration: const InputDecoration(
-                    labelText: 'Radius (meters)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.radiusMeters,
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
@@ -144,10 +148,10 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        decoration: const InputDecoration(
-                          labelText: 'Search address',
-                          border: OutlineInputBorder(),
-                          hintText: 'e.g., 123 Main St',
+                        decoration: InputDecoration(
+                          labelText: l10n.searchAddress,
+                          border: const OutlineInputBorder(),
+                          hintText: l10n.searchAddressHint,
                         ),
                         onSubmitted: (_) => _search(),
                       ),
@@ -195,9 +199,9 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
               ),
             ),
           if (_searchResults.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Search for an address or tap the map to place the geofence center'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(l10n.searchOrTapMap),
             ),
           const SizedBox(height: 8),
           Expanded(
@@ -256,7 +260,7 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.check),
-        label: const Text('Create'),
+        label: Text(l10n.create),
       ),
     );
   }

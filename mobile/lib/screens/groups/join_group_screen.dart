@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/groups_provider.dart';
 
 class JoinGroupScreen extends ConsumerStatefulWidget {
@@ -13,14 +14,14 @@ class JoinGroupScreen extends ConsumerStatefulWidget {
 class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   final _codeController = TextEditingController();
   bool _loading = false;
-  String? _error;
+  bool _hasError = false;
 
   Future<void> _join() async {
     if (_codeController.text.trim().isEmpty) return;
 
     setState(() {
       _loading = true;
-      _error = null;
+      _hasError = false;
     });
 
     try {
@@ -31,7 +32,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
         context.go('/groups/${group.id}');
       }
     } on Exception catch (_) {
-      setState(() => _error = 'Invalid or expired invite code');
+      setState(() => _hasError = true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -39,21 +40,22 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Join Group')),
+      appBar: AppBar(title: Text(l10n.joinGroup)),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Enter the invite code shared by a group admin.'),
+            Text(l10n.enterInviteCodeInstructions),
             const SizedBox(height: 24),
             TextField(
               controller: _codeController,
               decoration: InputDecoration(
-                labelText: 'Invite Code',
+                labelText: l10n.inviteCode,
                 border: const OutlineInputBorder(),
-                errorText: _error,
+                errorText: _hasError ? l10n.invalidOrExpiredInviteCode : null,
               ),
               textCapitalization: TextCapitalization.characters,
               textInputAction: TextInputAction.done,
@@ -67,7 +69,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Join Group'),
+                  : Text(l10n.joinGroup),
             ),
           ],
         ),

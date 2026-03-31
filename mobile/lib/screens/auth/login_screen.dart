@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -27,6 +28,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context);
+
+    String? errorText;
+    if (authState.errorKey != null) {
+      errorText = switch (authState.errorKey!) {
+        AuthErrorKey.registrationFailed => l10n.registrationFailed,
+        AuthErrorKey.invalidCredentials => l10n.invalidEmailOrPassword,
+      };
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -37,22 +47,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Fence',
+                l10n.appTitle,
                 style: Theme.of(context).textTheme.headlineLarge,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Family Location Sharing',
+                l10n.appSubtitle,
                 style: Theme.of(context).textTheme.bodyLarge,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.email,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
@@ -60,18 +70,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.password,
+                  border: const OutlineInputBorder(),
                 ),
                 obscureText: true,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _login(),
               ),
-              if (authState.error != null) ...[
+              if (errorText != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  authState.error!,
+                  errorText,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
@@ -84,12 +94,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Sign In'),
+                    : Text(l10n.signIn),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () => context.go('/auth/register'),
-                child: const Text('Create an account'),
+                child: Text(l10n.createAnAccount),
               ),
             ],
           ),

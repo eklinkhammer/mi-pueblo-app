@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/locations_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
@@ -47,10 +48,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final permissionStatus = await locationService.requestPermissions();
     if (permissionStatus != PermissionStatus.granted) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(permissionStatus == PermissionStatus.denied
-              ? 'Location permission denied. Enable it in Settings.'
-              : 'Location permission required to show your position.'),
+              ? l10n.locationPermissionDenied
+              : l10n.locationPermissionRequired),
         ));
       }
       return;
@@ -92,6 +94,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final groupsAsync = ref.watch(groupsProvider);
     final selectedGroupId = ref.watch(selectedGroupIdProvider);
 
@@ -131,12 +134,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Map'),
+        title: Text(l10n.map),
         actions: [
           groupsAsync.when(
             data: (groups) => DropdownButton<String>(
               value: selectedGroupId,
-              hint: const Text('Select group'),
+              hint: Text(l10n.selectGroup),
               items: groups
                   .map((g) => DropdownMenuItem(
                         value: g.id,
@@ -151,7 +154,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ],
       ),
       body: selectedGroupId == null
-          ? const Center(child: Text('Select a group to view the map'))
+          ? Center(child: Text(l10n.selectGroupToViewMap))
           : _buildMap(),
       floatingActionButton: selectedGroupId != null
           ? Column(
@@ -171,7 +174,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   onPressed: () =>
                       context.go('/groups/$selectedGroupId/geofences/create'),
                   icon: const Icon(Icons.add_location_alt),
-                  label: const Text('Add Geofence'),
+                  label: Text(l10n.addGeofence),
                 ),
               ],
             )
@@ -369,83 +372,88 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-        ),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Create Geofence',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
-                ),
-                autofocus: true,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Name is required' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: radiusController,
-                decoration: const InputDecoration(
-                  labelText: 'Radius (meters)',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (v) {
-                  final n = double.tryParse(v ?? '');
-                  if (n == null || n <= 0) return 'Enter a positive number';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () async {
-                  if (!formKey.currentState!.validate()) return;
-                  final navigator = Navigator.of(sheetContext);
-                  try {
-                    await ref.read(apiClientProvider).createGeofence(groupId, {
-                      'name': nameController.text.trim(),
-                      'latitude': point.latitude,
-                      'longitude': point.longitude,
-                      'radius_meters':
-                          double.parse(radiusController.text.trim()),
-                    });
-                    ref.invalidate(geofencesProvider(groupId));
-                    navigator.pop();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Geofence created')),
-                      );
-                    }
-                  } on Exception catch (e) {
-                    navigator.pop();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to create geofence: $e')),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Create'),
-              ),
-            ],
+      builder: (sheetContext) {
+        final l10n = AppLocalizations.of(sheetContext);
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
           ),
-        ),
-      ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.createGeofence,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: l10n.name,
+                    border: const OutlineInputBorder(),
+                  ),
+                  autofocus: true,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? l10n.nameIsRequired : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: radiusController,
+                  decoration: InputDecoration(
+                    labelText: l10n.radiusMeters,
+                    border: const OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    final n = double.tryParse(v ?? '');
+                    if (n == null || n <= 0) return l10n.enterPositiveNumber;
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+                    final navigator = Navigator.of(sheetContext);
+                    try {
+                      await ref.read(apiClientProvider).createGeofence(groupId, {
+                        'name': nameController.text.trim(),
+                        'latitude': point.latitude,
+                        'longitude': point.longitude,
+                        'radius_meters':
+                            double.parse(radiusController.text.trim()),
+                      });
+                      ref.invalidate(geofencesProvider(groupId));
+                      navigator.pop();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.geofenceCreated)),
+                        );
+                      }
+                    } on Exception catch (e) {
+                      navigator.pop();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content:
+                                  Text(l10n.failedToCreateGeofence(e.toString()))),
+                        );
+                      }
+                    }
+                  },
+                  child: Text(l10n.create),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -479,10 +487,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   String _timeAgo(DateTime dateTime) {
+    final l10n = AppLocalizations.of(context);
     final diff = DateTime.now().difference(dateTime);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return l10n.timeAgoJustNow;
+    if (diff.inMinutes < 60) return l10n.timeAgoMinutes(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.timeAgoHours(diff.inHours);
+    return l10n.timeAgoDays(diff.inDays);
   }
 }

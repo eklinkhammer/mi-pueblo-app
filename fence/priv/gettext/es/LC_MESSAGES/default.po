@@ -1,0 +1,20 @@
+## Spanish translations for push notification messages
+msgid ""
+msgstr ""
+"Language: es\n"
+
+#: lib/fence/workers/push_notification_worker.ex
+msgid "%{user_name} entered %{geofence_name}"
+msgstr "%{user_name} entró a %{geofence_name}"
+
+#: lib/fence/workers/push_notification_worker.ex
+msgid "%{user_name} exited %{geofence_name}"
+msgstr "%{user_name} salió de %{geofence_name}"
+
+#: lib/fence/workers/push_notification_worker.ex
+msgid "%{user_name} has arrived at %{geofence_name}"
+msgstr "%{user_name} ha llegado a %{geofence_name}"
+
+#: lib/fence/workers/push_notification_worker.ex
+msgid "%{user_name} has left %{geofence_name}"
+msgstr "%{user_name} se ha ido de %{geofence_name}"

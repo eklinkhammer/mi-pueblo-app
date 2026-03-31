@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/groups_provider.dart';
 
 class GroupListScreen extends ConsumerWidget {
@@ -9,15 +10,16 @@ class GroupListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupsAsync = ref.watch(groupsProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Groups'),
+        title: Text(l10n.groups),
         actions: [
           IconButton(
             icon: const Icon(Icons.group_add),
             onPressed: () => context.go('/groups/join'),
-            tooltip: 'Join Group',
+            tooltip: l10n.joinGroup,
           ),
         ],
       ),
@@ -28,16 +30,16 @@ class GroupListScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('No groups yet'),
+                  Text(l10n.noGroupsYet),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: () => context.go('/groups/create'),
-                    child: const Text('Create a Group'),
+                    child: Text(l10n.createAGroup),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton(
                     onPressed: () => context.go('/groups/join'),
-                    child: const Text('Join with Invite Code'),
+                    child: Text(l10n.joinWithInviteCode),
                   ),
                 ],
               ),
@@ -61,7 +63,8 @@ class GroupListScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) =>
+            Center(child: Text(l10n.errorWithMessage(error.toString()))),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.go('/groups/create'),

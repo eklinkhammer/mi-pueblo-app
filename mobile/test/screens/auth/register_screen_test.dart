@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/screens/auth/register_screen.dart';
 import '../../helpers/mocks.dart';
@@ -32,7 +33,11 @@ void main() {
           return notifier;
         }),
       ],
-      child: const MaterialApp(home: RegisterScreen()),
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const RegisterScreen(),
+      ),
     );
   }
 
@@ -40,7 +45,7 @@ void main() {
     testWidgets('renders Display Name, Email, and Password fields',
         (tester) async {
       await tester.pumpWidget(createApp());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(
           find.widgetWithText(TextField, 'Display Name'), findsOneWidget);
@@ -50,7 +55,7 @@ void main() {
 
     testWidgets('renders Create Account button', (tester) async {
       await tester.pumpWidget(createApp());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.widgetWithText(FilledButton, 'Create Account'),
           findsOneWidget);
@@ -58,11 +63,11 @@ void main() {
 
     testWidgets('shows error message from auth state', (tester) async {
       await tester.pumpWidget(createApp());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       notifier.setTestState(const AuthState(
         status: AuthStatus.unauthenticated,
-        error: 'Registration failed',
+        errorKey: AuthErrorKey.registrationFailed,
       ));
       await tester.pump();
 
@@ -72,7 +77,7 @@ void main() {
     testWidgets('shows "Already have an account? Sign in" link',
         (tester) async {
       await tester.pumpWidget(createApp());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('Already have an account? Sign in'), findsOneWidget);
     });

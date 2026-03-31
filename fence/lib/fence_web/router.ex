@@ -3,6 +3,7 @@ defmodule FenceWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug FenceWeb.LocalePlug
   end
 
   pipeline :authenticated do

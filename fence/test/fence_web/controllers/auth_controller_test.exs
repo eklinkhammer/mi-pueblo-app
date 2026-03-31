@@ -31,7 +31,7 @@ defmodule FenceWeb.AuthControllerTest do
 
     test "returns 400 for missing required fields", %{conn: conn} do
       conn = post(conn, "/api/v1/auth/register", %{"email" => "a@b.com"})
-      assert json_response(conn, 400)["error"] =~ "Missing"
+      assert %{"error" => %{"code" => "missing_fields"}} = json_response(conn, 400)
     end
 
     test "returns 422 for duplicate email", %{conn: conn} do
@@ -71,7 +71,7 @@ defmodule FenceWeb.AuthControllerTest do
           "password" => "wrongpassword"
         })
 
-      assert json_response(conn, 401)["error"] =~ "Invalid"
+      assert %{"error" => %{"code" => "invalid_credentials"}} = json_response(conn, 401)
     end
   end
 
@@ -86,7 +86,7 @@ defmodule FenceWeb.AuthControllerTest do
 
     test "returns 401 for invalid refresh token", %{conn: conn} do
       conn = post(conn, "/api/v1/auth/refresh", %{"refresh_token" => "invalid"})
-      assert json_response(conn, 401)["error"]
+      assert %{"error" => %{"code" => "invalid_refresh_token"}} = json_response(conn, 401)
     end
   end
 

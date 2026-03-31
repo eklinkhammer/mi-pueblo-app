@@ -18,13 +18,13 @@ defmodule FenceWeb.GeocodingController do
       {:error, _} ->
         conn
         |> put_status(:bad_gateway)
-        |> json(%{error: "Geocoding service unavailable"})
+        |> json(%{error: %{code: "geocoding_unavailable", message: "Geocoding service unavailable"}})
     end
   end
 
   def search(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: "Missing 'q' parameter"})
+    |> json(%{error: %{code: "missing_parameter", message: "Missing 'q' parameter"}})
   end
 end

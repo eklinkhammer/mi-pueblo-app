@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -25,6 +26,9 @@ class ApiClient {
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+        // Send device locale for backend localization
+        final locale = PlatformDispatcher.instance.locale;
+        options.headers['Accept-Language'] = locale.toLanguageTag();
         handler.next(options);
       },
       onError: (error, handler) async {

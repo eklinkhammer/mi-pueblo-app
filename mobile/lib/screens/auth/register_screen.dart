@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -29,9 +30,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context);
+
+    String? errorText;
+    if (authState.errorKey != null) {
+      errorText = switch (authState.errorKey!) {
+        AuthErrorKey.registrationFailed => l10n.registrationFailed,
+        AuthErrorKey.invalidCredentials => l10n.invalidEmailOrPassword,
+      };
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Account')),
+      appBar: AppBar(title: Text(l10n.createAccount)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -39,18 +49,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Display Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.displayName,
+                border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.email,
+                border: const OutlineInputBorder(),
               ),
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
@@ -58,19 +68,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                helperText: 'At least 8 characters',
+              decoration: InputDecoration(
+                labelText: l10n.password,
+                border: const OutlineInputBorder(),
+                helperText: l10n.passwordHelperText,
               ),
               obscureText: true,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _register(),
             ),
-            if (authState.error != null) ...[
+            if (errorText != null) ...[
               const SizedBox(height: 8),
               Text(
-                authState.error!,
+                errorText,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
@@ -83,12 +93,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Create Account'),
+                  : Text(l10n.createAccount),
             ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => context.go('/auth/login'),
-              child: const Text('Already have an account? Sign in'),
+              child: Text(l10n.alreadyHaveAccount),
             ),
           ],
         ),

@@ -10,6 +10,7 @@ defmodule Fence.Accounts.User do
     field :display_name, :string
     field :password_hash, :string
     field :password, :string, virtual: true
+    field :locale, :string, default: "en"
 
     timestamps(type: :utc_datetime)
   end
@@ -27,8 +28,9 @@ defmodule Fence.Accounts.User do
 
   def update_changeset(user, attrs) do
     user
-    |> cast(attrs, [:display_name])
+    |> cast(attrs, [:display_name, :locale])
     |> validate_length(:display_name, min: 1, max: 100)
+    |> validate_inclusion(:locale, ["en", "es"])
   end
 
   defp put_password_hash(%{valid?: true, changes: %{password: password}} = changeset) do

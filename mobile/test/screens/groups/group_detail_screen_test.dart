@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/models/group.dart';
 import 'package:fence/models/geofence.dart';
 import 'package:fence/providers/groups_provider.dart';
@@ -60,6 +61,8 @@ void main() {
         }),
       ],
       child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: GroupDetailScreen(groupId: _testGroupId),
       ),
     );

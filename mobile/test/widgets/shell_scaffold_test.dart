@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
 
 void main() {
@@ -33,7 +34,11 @@ void main() {
     testWidgets('shows 3 navigation destinations', (tester) async {
       final router = createRouter();
       await tester
-          .pumpWidget(MaterialApp.router(routerConfig: router));
+          .pumpWidget(MaterialApp.router(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+          ));
       await tester.pumpAndSettle();
 
       expect(find.byType(NavigationDestination), findsNWidgets(3));
@@ -45,7 +50,11 @@ void main() {
     testWidgets('correct tab selected for /map route', (tester) async {
       final router = createRouter(initialLocation: '/map');
       await tester
-          .pumpWidget(MaterialApp.router(routerConfig: router));
+          .pumpWidget(MaterialApp.router(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+          ));
       await tester.pumpAndSettle();
 
       final navBar =
@@ -56,7 +65,11 @@ void main() {
     testWidgets('correct tab selected for /groups route', (tester) async {
       final router = createRouter(initialLocation: '/groups');
       await tester
-          .pumpWidget(MaterialApp.router(routerConfig: router));
+          .pumpWidget(MaterialApp.router(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+          ));
       await tester.pumpAndSettle();
 
       final navBar =
@@ -67,7 +80,11 @@ void main() {
     testWidgets('correct tab selected for /settings route', (tester) async {
       final router = createRouter(initialLocation: '/settings');
       await tester
-          .pumpWidget(MaterialApp.router(routerConfig: router));
+          .pumpWidget(MaterialApp.router(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+          ));
       await tester.pumpAndSettle();
 
       final navBar =

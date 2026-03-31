@@ -13,7 +13,7 @@ defmodule FenceWeb.AuthPlug do
       _ ->
         conn
         |> put_status(:unauthorized)
-        |> Phoenix.Controller.json(%{error: "Unauthorized"})
+        |> Phoenix.Controller.json(%{error: %{code: "unauthorized", message: "Unauthorized"}})
         |> halt()
     end
   end

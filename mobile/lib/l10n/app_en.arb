@@ -1,0 +1,175 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Fence",
+  "appSubtitle": "Family Location Sharing",
+
+  "email": "Email",
+  "password": "Password",
+  "signIn": "Sign In",
+  "createAnAccount": "Create an account",
+  "createAccount": "Create Account",
+  "displayName": "Display Name",
+  "passwordHelperText": "At least 8 characters",
+  "alreadyHaveAccount": "Already have an account? Sign in",
+
+  "registrationFailed": "Registration failed",
+  "invalidEmailOrPassword": "Invalid email or password",
+
+  "map": "Map",
+  "groups": "Groups",
+  "settings": "Settings",
+
+  "selectGroup": "Select group",
+  "selectGroupToViewMap": "Select a group to view the map",
+  "addGeofence": "Add Geofence",
+  "createGeofence": "Create Geofence",
+  "name": "Name",
+  "radiusMeters": "Radius (meters)",
+  "create": "Create",
+  "geofenceCreated": "Geofence created",
+  "failedToCreateGeofence": "Failed to create geofence: {error}",
+  "@failedToCreateGeofence": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "locationPermissionDenied": "Location permission denied. Enable it in Settings.",
+  "locationPermissionRequired": "Location permission required to show your position.",
+  "nameIsRequired": "Name is required",
+  "enterPositiveNumber": "Enter a positive number",
+  "timeAgoJustNow": "just now",
+  "timeAgoMinutes": "{minutes}m ago",
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "timeAgoHours": "{hours}h ago",
+  "@timeAgoHours": {
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "timeAgoDays": "{days}d ago",
+  "@timeAgoDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+
+  "joinGroup": "Join Group",
+  "noGroupsYet": "No groups yet",
+  "createAGroup": "Create a Group",
+  "joinWithInviteCode": "Join with Invite Code",
+  "errorWithMessage": "Error: {error}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "group": "Group",
+  "invite": "Invite",
+  "members": "Members",
+  "geofences": "Geofences",
+  "noGeofencesYet": "No geofences yet",
+  "radiusWithValue": "{radius}m radius",
+  "@radiusWithValue": {
+    "placeholders": {
+      "radius": { "type": "int" }
+    }
+  },
+  "inviteCode": "Invite Code",
+  "shareCodeWithFamily": "Share this code with family members",
+  "copy": "Copy",
+  "copiedToClipboard": "Copied to clipboard",
+  "done": "Done",
+  "failedToCreateInvite": "Failed to create invite: {error}",
+  "@failedToCreateInvite": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "createGroup": "Create Group",
+  "groupName": "Group Name",
+  "groupNameHint": "e.g., The Smiths",
+  "failedWithError": "Failed: {error}",
+  "@failedWithError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "enterInviteCodeInstructions": "Enter the invite code shared by a group admin.",
+  "invalidOrExpiredInviteCode": "Invalid or expired invite code",
+
+  "nameHint": "e.g., Home, School, Office",
+  "searchAddress": "Search address",
+  "searchAddressHint": "e.g., 123 Main St",
+  "searchOrTapMap": "Search for an address or tap the map to place the geofence center",
+  "setNameAndLocation": "Please set a name and select a location",
+  "enterValidRadius": "Please enter a valid radius",
+  "addressSearchFailed": "Address search failed",
+
+  "geofenceNotFound": "Geofence not found",
+  "radius": "Radius",
+  "radiusInMeters": "{meters} meters",
+  "@radiusInMeters": {
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
+  "description": "Description",
+  "notifications": "Notifications",
+  "notifyOnEntry": "Notify on Entry",
+  "notifyOnExit": "Notify on Exit",
+  "optOutOfGeofence": "Opt out of this geofence",
+  "optOutSubtitle": "Your location won't trigger notifications for this fence",
+  "deleteGeofence": "Delete Geofence?",
+  "deleteCannotBeUndone": "This action cannot be undone.",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "optedOutSuccessfully": "Opted out successfully",
+  "alreadyOptedOut": "Already opted out",
+
+  "locationSharing": "Location Sharing",
+  "locationSharingSubtitle": "Share your location with group members",
+  "locationPermissions": "Location Permissions",
+  "manageLocationAccess": "Manage location access",
+  "locationPermissionGranted": "Location permission granted",
+  "locationPermissionDeniedSettings": "Location permission denied. Enable it in device Settings.",
+  "locationPermissionNotDetermined": "Location permission not determined. Please try again.",
+  "signOut": "Sign Out",
+  "signOutConfirm": "Sign Out?",
+  "unknown": "Unknown",
+
+  "locationSharingNotificationTitle": "Fence",
+  "locationSharingNotificationText": "Location sharing active",
+
+  "language": "Language",
+  "systemDefault": "System Default",
+  "english": "English",
+  "spanish": "Spanish",
+
+  "errorUnauthorized": "Unauthorized",
+  "errorMissingFields": "Missing required fields",
+  "errorInvalidCredentials": "Invalid email or password",
+  "errorInvalidRefreshToken": "Invalid refresh token",
+  "errorNotFound": "Not found",
+  "errorForbidden": "Access denied",
+  "errorInvalidInviteCode": "Invalid invite code",
+  "errorInviteCodeExpired": "Invite code expired",
+  "errorAlreadyMember": "Already a member",
+  "errorCouldNotCreateInvite": "Could not create invite",
+  "errorAlreadyOptedOut": "Already opted out",
+  "errorGeofenceNotFound": "Geofence not found",
+  "errorGeofenceExpired": "Geofence expired",
+  "errorNotGroupMember": "Not a group member",
+  "errorOptedOut": "Opted out of this geofence",
+  "errorGeocodingUnavailable": "Geocoding service unavailable",
+  "errorMissingParameter": "Missing required parameter",
+  "errorValidationFailed": "Validation failed",
+  "errorUnknown": "An unexpected error occurred"
+}

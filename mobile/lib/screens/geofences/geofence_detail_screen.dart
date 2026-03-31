@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/services/geofence_sync_service.dart';
@@ -23,6 +24,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
     final geofencesAsync = ref.watch(geofencesProvider(groupId));
     final subscriptionAsync =
         ref.watch(geofenceSubscriptionProvider(geofenceId));
+    final l10n = AppLocalizations.of(context);
 
     return geofencesAsync.when(
       data: (geofences) {
@@ -30,7 +32,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
         if (geofence == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text('Geofence not found')),
+            body: Center(child: Text(l10n.geofenceNotFound)),
           );
         }
 
@@ -88,31 +90,32 @@ class GeofenceDetailScreen extends ConsumerWidget {
                 ),
               ),
               ListTile(
-                title: const Text('Radius'),
-                subtitle: Text('${geofence.radiusMeters.round()} meters'),
+                title: Text(l10n.radius),
+                subtitle:
+                    Text(l10n.radiusInMeters(geofence.radiusMeters.round())),
               ),
               if (geofence.description != null)
                 ListTile(
-                  title: const Text('Description'),
+                  title: Text(l10n.description),
                   subtitle: Text(geofence.description!),
                 ),
               const Divider(),
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Notifications',
+                child: Text(l10n.notifications,
                     style: Theme.of(context).textTheme.titleMedium),
               ),
               subscriptionAsync.when(
                 data: (sub) => Column(
                   children: [
                     SwitchListTile(
-                      title: const Text('Notify on Entry'),
+                      title: Text(l10n.notifyOnEntry),
                       value: sub?.notifyOnEntry ?? false,
                       onChanged: (value) => _updateSubscription(
                           ref, {'notify_on_entry': value}),
                     ),
                     SwitchListTile(
-                      title: const Text('Notify on Exit'),
+                      title: Text(l10n.notifyOnExit),
                       value: sub?.notifyOnExit ?? false,
                       onChanged: (value) => _updateSubscription(
                           ref, {'notify_on_exit': value}),
@@ -121,14 +124,14 @@ class GeofenceDetailScreen extends ConsumerWidget {
                 ),
                 loading: () => const Center(
                     child: CircularProgressIndicator()),
-                error: (e, _) => Text('Error: $e'),
+                error: (e, _) =>
+                    Text(l10n.errorWithMessage(e.toString())),
               ),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.visibility_off),
-                title: const Text('Opt out of this geofence'),
-                subtitle: const Text(
-                    "Your location won't trigger notifications for this fence"),
+                title: Text(l10n.optOutOfGeofence),
+                subtitle: Text(l10n.optOutSubtitle),
                 onTap: () => _optOut(context, ref),
               ),
             ],
@@ -141,7 +144,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(),
-        body: Center(child: Text('Error: $e')),
+        body: Center(child: Text(l10n.errorWithMessage(e.toString()))),
       ),
     );
   }
@@ -158,41 +161,46 @@ class GeofenceDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _optOut(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.createOptOut(geofenceId);
       unawaited(ref.read(geofenceSyncServiceProvider).syncGeofences());
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Opted out successfully')),
+          SnackBar(content: Text(l10n.optedOutSuccessfully)),
         );
       }
     } on Exception catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Already opted out')),
+          SnackBar(content: Text(l10n.alreadyOptedOut)),
         );
       }
     }
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Geofence?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) {
+        final dl10n = AppLocalizations.of(dialogContext);
+        return AlertDialog(
+          title: Text(dl10n.deleteGeofence),
+          content: Text(dl10n.deleteCannotBeUndone),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(dl10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(dl10n.delete),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed ?? false) {
@@ -207,7 +215,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
       } on Exception catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed: $e')),
+            SnackBar(content: Text(l10n.failedWithError(e.toString()))),
           );
         }
       }

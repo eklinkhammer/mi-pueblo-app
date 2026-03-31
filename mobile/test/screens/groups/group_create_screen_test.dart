@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/models/group.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/screens/groups/group_create_screen.dart';
@@ -29,7 +30,11 @@ void main() {
       overrides: [
         groupsProvider.overrideWith(() => fakeNotifier),
       ],
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      ),
     );
   }
 

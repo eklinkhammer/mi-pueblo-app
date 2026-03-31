@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/models/geofence.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/services/api_client.dart';
@@ -58,6 +59,8 @@ void main() {
         }),
       ],
       child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: GeofenceDetailScreen(
           groupId: _testGroupId,
           geofenceId: _testGeofenceId,
