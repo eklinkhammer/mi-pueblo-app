@@ -3,6 +3,7 @@ allprojects {
         google()
         mavenCentral()
     }
+    extra.set("playServicesLocationVersion", "21.3.0")
 }
 
 val newBuildDir: Directory =
