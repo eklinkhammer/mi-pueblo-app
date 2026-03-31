@@ -16,7 +16,7 @@ defmodule Fence.Locations do
     case result do
       {:ok, location} ->
         # Enqueue geofence check
-        %{user_id: user_id, location_id: location.id}
+        %{user_id: user_id, location_id: location.id, source: location.source}
         |> GeofenceCheckWorker.new()
         |> Oban.insert()
 
@@ -42,6 +42,7 @@ defmodule Fence.Locations do
       on: m.user_id == l.user_id and m.group_id == ^group_id,
       join: u in Fence.Accounts.User,
       on: u.id == l.user_id,
+      where: l.source == "foreground",
       distinct: l.user_id,
       order_by: [asc: l.user_id, desc: l.inserted_at],
       select: %{
@@ -169,7 +170,7 @@ defmodule Fence.Locations do
          {:opted_out, false} <-
            {:opted_out, Fence.Geofences.opted_out?(user_id, geofence_id)} do
       # Insert device location record
-      location_attrs = Map.put(attrs, "user_id", user_id)
+      location_attrs = attrs |> Map.put("user_id", user_id) |> Map.put("source", "geofence_event")
 
       case %DeviceLocation{}
            |> DeviceLocation.changeset(location_attrs)
@@ -217,7 +218,6 @@ defmodule Fence.Locations do
             end
           end
 
-          broadcast_location_update(user_id, location.id)
           {:ok, %{verified: verified}}
 
         {:error, changeset} ->

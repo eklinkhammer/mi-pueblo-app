@@ -12,6 +12,7 @@ defmodule Fence.Locations.DeviceLocation do
     field :speed, :float
     field :bearing, :float
     field :battery_level, :float
+    field :source, :string, default: "foreground"
 
     belongs_to :user, Fence.Accounts.User
 
@@ -20,8 +21,9 @@ defmodule Fence.Locations.DeviceLocation do
 
   def changeset(location, attrs) do
     location
-    |> cast(attrs, [:user_id, :accuracy, :altitude, :speed, :bearing, :battery_level])
+    |> cast(attrs, [:user_id, :accuracy, :altitude, :speed, :bearing, :battery_level, :source])
     |> validate_required([:user_id])
+    |> validate_inclusion(:source, ["foreground", "background", "geofence_event"])
     |> put_point(attrs)
   end
 

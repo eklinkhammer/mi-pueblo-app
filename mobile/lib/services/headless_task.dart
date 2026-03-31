@@ -19,6 +19,7 @@ Future<void> headlessTask(bg.HeadlessEvent headlessEvent) async {
         'speed': coords.speed,
         'bearing': coords.heading,
         'battery_level': battery.level,
+        'source': 'background',
       });
     } on Exception catch (_) {
       // Silently fail
@@ -38,6 +39,7 @@ Future<void> headlessTask(bg.HeadlessEvent headlessEvent) async {
         'speed': coords.speed,
         'bearing': coords.heading,
         'battery_level': battery.level,
+        'source': 'geofence_event',
       });
     } on Exception catch (_) {
       // Silently fail

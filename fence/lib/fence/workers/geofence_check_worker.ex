@@ -6,7 +6,9 @@ defmodule Fence.Workers.GeofenceCheckWorker do
 
   @dialyzer {:nowarn_function, perform: 1}
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"user_id" => user_id, "location_id" => location_id}}) do
+  def perform(%Oban.Job{args: %{"user_id" => user_id, "location_id" => location_id} = args}) do
+    source = Map.get(args, "source", "foreground")
+
     # Get current geofence state
     previous_ids = Locations.get_user_geofence_ids(user_id)
 
@@ -33,8 +35,10 @@ defmodule Fence.Workers.GeofenceCheckWorker do
       |> Oban.insert()
     end
 
-    # Broadcast location update to group channels
-    Locations.broadcast_location_update(user_id, location_id)
+    # Only broadcast location to group channels for foreground reports
+    if source == "foreground" do
+      Locations.broadcast_location_update(user_id, location_id)
+    end
 
     :ok
   end
