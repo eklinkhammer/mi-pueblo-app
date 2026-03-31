@@ -42,7 +42,6 @@ defmodule Fence.Locations do
       on: m.user_id == l.user_id and m.group_id == ^group_id,
       join: u in Fence.Accounts.User,
       on: u.id == l.user_id,
-      where: l.source == "foreground",
       distinct: l.user_id,
       order_by: [asc: l.user_id, desc: l.inserted_at],
       select: %{
