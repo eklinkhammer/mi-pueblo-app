@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "463082453891",
+    "project_id": "mi-pueblo-8dbb0",
+    "storage_bucket": "mi-pueblo-8dbb0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463082453891:android:7974b5b27baf730c25d4b6",
+        "android_client_info": {
+          "package_name": "com.fence.fence"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpmSvKVC8fFQjIKnFn04I-LIOOjLUh9Zs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

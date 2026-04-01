@@ -22,6 +22,20 @@ end
 
 config :fence, FenceWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# FCM push notifications
+fcm_service_account = System.get_env("FCM_SERVICE_ACCOUNT_JSON")
+
+if fcm_service_account do
+  fcm_credentials = Jason.decode!(fcm_service_account)
+
+  config :fence, :fcm_credentials, fcm_credentials
+
+  config :fence, Fence.FCM,
+    adapter: Pigeon.FCM,
+    auth: Fence.Goth,
+    project_id: fcm_credentials["project_id"]
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

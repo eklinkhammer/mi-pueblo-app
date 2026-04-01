@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/models/user.dart';
 import 'package:fence/services/api_client.dart';
+import 'package:fence/services/notification_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -28,6 +31,7 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
+  NotificationService? _notificationService;
 
   AuthNotifier(this._apiClient) : super(const AuthState()) {
     _checkAuth();
@@ -45,9 +49,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final data = response.data!;
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      unawaited(_initNotifications());
     } on Exception catch (_) {
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
+  }
+
+  Future<void> _initNotifications() async {
+    _notificationService?.dispose();
+    _notificationService = NotificationService(_apiClient);
+    await _notificationService!.initialize();
   }
 
   Future<void> register(
@@ -62,6 +73,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      unawaited(_initNotifications());
     } on Exception catch (_) {
       state = state.copyWith(errorKey: AuthErrorKey.registrationFailed);
     }
@@ -77,12 +89,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      unawaited(_initNotifications());
     } on Exception catch (_) {
       state = state.copyWith(errorKey: AuthErrorKey.invalidCredentials);
     }
   }
 
   Future<void> logout() async {
+    _notificationService?.dispose();
+    _notificationService = null;
     await _apiClient.clearTokens();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }

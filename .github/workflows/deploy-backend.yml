@@ -1,0 +1,41 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [master]
+    paths: [fence/**]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 207.5.207.232 >> ~/.ssh/known_hosts
+
+      - name: Pull latest code
+        run: ssh -i ~/.ssh/deploy_key ubuntu@207.5.207.232 "cd ~/fence-deploy && git pull origin master"
+
+      - name: Ensure .env symlink
+        run: ssh -i ~/.ssh/deploy_key ubuntu@207.5.207.232 "cd ~/fence-deploy/fence && [ -L .env ] || ln -s .env.production .env"
+
+      - name: Rebuild and restart containers
+        run: ssh -i ~/.ssh/deploy_key ubuntu@207.5.207.232 "cd ~/fence-deploy/fence && docker compose -f docker-compose.prod.yml up -d --build"
+        timeout-minutes: 10
+
+      - name: Run database migrations
+        run: ssh -i ~/.ssh/deploy_key ubuntu@207.5.207.232 "cd ~/fence-deploy/fence && docker compose -f docker-compose.prod.yml exec app bin/fence eval 'Fence.Release.migrate()'"
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key ubuntu@207.5.207.232 "cd ~/fence-deploy/fence && docker compose -f docker-compose.prod.yml ps"
+          ssh -i ~/.ssh/deploy_key ubuntu@207.5.207.232 "curl -sf -o /dev/null -w 'HTTP %{http_code}\n' http://localhost:4000/api/v1/me || [ \$? -eq 22 ]"

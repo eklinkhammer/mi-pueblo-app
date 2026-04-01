@@ -7,16 +7,28 @@ defmodule Fence.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      FenceWeb.Telemetry,
-      Fence.Repo,
-      {DNSCluster, query: Application.get_env(:fence, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Fence.PubSub},
-      {Oban, Application.fetch_env!(:fence, Oban)},
-      Fence.Geocoding,
-      FenceWeb.Presence,
-      FenceWeb.Endpoint
-    ]
+    fcm_children =
+      if Application.get_env(:fence, :fcm_credentials) do
+        credentials = Application.fetch_env!(:fence, :fcm_credentials)
+
+        [
+          {Goth, name: Fence.Goth, source: {:service_account, credentials, []}},
+          Fence.FCM
+        ]
+      else
+        []
+      end
+
+    children =
+      [
+        FenceWeb.Telemetry,
+        Fence.Repo,
+        {DNSCluster, query: Application.get_env(:fence, :dns_cluster_query) || :ignore},
+        {Phoenix.PubSub, name: Fence.PubSub},
+        {Oban, Application.fetch_env!(:fence, Oban)},
+        Fence.Geocoding,
+        FenceWeb.Presence
+      ] ++ fcm_children ++ [FenceWeb.Endpoint]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

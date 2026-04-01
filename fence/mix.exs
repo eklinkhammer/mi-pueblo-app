@@ -68,6 +68,7 @@ defmodule Fence.MixProject do
 
       # Push notifications
       {:pigeon, "~> 2.0"},
+      {:goth, "~> 1.4"},
 
       # CORS
       {:cors_plug, "~> 3.0"},
