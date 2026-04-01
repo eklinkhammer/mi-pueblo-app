@@ -40,4 +40,35 @@ defmodule Fence.Groups.MembershipTest do
       assert %{user_id: ["has already been taken"]} = errors_on(changeset)
     end
   end
+
+  describe "notification_prefs_changeset/2" do
+    test "casts notification preference fields" do
+      user = create_user()
+      group = create_group(user)
+      membership = Fence.Groups.get_membership(user.id, group.id)
+
+      changeset =
+        Membership.notification_prefs_changeset(membership, %{
+          "silence_all_notifications" => true,
+          "silence_home_notifications" => true,
+          "notify_household" => false
+        })
+
+      assert changeset.valid?
+      assert Ecto.Changeset.get_change(changeset, :silence_all_notifications) == true
+      assert Ecto.Changeset.get_change(changeset, :silence_home_notifications) == true
+      assert Ecto.Changeset.get_change(changeset, :notify_household) == false
+    end
+
+    test "ignores unrelated fields" do
+      changeset =
+        Membership.notification_prefs_changeset(%Membership{}, %{
+          "role" => "admin",
+          "silence_all_notifications" => true
+        })
+
+      assert changeset.valid?
+      assert is_nil(Ecto.Changeset.get_change(changeset, :role))
+    end
+  end
 end

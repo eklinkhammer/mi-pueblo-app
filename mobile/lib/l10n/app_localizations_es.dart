@@ -391,4 +391,34 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorUnknown => 'Ocurrió un error inesperado';
+
+  @override
+  String get notificationSettings => 'Ajustes de notificaciones';
+
+  @override
+  String get silenceAllNotifications => 'Silenciar todas las notificaciones';
+
+  @override
+  String get silenceAllNotificationsSubtitle =>
+      'Detener todas las notificaciones de este grupo';
+
+  @override
+  String get silenceHomeNotifications => 'Silenciar notificaciones de hogar';
+
+  @override
+  String get silenceHomeNotificationsSubtitle =>
+      'Detener notificaciones cuando los miembros entren o salgan de su hogar';
+
+  @override
+  String get notifyHousehold => 'Siempre notificar del hogar';
+
+  @override
+  String get notifyHouseholdSubtitle =>
+      'Anular ajustes de silencio para miembros que comparten tu geocerca de hogar';
+
+  @override
+  String get memberNotifications => 'Notificaciones por miembro';
+
+  @override
+  String get homeNotifications => 'Notificaciones de hogar';
 }

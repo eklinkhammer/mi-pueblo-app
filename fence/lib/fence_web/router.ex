@@ -48,6 +48,10 @@ defmodule FenceWeb.Router do
     get "/groups/:id/members", GroupController, :members
     delete "/groups/:id/members/:user_id", GroupController, :remove_member
     post "/groups/:id/invites", GroupController, :create_invite
+    get "/groups/:id/notification-preferences", GroupController, :show_notification_preferences
+    put "/groups/:id/notification-preferences", GroupController, :update_notification_preferences
+    get "/groups/:id/member-preferences", GroupController, :list_member_preferences
+    put "/groups/:id/member-preferences/:subject_id", GroupController, :upsert_member_preference
 
     # Geofences
     get "/my-geofences", GeofenceController, :my_geofences

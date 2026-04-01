@@ -805,6 +805,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'An unexpected error occurred'**
   String get errorUnknown;
+
+  /// No description provided for @notificationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Settings'**
+  String get notificationSettings;
+
+  /// No description provided for @silenceAllNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Silence All Notifications'**
+  String get silenceAllNotifications;
+
+  /// No description provided for @silenceAllNotificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop all notifications from this group'**
+  String get silenceAllNotificationsSubtitle;
+
+  /// No description provided for @silenceHomeNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Silence Home Notifications'**
+  String get silenceHomeNotifications;
+
+  /// No description provided for @silenceHomeNotificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop notifications when members enter or leave their home'**
+  String get silenceHomeNotificationsSubtitle;
+
+  /// No description provided for @notifyHousehold.
+  ///
+  /// In en, this message translates to:
+  /// **'Always Notify Household'**
+  String get notifyHousehold;
+
+  /// No description provided for @notifyHouseholdSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Override silence settings for members who share your home geofence'**
+  String get notifyHouseholdSubtitle;
+
+  /// No description provided for @memberNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Per-Member Notifications'**
+  String get memberNotifications;
+
+  /// No description provided for @homeNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Notifications'**
+  String get homeNotifications;
 }
 
 class _AppLocalizationsDelegate

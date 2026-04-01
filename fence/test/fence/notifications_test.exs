@@ -107,4 +107,104 @@ defmodule Fence.NotificationsTest do
       refute Notifications.should_throttle?(user.id, geofence.id, 0)
     end
   end
+
+  describe "upsert_member_notification_preference/1" do
+    test "creates a new preference" do
+      {observer, geofence} = create_geofence_for_test()
+      subject = create_user()
+
+      assert {:ok, pref} =
+               Notifications.upsert_member_notification_preference(%{
+                 observer_id: observer.id,
+                 subject_id: subject.id,
+                 group_id: geofence.group_id,
+                 notify: false,
+                 notify_home: false
+               })
+
+      assert pref.observer_id == observer.id
+      assert pref.notify == false
+      assert pref.notify_home == false
+    end
+
+    test "upserts on conflict (same observer/subject/group)" do
+      {observer, geofence} = create_geofence_for_test()
+      subject = create_user()
+
+      attrs = %{
+        observer_id: observer.id,
+        subject_id: subject.id,
+        group_id: geofence.group_id,
+        notify: true,
+        notify_home: true
+      }
+
+      {:ok, _} = Notifications.upsert_member_notification_preference(attrs)
+      {:ok, updated} = Notifications.upsert_member_notification_preference(%{attrs | notify: false})
+
+      assert updated.notify == false
+      assert updated.notify_home == true
+    end
+  end
+
+  describe "list_member_notification_preferences/2" do
+    test "returns prefs for observer in group" do
+      {observer, geofence} = create_geofence_for_test()
+      subject1 = create_user()
+      subject2 = create_user()
+
+      Notifications.upsert_member_notification_preference(%{
+        observer_id: observer.id,
+        subject_id: subject1.id,
+        group_id: geofence.group_id,
+        notify: false
+      })
+
+      Notifications.upsert_member_notification_preference(%{
+        observer_id: observer.id,
+        subject_id: subject2.id,
+        group_id: geofence.group_id,
+        notify: true
+      })
+
+      prefs = Notifications.list_member_notification_preferences(observer.id, geofence.group_id)
+      assert length(prefs) == 2
+    end
+
+    test "returns empty when no prefs exist" do
+      {observer, geofence} = create_geofence_for_test()
+      assert [] == Notifications.list_member_notification_preferences(observer.id, geofence.group_id)
+    end
+  end
+
+  describe "get_member_notification_preferences_for_subject/3" do
+    test "batch-loads prefs for multiple observers" do
+      {observer1, geofence} = create_geofence_for_test()
+      observer2 = create_user()
+      subject = create_user()
+
+      Notifications.upsert_member_notification_preference(%{
+        observer_id: observer1.id,
+        subject_id: subject.id,
+        group_id: geofence.group_id,
+        notify: false
+      })
+
+      Notifications.upsert_member_notification_preference(%{
+        observer_id: observer2.id,
+        subject_id: subject.id,
+        group_id: geofence.group_id,
+        notify: true
+      })
+
+      prefs =
+        Notifications.get_member_notification_preferences_for_subject(
+          [observer1.id, observer2.id],
+          subject.id,
+          geofence.group_id
+        )
+
+      assert length(prefs) == 2
+    end
+  end
 end

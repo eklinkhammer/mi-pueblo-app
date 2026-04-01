@@ -143,6 +143,28 @@ class ApiClient {
   Future<Response<Map<String, dynamic>>> createInvite(String groupId) =>
       _dio.post<Map<String, dynamic>>('/groups/$groupId/invites');
 
+  // Notification preferences
+  Future<Response<Map<String, dynamic>>> getNotificationPreferences(
+          String groupId) =>
+      _dio.get<Map<String, dynamic>>(
+          '/groups/$groupId/notification-preferences');
+
+  Future<Response<Map<String, dynamic>>> updateNotificationPreferences(
+          String groupId, Map<String, dynamic> data) =>
+      _dio.put<Map<String, dynamic>>(
+          '/groups/$groupId/notification-preferences',
+          data: data);
+
+  Future<Response<Map<String, dynamic>>> getMemberPreferences(
+          String groupId) =>
+      _dio.get<Map<String, dynamic>>('/groups/$groupId/member-preferences');
+
+  Future<Response<Map<String, dynamic>>> upsertMemberPreference(
+          String groupId, String subjectId, Map<String, dynamic> data) =>
+      _dio.put<Map<String, dynamic>>(
+          '/groups/$groupId/member-preferences/$subjectId',
+          data: data);
+
   // Geofences
   Future<Response<Map<String, dynamic>>> getGeofences(String groupId) =>
       _dio.get<Map<String, dynamic>>('/groups/$groupId/geofences');

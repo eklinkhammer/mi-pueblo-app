@@ -235,4 +235,136 @@ defmodule FenceWeb.GroupControllerTest do
       assert json_response(conn, 403)
     end
   end
+
+  describe "GET /api/v1/groups/:id/notification-preferences" do
+    test "returns notification preferences for member", %{conn: conn, user: user} do
+      group = create_group(user)
+      conn = get(conn, "/api/v1/groups/#{group.id}/notification-preferences")
+      assert resp = json_response(conn, 200)
+      assert resp["silence_all_notifications"] == false
+      assert resp["silence_home_notifications"] == false
+      assert resp["notify_household"] == true
+    end
+
+    test "returns 403 for non-member", %{conn: conn} do
+      other = create_user()
+      group = create_group(other)
+      conn = get(conn, "/api/v1/groups/#{group.id}/notification-preferences")
+      assert json_response(conn, 403)
+    end
+  end
+
+  describe "PUT /api/v1/groups/:id/notification-preferences" do
+    test "updates notification preferences", %{conn: conn, user: user} do
+      group = create_group(user)
+
+      conn =
+        put(conn, "/api/v1/groups/#{group.id}/notification-preferences", %{
+          "silence_all_notifications" => true,
+          "notify_household" => false
+        })
+
+      assert resp = json_response(conn, 200)
+      assert resp["silence_all_notifications"] == true
+      assert resp["notify_household"] == false
+    end
+
+    test "returns 403 for non-member", %{conn: conn} do
+      other = create_user()
+      group = create_group(other)
+
+      conn =
+        put(conn, "/api/v1/groups/#{group.id}/notification-preferences", %{
+          "silence_all_notifications" => true
+        })
+
+      assert json_response(conn, 403)
+    end
+  end
+
+  describe "GET /api/v1/groups/:id/member-preferences" do
+    test "returns empty list when no prefs", %{conn: conn, user: user} do
+      group = create_group(user)
+      conn = get(conn, "/api/v1/groups/#{group.id}/member-preferences")
+      assert %{"preferences" => []} = json_response(conn, 200)
+    end
+
+    test "returns prefs after upsert", %{conn: conn, user: user} do
+      group = create_group(user)
+      subject = create_user()
+
+      Fence.Notifications.upsert_member_notification_preference(%{
+        observer_id: user.id,
+        subject_id: subject.id,
+        group_id: group.id,
+        notify: false,
+        notify_home: true
+      })
+
+      conn = get(conn, "/api/v1/groups/#{group.id}/member-preferences")
+      assert %{"preferences" => [pref]} = json_response(conn, 200)
+      assert pref["subject_id"] == subject.id
+      assert pref["notify"] == false
+    end
+
+    test "returns 403 for non-member", %{conn: conn} do
+      other = create_user()
+      group = create_group(other)
+      conn = get(conn, "/api/v1/groups/#{group.id}/member-preferences")
+      assert json_response(conn, 403)
+    end
+  end
+
+  describe "PUT /api/v1/groups/:id/member-preferences/:subject_id" do
+    test "creates member preference", %{conn: conn, user: user} do
+      group = create_group(user)
+      subject = create_user()
+
+      conn =
+        put(conn, "/api/v1/groups/#{group.id}/member-preferences/#{subject.id}", %{
+          "notify" => false,
+          "notify_home" => false
+        })
+
+      assert resp = json_response(conn, 200)
+      assert resp["subject_id"] == subject.id
+      assert resp["notify"] == false
+      assert resp["notify_home"] == false
+    end
+
+    test "upserts existing preference", %{conn: conn, user: user} do
+      group = create_group(user)
+      subject = create_user()
+
+      put(conn, "/api/v1/groups/#{group.id}/member-preferences/#{subject.id}", %{
+        "notify" => false
+      })
+
+      conn =
+        conn
+        |> recycle()
+        |> authed_conn(user)
+        |> put("/api/v1/groups/#{group.id}/member-preferences/#{subject.id}", %{
+          "notify" => true,
+          "notify_home" => false
+        })
+
+      assert resp = json_response(conn, 200)
+      assert resp["notify"] == true
+      assert resp["notify_home"] == false
+    end
+
+    test "returns 403 for non-member", %{conn: conn} do
+      other = create_user()
+      group = create_group(other)
+      subject = create_user()
+
+      conn =
+        put(conn, "/api/v1/groups/#{group.id}/member-preferences/#{subject.id}", %{
+          "notify" => false
+        })
+
+      assert json_response(conn, 403)
+    end
+  end
 end

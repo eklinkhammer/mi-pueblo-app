@@ -387,4 +387,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorUnknown => 'An unexpected error occurred';
+
+  @override
+  String get notificationSettings => 'Notification Settings';
+
+  @override
+  String get silenceAllNotifications => 'Silence All Notifications';
+
+  @override
+  String get silenceAllNotificationsSubtitle =>
+      'Stop all notifications from this group';
+
+  @override
+  String get silenceHomeNotifications => 'Silence Home Notifications';
+
+  @override
+  String get silenceHomeNotificationsSubtitle =>
+      'Stop notifications when members enter or leave their home';
+
+  @override
+  String get notifyHousehold => 'Always Notify Household';
+
+  @override
+  String get notifyHouseholdSubtitle =>
+      'Override silence settings for members who share your home geofence';
+
+  @override
+  String get memberNotifications => 'Per-Member Notifications';
+
+  @override
+  String get homeNotifications => 'Home Notifications';
 }

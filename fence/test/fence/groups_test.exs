@@ -238,4 +238,33 @@ defmodule Fence.GroupsTest do
       assert {:error, :already_member} = Groups.join_by_invite_code(admin.id, invite.code)
     end
   end
+
+  describe "update_notification_preferences/3" do
+    test "updates silence and household flags" do
+      user = create_user()
+      group = create_group(user)
+
+      assert {:ok, membership} =
+               Groups.update_notification_preferences(user.id, group.id, %{
+                 "silence_all_notifications" => true,
+                 "silence_home_notifications" => true,
+                 "notify_household" => false
+               })
+
+      assert membership.silence_all_notifications == true
+      assert membership.silence_home_notifications == true
+      assert membership.notify_household == false
+    end
+
+    test "returns not_found for non-member" do
+      user = create_user()
+      other = create_user()
+      group = create_group(other)
+
+      assert {:error, :not_found} =
+               Groups.update_notification_preferences(user.id, group.id, %{
+                 "silence_all_notifications" => true
+               })
+    end
+  end
 end

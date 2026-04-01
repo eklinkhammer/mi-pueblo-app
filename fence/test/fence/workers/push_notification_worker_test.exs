@@ -167,5 +167,124 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
                  "event" => "entered"
                })
     end
+
+    test "skips when subscriber has silence_all_notifications enabled" do
+      {triggering_user, subscriber, geofence, _group} = setup_geofence_with_subscriber()
+
+      {:ok, _} =
+        Fence.Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
+          "silence_all_notifications" => true
+        })
+
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "user_id" => triggering_user.id,
+                 "geofence_id" => geofence.id,
+                 "event" => "entered"
+               })
+
+      assert is_nil(Notifications.last_notification_time(subscriber.id, geofence.id))
+    end
+
+    test "skips home notification when subscriber has silence_home_notifications enabled" do
+      {triggering_user, subscriber, geofence, _group} = setup_geofence_with_subscriber()
+
+      # Set the geofence as triggering user's home
+      membership = Fence.Groups.get_membership(triggering_user.id, geofence.group_id)
+
+      membership
+      |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: geofence.id})
+      |> Fence.Repo.update!()
+
+      {:ok, _} =
+        Fence.Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
+          "silence_home_notifications" => true
+        })
+
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "user_id" => triggering_user.id,
+                 "geofence_id" => geofence.id,
+                 "event" => "entered"
+               })
+
+      assert is_nil(Notifications.last_notification_time(subscriber.id, geofence.id))
+    end
+
+    test "skips when per-member notify is false" do
+      {triggering_user, subscriber, geofence, _group} = setup_geofence_with_subscriber()
+
+      Notifications.upsert_member_notification_preference(%{
+        observer_id: subscriber.id,
+        subject_id: triggering_user.id,
+        group_id: geofence.group_id,
+        notify: false
+      })
+
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "user_id" => triggering_user.id,
+                 "geofence_id" => geofence.id,
+                 "event" => "entered"
+               })
+
+      assert is_nil(Notifications.last_notification_time(subscriber.id, geofence.id))
+    end
+
+    test "skips home notification when per-member notify_home is false" do
+      {triggering_user, subscriber, geofence, _group} = setup_geofence_with_subscriber()
+
+      # Set the geofence as triggering user's home
+      membership = Fence.Groups.get_membership(triggering_user.id, geofence.group_id)
+
+      membership
+      |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: geofence.id})
+      |> Fence.Repo.update!()
+
+      Notifications.upsert_member_notification_preference(%{
+        observer_id: subscriber.id,
+        subject_id: triggering_user.id,
+        group_id: geofence.group_id,
+        notify: true,
+        notify_home: false
+      })
+
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "user_id" => triggering_user.id,
+                 "geofence_id" => geofence.id,
+                 "event" => "entered"
+               })
+
+      assert is_nil(Notifications.last_notification_time(subscriber.id, geofence.id))
+    end
+
+    test "household override sends despite silence_all when notify_household is on" do
+      {triggering_user, subscriber, geofence, _group} = setup_geofence_with_subscriber()
+
+      # Both users share the same home geofence
+      for user <- [triggering_user, subscriber] do
+        Fence.Groups.get_membership(user.id, geofence.group_id)
+        |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: geofence.id})
+        |> Fence.Repo.update!()
+      end
+
+      # Subscriber silences all but keeps notify_household on (default)
+      {:ok, _} =
+        Fence.Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
+          "silence_all_notifications" => true,
+          "notify_household" => true
+        })
+
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "user_id" => triggering_user.id,
+                 "geofence_id" => geofence.id,
+                 "event" => "entered"
+               })
+
+      # Notification should still be sent because of household override
+      assert Notifications.last_notification_time(subscriber.id, geofence.id)
+    end
   end
 end

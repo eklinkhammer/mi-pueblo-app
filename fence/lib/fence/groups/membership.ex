@@ -7,6 +7,9 @@ defmodule Fence.Groups.Membership do
 
   schema "memberships" do
     field :role, :string, default: "member"
+    field :silence_all_notifications, :boolean, default: false
+    field :silence_home_notifications, :boolean, default: false
+    field :notify_household, :boolean, default: true
 
     belongs_to :user, Fence.Accounts.User
     belongs_to :group, Fence.Groups.Group
@@ -29,5 +32,10 @@ defmodule Fence.Groups.Membership do
     membership
     |> cast(attrs, [:home_geofence_id])
     |> foreign_key_constraint(:home_geofence_id)
+  end
+
+  def notification_prefs_changeset(membership, attrs) do
+    membership
+    |> cast(attrs, [:silence_all_notifications, :silence_home_notifications, :notify_household])
   end
 end

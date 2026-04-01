@@ -178,5 +178,15 @@
   "errorGeocodingUnavailable": "Geocoding service unavailable",
   "errorMissingParameter": "Missing required parameter",
   "errorValidationFailed": "Validation failed",
-  "errorUnknown": "An unexpected error occurred"
+  "errorUnknown": "An unexpected error occurred",
+
+  "notificationSettings": "Notification Settings",
+  "silenceAllNotifications": "Silence All Notifications",
+  "silenceAllNotificationsSubtitle": "Stop all notifications from this group",
+  "silenceHomeNotifications": "Silence Home Notifications",
+  "silenceHomeNotificationsSubtitle": "Stop notifications when members enter or leave their home",
+  "notifyHousehold": "Always Notify Household",
+  "notifyHouseholdSubtitle": "Override silence settings for members who share your home geofence",
+  "memberNotifications": "Per-Member Notifications",
+  "homeNotifications": "Home Notifications"
 }

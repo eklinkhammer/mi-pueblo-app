@@ -126,6 +126,16 @@ defmodule Fence.Groups do
     DateTime.compare(expires_at, DateTime.utc_now()) == :lt
   end
 
+  def update_notification_preferences(user_id, group_id, attrs) do
+    case get_membership(user_id, group_id) do
+      nil -> {:error, :not_found}
+      membership ->
+        membership
+        |> Membership.notification_prefs_changeset(attrs)
+        |> Repo.update()
+    end
+  end
+
   defp do_join(user_id, group_id) do
     %Membership{}
     |> Membership.changeset(%{user_id: user_id, group_id: group_id, role: "member"})

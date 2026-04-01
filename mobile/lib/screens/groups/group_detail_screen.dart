@@ -25,6 +25,12 @@ class GroupDetailScreen extends ConsumerWidget {
         title: Text(l10n.group),
         actions: [
           IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () =>
+                context.go('/groups/$groupId/notification-settings'),
+            tooltip: l10n.notificationSettings,
+          ),
+          IconButton(
             icon: const Icon(Icons.person_add),
             onPressed: () => _createInvite(context, ref),
             tooltip: l10n.invite,

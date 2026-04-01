@@ -133,5 +133,15 @@
   "errorGeocodingUnavailable": "Servicio de geocodificación no disponible",
   "errorMissingParameter": "Falta un parámetro obligatorio",
   "errorValidationFailed": "Error de validación",
-  "errorUnknown": "Ocurrió un error inesperado"
+  "errorUnknown": "Ocurrió un error inesperado",
+
+  "notificationSettings": "Ajustes de notificaciones",
+  "silenceAllNotifications": "Silenciar todas las notificaciones",
+  "silenceAllNotificationsSubtitle": "Detener todas las notificaciones de este grupo",
+  "silenceHomeNotifications": "Silenciar notificaciones de hogar",
+  "silenceHomeNotificationsSubtitle": "Detener notificaciones cuando los miembros entren o salgan de su hogar",
+  "notifyHousehold": "Siempre notificar del hogar",
+  "notifyHouseholdSubtitle": "Anular ajustes de silencio para miembros que comparten tu geocerca de hogar",
+  "memberNotifications": "Notificaciones por miembro",
+  "homeNotifications": "Notificaciones de hogar"
 }
