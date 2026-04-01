@@ -50,7 +50,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBpmSvKVC8fFQjIKnFn04I-LIOOjLUh9Zs',
+    apiKey: 'AIzaSyCcRUPYzc9RLq9Z0i5XyaMQ9ks-hh6Etgk',
     appId: '1:463082453891:android:7974b5b27baf730c25d4b6',
     messagingSenderId: '463082453891',
     projectId: 'mi-pueblo-8dbb0',
@@ -58,11 +58,12 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyD2dA323JlZE2D5SsrFir9wtN0OYfLo1mo',
+    apiKey: 'AIzaSyCN88Mgt2IDfUq5zrMYMDxIp-BeFGmfoBk',
     appId: '1:463082453891:ios:dd88b1619f58118a25d4b6',
     messagingSenderId: '463082453891',
     projectId: 'mi-pueblo-8dbb0',
     storageBucket: 'mi-pueblo-8dbb0.firebasestorage.app',
     iosBundleId: 'com.fence.fence',
   );
+
 }
