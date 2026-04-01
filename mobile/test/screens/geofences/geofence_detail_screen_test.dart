@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/models/geofence.dart';
+import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/screens/geofences/geofence_detail_screen.dart';
 import '../../helpers/mocks.dart';
+import '../../helpers/http_overrides.dart';
 
 const _testGroupId = 'test-group-id';
 const _testGeofenceId = 'geo-1';
@@ -36,8 +40,17 @@ const _testSubscription = GeofenceSubscription(
 void main() {
   late MockApiClient mockApi;
 
+  setUpAll(() {
+    HttpOverrides.global = TestHttpOverrides();
+  });
+
+  tearDownAll(() {
+    HttpOverrides.global = null;
+  });
+
   setUp(() {
     mockApi = MockApiClient();
+    when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
   });
 
   Widget createApp({
@@ -57,6 +70,10 @@ void main() {
         geofenceSubscriptionProvider(_testGeofenceId).overrideWith((ref) {
           return Future.value(subscription);
         }),
+        geofenceResidentsProvider(
+          (groupId: _testGroupId, geofenceId: _testGeofenceId),
+        ).overrideWith((ref) => Future.value(<Resident>[])),
+        authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
       ],
       child: const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -120,6 +137,10 @@ void main() {
       ));
       await tester.pump();
 
+      await tester.scrollUntilVisible(
+        find.text('Notify on Entry'),
+        200,
+      );
       expect(find.text('Notify on Entry'), findsOneWidget);
       expect(find.text('Notify on Exit'), findsOneWidget);
       expect(find.byType(SwitchListTile), findsNWidgets(2));
@@ -183,6 +204,10 @@ void main() {
       ));
       await tester.pump();
 
+      await tester.scrollUntilVisible(
+        find.text('Notifications'),
+        200,
+      );
       expect(find.text('Notifications'), findsOneWidget);
     });
   });
