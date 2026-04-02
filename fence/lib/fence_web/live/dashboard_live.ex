@@ -2,6 +2,8 @@ defmodule FenceWeb.DashboardLive do
   use FenceWeb, :live_view
 
   alias Fence.Locations
+  alias Fence.Metrics
+  alias Fence.Metrics.Collector
 
   @refresh_interval :timer.seconds(10)
 
@@ -10,6 +12,14 @@ defmodule FenceWeb.DashboardLive do
     socket =
       socket
       |> assign(:locations, [])
+      |> assign(:total_users, 0)
+      |> assign(:staleness, %{p50: 0, p90: 0})
+      |> assign(:vm_memory_mb, 0.0)
+      |> assign(:process_count, 0)
+      |> assign(:atom_count, 0)
+      |> assign(:request_latency, %{p50: 0, p90: 0, p99: 0})
+      |> assign(:db_query, %{p50: 0, p90: 0, p99: 0})
+      |> assign(:db_queue, %{p50: 0, p90: 0, p99: 0})
       |> load_data()
       |> schedule_refresh()
 
@@ -27,6 +37,12 @@ defmodule FenceWeb.DashboardLive do
   end
 
   defp load_data(socket) do
+    socket
+    |> load_locations()
+    |> load_metrics()
+  end
+
+  defp load_locations(socket) do
     locations = Locations.get_all_last_locations()
 
     location_data =
@@ -48,6 +64,18 @@ defmodule FenceWeb.DashboardLive do
     |> assign(:locations, location_data)
     |> push_event("update_locations", %{locations: location_data})
     |> maybe_fit_bounds(bounds)
+  end
+
+  defp load_metrics(socket) do
+    socket
+    |> assign(:total_users, Metrics.total_user_count())
+    |> assign(:staleness, Metrics.sync_staleness_percentiles())
+    |> assign(:vm_memory_mb, Float.round(:erlang.memory(:total) / 1_048_576, 1))
+    |> assign(:process_count, :erlang.system_info(:process_count))
+    |> assign(:atom_count, :erlang.system_info(:atom_count))
+    |> assign(:request_latency, Collector.get_request_latency_percentiles())
+    |> assign(:db_query, Collector.get_db_query_percentiles())
+    |> assign(:db_queue, Collector.get_db_queue_percentiles())
   end
 
   defp maybe_fit_bounds(socket, []), do: socket
@@ -72,11 +100,75 @@ defmodule FenceWeb.DashboardLive do
     end
   end
 
+  defp format_staleness(seconds) when is_number(seconds) do
+    cond do
+      seconds < 60 -> "#{seconds}s"
+      seconds < 3600 -> "#{div(seconds, 60)}m"
+      seconds < 86_400 -> "#{div(seconds, 3600)}h"
+      true -> "#{div(seconds, 86_400)}d"
+    end
+  end
+
+  defp format_staleness(_), do: "N/A"
+
+  defp format_number(n) when is_integer(n) do
+    n
+    |> Integer.to_string()
+    |> String.reverse()
+    |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
+    |> String.reverse()
+  end
+
+  defp format_number(n), do: to_string(n)
+
+  attr :title, :string, required: true
+  attr :value, :string, required: true
+
+  defp metric_card(assigns) do
+    ~H"""
+    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">{@title}</div>
+      <div class="mt-1 text-lg font-semibold text-gray-900">{@value}</div>
+    </div>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-4">
       <h1 class="text-2xl font-bold">Dashboard</h1>
+
+      <%!-- Row 1: App metrics --%>
+      <div class="grid grid-cols-3 gap-4">
+        <.metric_card title="Total Users" value={format_number(@total_users)} />
+        <.metric_card title="Staleness p50" value={format_staleness(@staleness.p50)} />
+        <.metric_card title="Staleness p90" value={format_staleness(@staleness.p90)} />
+      </div>
+
+      <%!-- Row 2: VM metrics --%>
+      <div class="grid grid-cols-3 gap-4">
+        <.metric_card title="VM Memory" value={"#{@vm_memory_mb} MB"} />
+        <.metric_card title="Processes" value={format_number(@process_count)} />
+        <.metric_card title="Atoms" value={format_number(@atom_count)} />
+      </div>
+
+      <%!-- Row 3: Latency metrics --%>
+      <div class="grid grid-cols-3 gap-4">
+        <.metric_card
+          title="Request Latency (ms)"
+          value={"p50:#{@request_latency.p50} p90:#{@request_latency.p90} p99:#{@request_latency.p99}"}
+        />
+        <.metric_card
+          title="DB Query Time (ms)"
+          value={"p50:#{@db_query.p50} p90:#{@db_query.p90} p99:#{@db_query.p99}"}
+        />
+        <.metric_card
+          title="DB Queue Wait (ms)"
+          value={"p50:#{@db_queue.p50} p90:#{@db_queue.p90} p99:#{@db_queue.p99}"}
+        />
+      </div>
+
       <div class="flex gap-4">
         <div
           id="map"

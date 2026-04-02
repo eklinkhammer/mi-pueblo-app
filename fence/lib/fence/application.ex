@@ -27,7 +27,8 @@ defmodule Fence.Application do
         {Phoenix.PubSub, name: Fence.PubSub},
         {Oban, Application.fetch_env!(:fence, Oban)},
         Fence.Geocoding,
-        FenceWeb.Presence
+        FenceWeb.Presence,
+        Fence.Metrics.Collector
       ] ++ fcm_children ++ [FenceWeb.Endpoint]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
