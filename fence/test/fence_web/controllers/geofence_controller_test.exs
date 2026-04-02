@@ -40,7 +40,7 @@ defmodule FenceWeb.GeofenceControllerTest do
 
       conn = get(conn, "/api/v1/my-geofences")
       assert %{"geofences" => geofences} = json_response(conn, 200)
-      assert length(geofences) == 0
+      assert geofences == []
     end
 
     test "returns 401 without auth" do

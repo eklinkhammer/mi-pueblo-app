@@ -4,6 +4,7 @@ defmodule Fence.AccountsTest do
   use Oban.Testing, repo: Fence.Repo
 
   alias Fence.Accounts
+  alias Fence.Accounts.PasswordResetCode
   import Fence.Factory
 
   describe "register_user/1" do
@@ -186,7 +187,7 @@ defmodule Fence.AccountsTest do
 
       # Only the latest code should be unused
       codes =
-        Fence.Accounts.PasswordResetCode
+        PasswordResetCode
         |> Ecto.Query.where([r], r.user_id == ^user.id and is_nil(r.used_at))
         |> Repo.all()
 
@@ -197,10 +198,10 @@ defmodule Fence.AccountsTest do
   describe "reset_password/3" do
     setup do
       user = create_user()
-      code = Fence.Accounts.PasswordResetCode.generate_code()
+      code = PasswordResetCode.generate_code()
 
-      %Fence.Accounts.PasswordResetCode{}
-      |> Fence.Accounts.PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
       |> Repo.insert!()
 
       %{user: user, code: code}
@@ -226,10 +227,10 @@ defmodule Fence.AccountsTest do
 
     test "rejects expired code" do
       user = create_user()
-      code = Fence.Accounts.PasswordResetCode.generate_code()
+      code = PasswordResetCode.generate_code()
 
-      %Fence.Accounts.PasswordResetCode{}
-      |> Fence.Accounts.PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
       |> Ecto.Changeset.put_change(
         :expires_at,
         DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
@@ -241,10 +242,10 @@ defmodule Fence.AccountsTest do
 
     test "rejects after max attempts exceeded" do
       user = create_user()
-      code = Fence.Accounts.PasswordResetCode.generate_code()
+      code = PasswordResetCode.generate_code()
 
-      %Fence.Accounts.PasswordResetCode{}
-      |> Fence.Accounts.PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
       |> Ecto.Changeset.put_change(:attempts, 5)
       |> Repo.insert!()
 

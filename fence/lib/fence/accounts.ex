@@ -2,6 +2,7 @@ defmodule Fence.Accounts do
   import Ecto.Query
   alias Fence.Accounts.{PasswordResetCode, ShareToken, Token, User}
   alias Fence.Repo
+  alias Fence.Workers
 
   def register_user(attrs) do
     %User{}
@@ -157,7 +158,7 @@ defmodule Fence.Accounts do
         |> Repo.insert!()
 
         %{user_id: user.id, code: code}
-        |> Fence.Workers.PasswordResetEmailWorker.new()
+        |> Workers.PasswordResetEmailWorker.new()
         |> Oban.insert()
 
       nil ->

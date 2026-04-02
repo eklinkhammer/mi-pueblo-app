@@ -3,7 +3,8 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
 
   use Oban.Testing, repo: Fence.Repo
 
-  alias Fence.{Geofences, Notifications}
+  alias Fence.{Geofences, Groups, Notifications, Repo}
+  alias Fence.Groups.Membership
   alias Fence.Workers.PushNotificationWorker
   import Fence.Factory
 
@@ -16,8 +17,8 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
     subscriber = create_user(%{"display_name" => "Subscriber"})
     group = create_group(triggering_user)
 
-    {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, triggering_user.id)
-    {:ok, _} = Fence.Groups.join_by_invite_code(subscriber.id, invite.code)
+    {:ok, invite} = Groups.get_or_create_invite(group.id, triggering_user.id)
+    {:ok, _} = Groups.join_by_invite_code(subscriber.id, invite.code)
 
     geofence = create_geofence(group, triggering_user)
 
@@ -29,7 +30,7 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
       })
 
     # Grant mutual visibility so notifications can flow
-    {:ok, _} = Fence.Groups.grant_visibility(triggering_user.id, group.id, subscriber.id)
+    {:ok, _} = Groups.grant_visibility(triggering_user.id, group.id, subscriber.id)
 
     {triggering_user, subscriber, geofence, group}
   end
@@ -164,8 +165,8 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
       admin = create_user(%{"display_name" => "Admin"})
       group = create_group(admin)
       joiner = create_user(%{"display_name" => "Joiner"})
-      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
-      {:ok, _} = Fence.Groups.join_by_invite_code(joiner.id, invite.code)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Groups.join_by_invite_code(joiner.id, invite.code)
 
       # The worker should complete without error
       assert :ok =
@@ -181,8 +182,8 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
       subscriber = create_user(%{"display_name" => "Subscriber"})
       group = create_group(triggering_user)
 
-      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, triggering_user.id)
-      {:ok, _} = Fence.Groups.join_by_invite_code(subscriber.id, invite.code)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, triggering_user.id)
+      {:ok, _} = Groups.join_by_invite_code(subscriber.id, invite.code)
 
       geofence = create_geofence(group, triggering_user)
 
@@ -221,7 +222,7 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
       {triggering_user, subscriber, geofence, _group} = setup_geofence_with_subscriber()
 
       {:ok, _} =
-        Fence.Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
+        Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
           "silence_all_notifications" => true
         })
 
@@ -239,14 +240,14 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
       {triggering_user, subscriber, geofence, _group} = setup_geofence_with_subscriber()
 
       # Set the geofence as triggering user's home
-      membership = Fence.Groups.get_membership(triggering_user.id, geofence.group_id)
+      membership = Groups.get_membership(triggering_user.id, geofence.group_id)
 
       membership
-      |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: geofence.id})
-      |> Fence.Repo.update!()
+      |> Membership.set_home_changeset(%{home_geofence_id: geofence.id})
+      |> Repo.update!()
 
       {:ok, _} =
-        Fence.Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
+        Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
           "silence_home_notifications" => true
         })
 
@@ -284,11 +285,11 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
       {triggering_user, subscriber, geofence, _group} = setup_geofence_with_subscriber()
 
       # Set the geofence as triggering user's home
-      membership = Fence.Groups.get_membership(triggering_user.id, geofence.group_id)
+      membership = Groups.get_membership(triggering_user.id, geofence.group_id)
 
       membership
-      |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: geofence.id})
-      |> Fence.Repo.update!()
+      |> Membership.set_home_changeset(%{home_geofence_id: geofence.id})
+      |> Repo.update!()
 
       Notifications.upsert_member_notification_preference(%{
         observer_id: subscriber.id,
@@ -313,14 +314,14 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
 
       # Both users share the same home geofence
       for user <- [triggering_user, subscriber] do
-        Fence.Groups.get_membership(user.id, geofence.group_id)
-        |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: geofence.id})
-        |> Fence.Repo.update!()
+        Groups.get_membership(user.id, geofence.group_id)
+        |> Membership.set_home_changeset(%{home_geofence_id: geofence.id})
+        |> Repo.update!()
       end
 
       # Subscriber silences all but keeps notify_household on (default)
       {:ok, _} =
-        Fence.Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
+        Groups.update_notification_preferences(subscriber.id, geofence.group_id, %{
           "silence_all_notifications" => true,
           "notify_household" => true
         })

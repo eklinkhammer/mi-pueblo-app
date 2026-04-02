@@ -28,21 +28,24 @@ defmodule Fence.Accounts.GoogleToken do
     @impl true
     def handle_call(:get_keys, _from, state) do
       now = System.monotonic_time(:second)
-      # Cache for 1 hour
-      if state.fetched_at && now - state.fetched_at < 3600 do
-        {:reply, {:ok, state.keys}, state}
-      else
-        case fetch_keys() do
-          {:ok, keys} ->
-            {:reply, {:ok, keys}, %{keys: keys, fetched_at: now}}
 
-          {:error, _} = error ->
-            if state.keys != %{} do
-              {:reply, {:ok, state.keys}, state}
-            else
-              {:reply, error, state}
-            end
-        end
+      if cache_valid?(state, now),
+        do: {:reply, {:ok, state.keys}, state},
+        else: handle_fetch_keys(state, now)
+    end
+
+    defp cache_valid?(%{fetched_at: nil}, _now), do: false
+    defp cache_valid?(%{fetched_at: fetched_at}, now), do: now - fetched_at < 3600
+
+    defp handle_fetch_keys(state, now) do
+      case fetch_keys() do
+        {:ok, keys} ->
+          {:reply, {:ok, keys}, %{keys: keys, fetched_at: now}}
+
+        {:error, _} = error ->
+          if state.keys != %{},
+            do: {:reply, {:ok, state.keys}, state},
+            else: {:reply, error, state}
       end
     end
 
@@ -78,33 +81,31 @@ defmodule Fence.Accounts.GoogleToken do
   end
 
   defp verify_signature(id_token) do
-    try do
-      # Extract kid from JWT header
-      protected = id_token |> String.split(".") |> List.first()
+    # Extract kid from JWT header
+    protected = id_token |> String.split(".") |> List.first()
 
-      header =
-        protected
-        |> Base.url_decode64!(padding: false)
-        |> Jason.decode!()
+    header =
+      protected
+      |> Base.url_decode64!(padding: false)
+      |> Jason.decode!()
 
-      kid = header["kid"]
+    kid = header["kid"]
 
-      with {:ok, keys} <- KeyStore.get_keys(),
-           %JOSE.JWK{} = jwk <- Map.get(keys, kid) do
-        case JOSE.JWT.verify_strict(jwk, ["RS256"], id_token) do
-          {true, %JOSE.JWT{fields: claims}, _jws} ->
-            {:ok, claims}
+    with {:ok, keys} <- KeyStore.get_keys(),
+         %JOSE.JWK{} = jwk <- Map.get(keys, kid) do
+      case JOSE.JWT.verify_strict(jwk, ["RS256"], id_token) do
+        {true, %JOSE.JWT{fields: claims}, _jws} ->
+          {:ok, claims}
 
-          {false, _, _} ->
-            {:error, :invalid_signature}
-        end
-      else
-        nil -> {:error, :unknown_kid}
-        error -> error
+        {false, _, _} ->
+          {:error, :invalid_signature}
       end
-    rescue
-      _ -> {:error, :malformed_token}
+    else
+      nil -> {:error, :unknown_kid}
+      error -> error
     end
+  rescue
+    _ -> {:error, :malformed_token}
   end
 
   defp verify_claims(claims, client_ids) do

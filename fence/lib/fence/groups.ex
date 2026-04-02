@@ -2,6 +2,7 @@ defmodule Fence.Groups do
   import Ecto.Query
   alias Fence.Groups.{Group, Invite, Membership, VisibilityPair}
   alias Fence.Repo
+  alias Fence.Workers.PushNotificationWorker
 
   def create_group(user, attrs) do
     Repo.transaction(fn ->
@@ -73,14 +74,8 @@ defmodule Fence.Groups do
         {:error, :not_found}
 
       membership ->
-        Repo.transaction(fn ->
-          delete_visibility_pairs_for_member(group_id, user_id)
-
-          case Repo.delete(membership) do
-            {:ok, m} -> m
-            {:error, changeset} -> Repo.rollback(changeset)
-          end
-        end)
+        delete_visibility_pairs_for_member(group_id, user_id)
+        Repo.delete(membership)
     end
   end
 
@@ -157,7 +152,7 @@ defmodule Fence.Groups do
         create_pending_visibility_pairs(group_id, user_id)
 
         %{type: "member_joined", group_id: group_id, user_id: user_id}
-        |> Fence.Workers.PushNotificationWorker.new()
+        |> PushNotificationWorker.new()
         |> Oban.insert()
 
         {:ok, Repo.preload(membership, :group)}

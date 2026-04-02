@@ -19,18 +19,20 @@ defmodule FenceWeb.LocalePlug do
   end
 
   defp parse_accept_language(conn) do
-    case get_req_header(conn, "accept-language") do
-      [header | _] ->
-        header
-        |> String.split(",")
-        |> Enum.map(&parse_lang_tag/1)
-        |> Enum.sort_by(fn {_lang, q} -> q end, :desc)
-        |> Enum.find_value(fn {lang, _q} -> if lang in @supported_locales, do: lang end)
-
-      _ ->
-        nil
-    end
+    conn
+    |> get_req_header("accept-language")
+    |> extract_locale()
   end
+
+  defp extract_locale([header | _]) do
+    header
+    |> String.split(",")
+    |> Enum.map(&parse_lang_tag/1)
+    |> Enum.sort_by(fn {_lang, q} -> q end, :desc)
+    |> Enum.find_value(fn {lang, _q} -> if lang in @supported_locales, do: lang end)
+  end
+
+  defp extract_locale(_), do: nil
 
   defp parse_lang_tag(tag) do
     case String.split(String.trim(tag), ";") do

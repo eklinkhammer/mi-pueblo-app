@@ -279,15 +279,16 @@ defmodule FenceWeb.WebJourneyTest do
       assert html2 =~ "Persist Group"
     end
 
-    test "invalid share token in session redirects to unauthorized", %{conn: conn} do
+    test "invalid share token in session redirects to login", %{conn: conn} do
       # Manually set an invalid share token in the session
       conn =
         conn
         |> Phoenix.ConnTest.init_test_session(%{share_token: "invalid_token_abc"})
         |> get("/web/map")
 
-      # ShareTokenPlug should reject this with 401
-      assert conn.status == 401
+      # ShareTokenPlug should redirect to login
+      assert conn.status == 302
+      assert redirected_to(conn) =~ "/web/login"
     end
 
     test "login as user A then user B → session switches to user B", %{conn: conn} do
@@ -331,7 +332,8 @@ defmodule FenceWeb.WebJourneyTest do
         |> recycle()
         |> get("/web/map")
 
-      assert result.status == 401
+      assert result.status == 302
+      assert redirected_to(result) =~ "/web/login"
     end
   end
 

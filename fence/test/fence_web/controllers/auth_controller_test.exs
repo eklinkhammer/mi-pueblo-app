@@ -1,6 +1,9 @@
 defmodule FenceWeb.AuthControllerTest do
   use FenceWeb.ConnCase, async: true
 
+  alias Fence.Accounts.PasswordResetCode
+  alias Fence.Repo
+
   import Fence.Factory
 
   describe "POST /api/v1/auth/register" do
@@ -150,11 +153,11 @@ defmodule FenceWeb.AuthControllerTest do
   describe "POST /api/v1/auth/reset-password" do
     setup %{conn: conn} do
       user = create_user()
-      code = Fence.Accounts.PasswordResetCode.generate_code()
+      code = PasswordResetCode.generate_code()
 
-      %Fence.Accounts.PasswordResetCode{}
-      |> Fence.Accounts.PasswordResetCode.changeset(%{user_id: user.id, code: code})
-      |> Fence.Repo.insert!()
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      |> Repo.insert!()
 
       %{conn: conn, user: user, code: code}
     end
@@ -184,15 +187,15 @@ defmodule FenceWeb.AuthControllerTest do
 
     test "returns 422 for expired code", %{conn: conn} do
       user = create_user()
-      code = Fence.Accounts.PasswordResetCode.generate_code()
+      code = PasswordResetCode.generate_code()
 
-      %Fence.Accounts.PasswordResetCode{}
-      |> Fence.Accounts.PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
       |> Ecto.Changeset.put_change(
         :expires_at,
         DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
       )
-      |> Fence.Repo.insert!()
+      |> Repo.insert!()
 
       conn =
         post(conn, "/api/v1/auth/reset-password", %{
@@ -206,12 +209,12 @@ defmodule FenceWeb.AuthControllerTest do
 
     test "returns 422 for max attempts exceeded", %{conn: conn} do
       user = create_user()
-      code = Fence.Accounts.PasswordResetCode.generate_code()
+      code = PasswordResetCode.generate_code()
 
-      %Fence.Accounts.PasswordResetCode{}
-      |> Fence.Accounts.PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
       |> Ecto.Changeset.put_change(:attempts, 5)
-      |> Fence.Repo.insert!()
+      |> Repo.insert!()
 
       conn =
         post(conn, "/api/v1/auth/reset-password", %{
