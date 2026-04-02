@@ -97,6 +97,14 @@ class ApiClient {
     });
   }
 
+  Future<Response<Map<String, dynamic>>> anonymousJoin(
+      String inviteCode, String displayName) {
+    return _dio.post<Map<String, dynamic>>('/auth/anonymous-join', data: {
+      'invite_code': inviteCode,
+      'display_name': displayName,
+    });
+  }
+
   Future<Response<Map<String, dynamic>>> googleSignIn(String idToken) {
     return _dio.post<Map<String, dynamic>>('/auth/google', data: {
       'id_token': idToken,

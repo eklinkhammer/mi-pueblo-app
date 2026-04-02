@@ -34,6 +34,21 @@ defmodule Fence.AccountsTest do
     end
   end
 
+  describe "create_anonymous_user/1" do
+    test "creates user with is_anonymous true and no email" do
+      assert {:ok, user} = Accounts.create_anonymous_user(%{"display_name" => "Anon"})
+      assert user.is_anonymous == true
+      assert user.display_name == "Anon"
+      assert is_nil(user.email)
+      assert is_nil(user.password_hash)
+    end
+
+    test "rejects missing display_name" do
+      assert {:error, changeset} = Accounts.create_anonymous_user(%{})
+      assert %{display_name: ["can't be blank"]} = errors_on(changeset)
+    end
+  end
+
   describe "authenticate/2" do
     test "authenticates with correct credentials" do
       user = create_user()

@@ -30,6 +30,7 @@ defmodule FenceWeb.Router do
     post "/auth/login", AuthController, :login
     post "/auth/google", AuthController, :google
     post "/auth/refresh", AuthController, :refresh
+    post "/auth/anonymous-join", AuthController, :anonymous_join
     post "/auth/forgot-password", AuthController, :forgot_password
     post "/auth/reset-password", AuthController, :reset_password
   end

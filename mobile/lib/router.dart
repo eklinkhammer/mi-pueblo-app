@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/onboarding_provider.dart';
+import 'package:fence/screens/auth/anonymous_join_screen.dart';
 import 'package:fence/screens/auth/login_screen.dart';
 import 'package:fence/screens/auth/register_screen.dart';
 import 'package:fence/screens/onboarding/onboarding_screen.dart';
@@ -34,7 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation.startsWith('/auth') || isOnboarding;
 
       if (authState.status == AuthStatus.unknown) return null;
-      if (!isAuth && !isAuthRoute) return '/auth/login';
+      if (!isAuth && !isAuthRoute) return '/auth/join';
       if (isAuth && isAuthRoute) return '/map';
       return null;
     },
@@ -46,6 +47,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Auth routes
+      GoRoute(
+        path: '/auth/join',
+        builder: (context, state) => const AnonymousJoinScreen(),
+      ),
       GoRoute(
         path: '/auth/login',
         builder: (context, state) => const LoginScreen(),
