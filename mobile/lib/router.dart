@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/providers/auth_provider.dart';
+import 'package:fence/providers/onboarding_provider.dart';
 import 'package:fence/screens/auth/login_screen.dart';
 import 'package:fence/screens/auth/register_screen.dart';
+import 'package:fence/screens/onboarding/onboarding_screen.dart';
 import 'package:fence/screens/map/map_screen.dart';
 import 'package:fence/screens/groups/group_list_screen.dart';
 import 'package:fence/screens/groups/group_detail_screen.dart';
@@ -17,12 +19,19 @@ import 'package:fence/widgets/shell_scaffold.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
+  final onboardingCompleted = ref.watch(onboardingProvider);
 
   return GoRouter(
     initialLocation: '/map',
     redirect: (context, state) {
+      final isOnboarding = state.matchedLocation == '/onboarding';
+
+      if (!onboardingCompleted && !isOnboarding) return '/onboarding';
+      if (onboardingCompleted && isOnboarding) return '/auth/login';
+
       final isAuth = authState.status == AuthStatus.authenticated;
-      final isAuthRoute = state.matchedLocation.startsWith('/auth');
+      final isAuthRoute =
+          state.matchedLocation.startsWith('/auth') || isOnboarding;
 
       if (authState.status == AuthStatus.unknown) return null;
       if (!isAuth && !isAuthRoute) return '/auth/login';
@@ -30,6 +39,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      // Onboarding route
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
       // Auth routes
       GoRoute(
         path: '/auth/login',

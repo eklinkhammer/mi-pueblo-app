@@ -170,6 +170,24 @@ abstract class AppLocalizations {
   /// **'Invalid email or password'**
   String get invalidEmailOrPassword;
 
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @googleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed'**
+  String get googleSignInFailed;
+
+  /// No description provided for @or.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get or;
+
   /// No description provided for @map.
   ///
   /// In en, this message translates to:

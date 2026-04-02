@@ -45,6 +45,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidEmailOrPassword => 'Invalid email or password';
 
   @override
+  String get signInWithGoogle => 'Sign in with Google';
+
+  @override
+  String get googleSignInFailed => 'Google sign-in failed';
+
+  @override
+  String get or => 'or';
+
+  @override
   String get map => 'Map';
 
   @override
