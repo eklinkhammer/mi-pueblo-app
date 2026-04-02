@@ -22,8 +22,7 @@ defmodule FenceWeb.ShareTokenPlug do
 
       _ ->
         conn
-        |> put_resp_content_type("text/html")
-        |> send_resp(401, "Invalid or expired share token")
+        |> Phoenix.Controller.redirect(to: "/web/login")
         |> halt()
     end
   end

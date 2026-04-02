@@ -35,18 +35,19 @@ defmodule FenceWeb.ShareTokenPlugTest do
       refute conn.halted
     end
 
-    test "invalid token returns 401" do
+    test "invalid token redirects to login" do
       conn =
         build_conn()
         |> Plug.Test.init_test_session(%{})
         |> Map.put(:params, %{"token" => "totally-invalid-token"})
         |> ShareTokenPlug.call([])
 
-      assert conn.status == 401
+      assert conn.status == 302
+      assert get_resp_header(conn, "location") == ["/web/login"]
       assert conn.halted
     end
 
-    test "expired token returns 401" do
+    test "expired token redirects to login" do
       user = create_user()
       {:ok, st} = Fence.Accounts.create_share_token(user.id, days: -1)
 
@@ -56,18 +57,20 @@ defmodule FenceWeb.ShareTokenPlugTest do
         |> Map.put(:params, %{"token" => st.token})
         |> ShareTokenPlug.call([])
 
-      assert conn.status == 401
+      assert conn.status == 302
+      assert get_resp_header(conn, "location") == ["/web/login"]
       assert conn.halted
     end
 
-    test "no token at all returns 401" do
+    test "no token at all redirects to login" do
       conn =
         build_conn()
         |> Plug.Test.init_test_session(%{})
         |> Map.put(:params, %{})
         |> ShareTokenPlug.call([])
 
-      assert conn.status == 401
+      assert conn.status == 302
+      assert get_resp_header(conn, "location") == ["/web/login"]
       assert conn.halted
     end
   end
