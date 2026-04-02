@@ -10,6 +10,7 @@ defmodule Fence.Accounts.User do
     field :display_name, :string
     field :password_hash, :string
     field :password, :string, virtual: true
+    field :google_id, :string
     field :locale, :string, default: "en"
 
     timestamps(type: :utc_datetime)
@@ -31,6 +32,23 @@ defmodule Fence.Accounts.User do
     |> cast(attrs, [:display_name, :locale])
     |> validate_length(:display_name, min: 1, max: 100)
     |> validate_inclusion(:locale, ["en", "es"])
+  end
+
+  def oauth_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:email, :display_name, :google_id])
+    |> validate_required([:email, :display_name, :google_id])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/)
+    |> validate_length(:display_name, min: 1, max: 100)
+    |> unique_constraint(:email)
+    |> unique_constraint(:google_id)
+  end
+
+  def link_google_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:google_id])
+    |> validate_required([:google_id])
+    |> unique_constraint(:google_id)
   end
 
   defp put_password_hash(%{valid?: true, changes: %{password: password}} = changeset) do

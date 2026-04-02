@@ -1,13 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:fence/config.dart';
 import 'package:fence/models/user.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/services/notification_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
-enum AuthErrorKey { registrationFailed, invalidCredentials }
+enum AuthErrorKey {
+  registrationFailed,
+  invalidCredentials,
+  googleSignInFailed,
+  googleSignInCancelled,
+}
 
 class AuthState {
   final AuthStatus status;
@@ -92,6 +99,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
       unawaited(_initNotifications());
     } on Exception catch (_) {
       state = state.copyWith(errorKey: AuthErrorKey.invalidCredentials);
+    }
+  }
+
+  Future<void> signInWithGoogle() async {
+    try {
+      final googleSignIn = GoogleSignIn(
+        serverClientId: AppConfig.googleServerClientId,
+      );
+      final account = await googleSignIn.signIn();
+      if (account == null) {
+        // User cancelled
+        return;
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) {
+        state = state.copyWith(errorKey: AuthErrorKey.googleSignInFailed);
+        return;
+      }
+
+      final response = await _apiClient.googleSignIn(idToken);
+      final data = response.data!;
+      await _apiClient.setTokens(
+        data['access_token'] as String,
+        data['refresh_token'] as String,
+      );
+      final user = User.fromJson(data['user'] as Map<String, dynamic>);
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      unawaited(_initNotifications());
+    } on Exception catch (_) {
+      state = state.copyWith(errorKey: AuthErrorKey.googleSignInFailed);
     }
   }
 

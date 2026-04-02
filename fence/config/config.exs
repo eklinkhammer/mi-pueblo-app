@@ -70,6 +70,9 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
+# Google OAuth
+config :fence, :google_oauth_client_ids, []
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

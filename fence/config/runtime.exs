@@ -36,6 +36,14 @@ if fcm_service_account do
     project_id: fcm_credentials["project_id"]
 end
 
+# Google OAuth client IDs (comma-separated Android + Web client IDs)
+google_client_ids = System.get_env("GOOGLE_OAUTH_CLIENT_IDS")
+
+if google_client_ids do
+  ids = google_client_ids |> String.split(",") |> Enum.map(&String.trim/1)
+  config :fence, :google_oauth_client_ids, ids
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

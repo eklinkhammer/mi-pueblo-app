@@ -13,7 +13,7 @@ defmodule Fence.Accounts do
     user = Repo.get_by(User, email: email)
 
     cond do
-      user && Bcrypt.verify_pass(password, user.password_hash) ->
+      user && user.password_hash && Bcrypt.verify_pass(password, user.password_hash) ->
         {:ok, user}
 
       user ->
@@ -66,6 +66,28 @@ defmodule Fence.Accounts do
   def get_device_tokens(user_id) do
     from(dt in Fence.Accounts.DeviceToken, where: dt.user_id == ^user_id)
     |> Repo.all()
+  end
+
+  # Google OAuth
+
+  def authenticate_google(%{google_id: google_id, email: email, name: name}) do
+    case Repo.get_by(User, google_id: google_id) do
+      %User{} = user ->
+        {:ok, user}
+
+      nil ->
+        case Repo.get_by(User, email: email) do
+          %User{} = user ->
+            user
+            |> User.link_google_changeset(%{google_id: google_id})
+            |> Repo.update()
+
+          nil ->
+            %User{}
+            |> User.oauth_changeset(%{email: email, display_name: name, google_id: google_id})
+            |> Repo.insert()
+        end
+    end
   end
 
   # Share tokens

@@ -47,6 +47,40 @@ defmodule FenceWeb.AuthController do
     end
   end
 
+  def google(conn, %{"id_token" => id_token}) do
+    google_token_mod = Application.get_env(:fence, :google_token_module, Fence.Accounts.GoogleToken)
+
+    case google_token_mod.verify_and_extract(id_token) do
+      {:ok, claims} ->
+        case Accounts.authenticate_google(claims) do
+          {:ok, user} ->
+            {:ok, tokens} = Accounts.generate_tokens(user)
+
+            json(conn, %{
+              user: user_json(user),
+              access_token: tokens.access_token,
+              refresh_token: tokens.refresh_token
+            })
+
+          {:error, changeset} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{errors: format_errors(changeset)})
+        end
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{error: %{code: "invalid_google_token", message: "Invalid Google ID token"}})
+    end
+  end
+
+  def google(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: %{code: "missing_fields", message: "Missing required field: id_token"}})
+  end
+
   def refresh(conn, %{"refresh_token" => refresh_token}) do
     case Accounts.refresh_tokens(refresh_token) do
       {:ok, tokens} ->

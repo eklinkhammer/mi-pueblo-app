@@ -73,6 +73,46 @@ defmodule Fence.Accounts.UserTest do
     end
   end
 
+  describe "oauth_changeset/2" do
+    @oauth_attrs %{email: "oauth@example.com", display_name: "OAuth User", google_id: "g_123"}
+
+    test "valid attrs produce valid changeset" do
+      changeset = User.oauth_changeset(%User{}, @oauth_attrs)
+      assert changeset.valid?
+    end
+
+    test "requires email, display_name, google_id" do
+      changeset = User.oauth_changeset(%User{}, %{})
+      errors = errors_on(changeset)
+      assert %{email: ["can't be blank"]} = errors
+      assert %{display_name: ["can't be blank"]} = errors
+      assert %{google_id: ["can't be blank"]} = errors
+    end
+
+    test "validates email format" do
+      changeset = User.oauth_changeset(%User{}, %{@oauth_attrs | email: "invalid"})
+      assert %{email: ["has invalid format"]} = errors_on(changeset)
+    end
+
+    test "validates display_name max length" do
+      long_name = String.duplicate("a", 101)
+      changeset = User.oauth_changeset(%User{}, %{@oauth_attrs | display_name: long_name})
+      assert %{display_name: [_]} = errors_on(changeset)
+    end
+  end
+
+  describe "link_google_changeset/2" do
+    test "valid attrs produce valid changeset" do
+      changeset = User.link_google_changeset(%User{}, %{google_id: "g_456"})
+      assert changeset.valid?
+    end
+
+    test "requires google_id" do
+      changeset = User.link_google_changeset(%User{}, %{})
+      assert %{google_id: ["can't be blank"]} = errors_on(changeset)
+    end
+  end
+
   describe "update_changeset/2" do
     test "updates display_name" do
       changeset = User.update_changeset(%User{display_name: "Old"}, %{display_name: "New"})

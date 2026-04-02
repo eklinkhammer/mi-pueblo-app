@@ -9,6 +9,11 @@ class AppConfig {
     defaultValue: 'ws://10.0.2.2:4000/socket/websocket',
   );
 
+  static const String googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue: '',
+  );
+
   static const Duration locationInterval = Duration(minutes: 5);
   static final int locationIntervalMs = locationInterval.inMilliseconds;
   static const int locationDistanceFilter = 50; // meters

@@ -130,6 +130,38 @@ defmodule Fence.AccountsTest do
     end
   end
 
+  describe "authenticate_google/1" do
+    test "creates new user from Google claims" do
+      claims = %{google_id: "google_123", email: unique_email(), name: "Google User"}
+      assert {:ok, user} = Accounts.authenticate_google(claims)
+      assert user.google_id == "google_123"
+      assert user.email == claims.email
+      assert user.display_name == "Google User"
+      assert is_nil(user.password_hash)
+    end
+
+    test "returns existing user by google_id" do
+      claims = %{google_id: "google_456", email: unique_email(), name: "Google User"}
+      {:ok, first} = Accounts.authenticate_google(claims)
+      {:ok, second} = Accounts.authenticate_google(claims)
+      assert first.id == second.id
+    end
+
+    test "links google_id to existing email/password user" do
+      user = create_user()
+      claims = %{google_id: "google_789", email: user.email, name: "Google User"}
+      {:ok, linked} = Accounts.authenticate_google(claims)
+      assert linked.id == user.id
+      assert linked.google_id == "google_789"
+    end
+
+    test "authenticate/2 returns invalid_credentials for Google-only user" do
+      claims = %{google_id: "google_no_pw", email: unique_email(), name: "No Password"}
+      {:ok, user} = Accounts.authenticate_google(claims)
+      assert {:error, :invalid_credentials} = Accounts.authenticate(user.email, "anything")
+    end
+  end
+
   describe "get_device_tokens/1" do
     test "returns all tokens for user" do
       user = create_user()

@@ -61,6 +61,7 @@ defmodule Fence.MixProject do
 
       # Auth
       {:joken, "~> 2.6"},
+      {:jose, "~> 1.11"},
       {:bcrypt_elixir, "~> 3.0"},
 
       # Job queue

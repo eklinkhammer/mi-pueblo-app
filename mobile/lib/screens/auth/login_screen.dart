@@ -35,6 +35,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       errorText = switch (authState.errorKey!) {
         AuthErrorKey.registrationFailed => l10n.registrationFailed,
         AuthErrorKey.invalidCredentials => l10n.invalidEmailOrPassword,
+        AuthErrorKey.googleSignInFailed => l10n.googleSignInFailed,
+        AuthErrorKey.googleSignInCancelled => null,
       };
     }
 
@@ -95,6 +97,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(l10n.signIn),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      l10n.or,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _loading
+                    ? null
+                    : () => ref.read(authProvider.notifier).signInWithGoogle(),
+                icon: const Icon(Icons.g_mobiledata, size: 24),
+                label: Text(l10n.signInWithGoogle),
               ),
               const SizedBox(height: 12),
               TextButton(

@@ -19,6 +19,13 @@ defmodule Fence.Application do
         []
       end
 
+    google_jwks_children =
+      if Application.get_env(:fence, :start_google_jwks, true) do
+        [Fence.Accounts.GoogleToken.KeyStore]
+      else
+        []
+      end
+
     children =
       [
         FenceWeb.Telemetry,
@@ -28,7 +35,7 @@ defmodule Fence.Application do
         {Oban, Application.fetch_env!(:fence, Oban)},
         Fence.Geocoding,
         FenceWeb.Presence
-      ] ++ fcm_children ++ [FenceWeb.Endpoint]
+      ] ++ google_jwks_children ++ fcm_children ++ [FenceWeb.Endpoint]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
