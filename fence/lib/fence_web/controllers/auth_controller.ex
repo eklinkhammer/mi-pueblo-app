@@ -191,9 +191,7 @@ defmodule FenceWeb.AuthController do
   def reset_password(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{
-      error: %{code: "missing_fields", message: "Missing required fields: email, code, password"}
-    })
+    |> json(%{error: %{code: "missing_fields", message: "Missing required fields: email, code, password"}})
   end
 
   defp user_json(user) do
