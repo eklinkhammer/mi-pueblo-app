@@ -1,7 +1,8 @@
 defmodule Fence.Accounts do
   import Ecto.Query
-  alias Fence.Accounts.{ShareToken, Token, User}
+  alias Fence.Accounts.{PasswordResetCode, ShareToken, Token, User}
   alias Fence.Repo
+  alias Fence.Workers
 
   def register_user(attrs) do
     %User{}
@@ -50,6 +51,23 @@ defmodule Fence.Accounts do
     user
     |> User.update_changeset(attrs)
     |> Repo.update()
+  end
+
+  def delete_user(%User{} = user) do
+    cancel_pending_jobs_for_user(user.id)
+    Repo.delete(user)
+  end
+
+  defp cancel_pending_jobs_for_user(user_id) do
+    user_id_str = to_string(user_id)
+
+    query =
+      from(j in Oban.Job,
+        where: j.state in ["available", "scheduled", "retryable"],
+        where: fragment("?->>'user_id' = ?", j.args, ^user_id_str)
+      )
+
+    Oban.cancel_all_jobs(query)
   end
 
   def register_device_token(user_id, token, platform) do
@@ -125,5 +143,99 @@ defmodule Fence.Accounts do
       nil -> {:error, :not_found}
       token -> Repo.delete(token)
     end
+  end
+
+  # Password reset
+
+  def request_password_reset(email) do
+    case Repo.get_by(User, email: email) do
+      %User{} = user ->
+        invalidate_old_reset_codes(user.id)
+        code = PasswordResetCode.generate_code()
+
+        %PasswordResetCode{}
+        |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
+        |> Repo.insert!()
+
+        %{user_id: user.id, code: code}
+        |> Workers.PasswordResetEmailWorker.new()
+        |> Oban.insert()
+
+      nil ->
+        Bcrypt.no_user_verify()
+    end
+
+    :ok
+  end
+
+  def reset_password(email, code, new_password) do
+    case verify_reset_code(email, code) do
+      {:ok, reset_code, user} ->
+        Repo.transaction(fn ->
+          user
+          |> User.password_changeset(%{password: new_password})
+          |> Repo.update!()
+
+          reset_code
+          |> Ecto.Changeset.change(used_at: DateTime.utc_now() |> DateTime.truncate(:second))
+          |> Repo.update!()
+
+          user
+        end)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp verify_reset_code(email, code) do
+    with %User{} = user <- Repo.get_by(User, email: email),
+         %PasswordResetCode{} = reset_code <- get_latest_reset_code(user.id) do
+      cond do
+        PasswordResetCode.used?(reset_code) ->
+          {:error, :code_already_used}
+
+        PasswordResetCode.expired?(reset_code) ->
+          {:error, :code_expired}
+
+        PasswordResetCode.max_attempts_exceeded?(reset_code) ->
+          {:error, :max_attempts}
+
+        Bcrypt.verify_pass(code, reset_code.code_hash) ->
+          {:ok, reset_code, user}
+
+        true ->
+          increment_attempts(reset_code)
+          {:error, :invalid_code}
+      end
+    else
+      nil ->
+        Bcrypt.no_user_verify()
+        {:error, :invalid_code}
+    end
+  end
+
+  defp get_latest_reset_code(user_id) do
+    from(r in PasswordResetCode,
+      where: r.user_id == ^user_id and is_nil(r.used_at),
+      order_by: [desc: :inserted_at],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  defp invalidate_old_reset_codes(user_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    from(r in PasswordResetCode,
+      where: r.user_id == ^user_id and is_nil(r.used_at)
+    )
+    |> Repo.update_all(set: [used_at: now])
+  end
+
+  defp increment_attempts(reset_code) do
+    reset_code
+    |> Ecto.Changeset.change(attempts: reset_code.attempts + 1)
+    |> Repo.update()
   end
 end

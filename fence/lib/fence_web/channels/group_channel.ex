@@ -52,6 +52,7 @@ defmodule FenceWeb.GroupChannel do
           user_b_id: pair.user_b_id,
           status: pair.status
         })
+
         {:reply, :ok, socket}
 
       {:error, _} ->
@@ -70,6 +71,7 @@ defmodule FenceWeb.GroupChannel do
           user_b_id: pair.user_b_id,
           status: pair.status
         })
+
         {:reply, :ok, socket}
 
       {:error, _} ->

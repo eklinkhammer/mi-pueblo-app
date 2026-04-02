@@ -1,6 +1,9 @@
 defmodule FenceWeb.AuthControllerTest do
   use FenceWeb.ConnCase, async: true
 
+  alias Fence.Accounts.PasswordResetCode
+  alias Fence.Repo
+
   import Fence.Factory
 
   describe "POST /api/v1/auth/register" do
@@ -126,6 +129,106 @@ defmodule FenceWeb.AuthControllerTest do
         |> put("/api/v1/me", %{"display_name" => String.duplicate("a", 101)})
 
       assert json_response(conn, 422)["errors"]
+    end
+  end
+
+  describe "POST /api/v1/auth/forgot-password" do
+    test "returns success message for existing email", %{conn: conn} do
+      user = create_user()
+      conn = post(conn, "/api/v1/auth/forgot-password", %{"email" => user.email})
+      assert %{"message" => _} = json_response(conn, 200)
+    end
+
+    test "returns same success message for non-existent email", %{conn: conn} do
+      conn = post(conn, "/api/v1/auth/forgot-password", %{"email" => "nope@example.com"})
+      assert %{"message" => _} = json_response(conn, 200)
+    end
+
+    test "returns 400 when email is missing", %{conn: conn} do
+      conn = post(conn, "/api/v1/auth/forgot-password", %{})
+      assert %{"error" => %{"code" => "missing_fields"}} = json_response(conn, 400)
+    end
+  end
+
+  describe "POST /api/v1/auth/reset-password" do
+    setup %{conn: conn} do
+      user = create_user()
+      code = PasswordResetCode.generate_code()
+
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      |> Repo.insert!()
+
+      %{conn: conn, user: user, code: code}
+    end
+
+    test "resets password and returns tokens", %{conn: conn, user: user, code: code} do
+      conn =
+        post(conn, "/api/v1/auth/reset-password", %{
+          "email" => user.email,
+          "code" => code,
+          "password" => "newpassword123"
+        })
+
+      assert %{"user" => u, "access_token" => _, "refresh_token" => _} = json_response(conn, 200)
+      assert u["id"] == user.id
+    end
+
+    test "returns 422 for invalid code", %{conn: conn, user: user} do
+      conn =
+        post(conn, "/api/v1/auth/reset-password", %{
+          "email" => user.email,
+          "code" => "000000",
+          "password" => "newpassword123"
+        })
+
+      assert %{"error" => %{"code" => "invalid_code"}} = json_response(conn, 422)
+    end
+
+    test "returns 422 for expired code", %{conn: conn} do
+      user = create_user()
+      code = PasswordResetCode.generate_code()
+
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      |> Ecto.Changeset.put_change(
+        :expires_at,
+        DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
+      )
+      |> Repo.insert!()
+
+      conn =
+        post(conn, "/api/v1/auth/reset-password", %{
+          "email" => user.email,
+          "code" => code,
+          "password" => "newpassword123"
+        })
+
+      assert %{"error" => %{"code" => "code_expired"}} = json_response(conn, 422)
+    end
+
+    test "returns 422 for max attempts exceeded", %{conn: conn} do
+      user = create_user()
+      code = PasswordResetCode.generate_code()
+
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      |> Ecto.Changeset.put_change(:attempts, 5)
+      |> Repo.insert!()
+
+      conn =
+        post(conn, "/api/v1/auth/reset-password", %{
+          "email" => user.email,
+          "code" => code,
+          "password" => "newpassword123"
+        })
+
+      assert %{"error" => %{"code" => "max_attempts"}} = json_response(conn, 422)
+    end
+
+    test "returns 400 for missing fields", %{conn: conn} do
+      conn = post(conn, "/api/v1/auth/reset-password", %{"email" => "a@b.com"})
+      assert %{"error" => %{"code" => "missing_fields"}} = json_response(conn, 400)
     end
   end
 

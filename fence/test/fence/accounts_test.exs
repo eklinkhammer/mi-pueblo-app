@@ -1,7 +1,10 @@
 defmodule Fence.AccountsTest do
-  use Fence.DataCase, async: true
+  use Fence.DataCase, async: false
+
+  use Oban.Testing, repo: Fence.Repo
 
   alias Fence.Accounts
+  alias Fence.Accounts.PasswordResetCode
   import Fence.Factory
 
   describe "register_user/1" do
@@ -159,6 +162,99 @@ defmodule Fence.AccountsTest do
       claims = %{google_id: "google_no_pw", email: unique_email(), name: "No Password"}
       {:ok, user} = Accounts.authenticate_google(claims)
       assert {:error, :invalid_credentials} = Accounts.authenticate(user.email, "anything")
+    end
+  end
+
+  describe "request_password_reset/1" do
+    test "returns :ok for existing user and enqueues email worker" do
+      user = create_user()
+      assert :ok = Accounts.request_password_reset(user.email)
+
+      assert_enqueued(
+        worker: Fence.Workers.PasswordResetEmailWorker,
+        args: %{user_id: user.id}
+      )
+    end
+
+    test "returns :ok for non-existent email (no information leak)" do
+      assert :ok = Accounts.request_password_reset("nonexistent@example.com")
+    end
+
+    test "invalidates old reset codes when requesting new one" do
+      user = create_user()
+      Accounts.request_password_reset(user.email)
+      Accounts.request_password_reset(user.email)
+
+      # Only the latest code should be unused
+      codes =
+        PasswordResetCode
+        |> Ecto.Query.where([r], r.user_id == ^user.id and is_nil(r.used_at))
+        |> Repo.all()
+
+      assert length(codes) == 1
+    end
+  end
+
+  describe "reset_password/3" do
+    setup do
+      user = create_user()
+      code = PasswordResetCode.generate_code()
+
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      |> Repo.insert!()
+
+      %{user: user, code: code}
+    end
+
+    test "resets password with valid code", %{user: user, code: code} do
+      assert {:ok, updated_user} = Accounts.reset_password(user.email, code, "newpassword123")
+      assert updated_user.id == user.id
+      assert {:ok, _} = Accounts.authenticate(user.email, "newpassword123")
+    end
+
+    test "marks code as used after successful reset", %{user: user, code: code} do
+      {:ok, _} = Accounts.reset_password(user.email, code, "newpassword123")
+
+      # Second attempt with same code should fail (code is used, so no active codes found)
+      assert {:error, :invalid_code} = Accounts.reset_password(user.email, code, "anotherpass123")
+    end
+
+    test "rejects wrong code", %{user: user} do
+      assert {:error, :invalid_code} =
+               Accounts.reset_password(user.email, "000000", "newpassword123")
+    end
+
+    test "rejects expired code" do
+      user = create_user()
+      code = PasswordResetCode.generate_code()
+
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      |> Ecto.Changeset.put_change(
+        :expires_at,
+        DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
+      )
+      |> Repo.insert!()
+
+      assert {:error, :code_expired} = Accounts.reset_password(user.email, code, "newpassword123")
+    end
+
+    test "rejects after max attempts exceeded" do
+      user = create_user()
+      code = PasswordResetCode.generate_code()
+
+      %PasswordResetCode{}
+      |> PasswordResetCode.changeset(%{user_id: user.id, code: code})
+      |> Ecto.Changeset.put_change(:attempts, 5)
+      |> Repo.insert!()
+
+      assert {:error, :max_attempts} = Accounts.reset_password(user.email, code, "newpassword123")
+    end
+
+    test "rejects for non-existent email" do
+      assert {:error, :invalid_code} =
+               Accounts.reset_password("nonexistent@example.com", "123456", "newpass123")
     end
   end
 

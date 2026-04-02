@@ -98,8 +98,7 @@ if config_env() == :prod do
       You can generate one by calling: openssl rand -base64 64
       """
 
-  config :fence, Fence.Accounts.Token,
-    secret_key: jwt_secret
+  config :fence, Fence.Accounts.Token, secret_key: jwt_secret
 
   # ## SSL Support
   #

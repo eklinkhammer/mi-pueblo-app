@@ -20,6 +20,10 @@ config :fence, FenceWeb.Endpoint,
 # Oban manual mode for tests - prevents cascading worker execution
 config :fence, Oban, testing: :manual
 
+# Swoosh test adapter
+config :fence, Fence.Mailer, adapter: Swoosh.Adapters.Test
+config :swoosh, :api_client, false
+
 # Google OAuth — use mock in tests, don't start JWKS KeyStore
 config :fence, :google_token_module, Fence.Accounts.GoogleTokenMock
 config :fence, :start_google_jwks, false

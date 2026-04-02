@@ -7,17 +7,19 @@ defmodule FenceWeb.WebCrossUserTest do
   alias Fence.{Geofences, Groups, Locations}
 
   setup do
-    user_a = create_user(%{
-      "email" => "alice@example.com",
-      "password" => "password123",
-      "display_name" => "Alice"
-    })
+    user_a =
+      create_user(%{
+        "email" => "alice@example.com",
+        "password" => "password123",
+        "display_name" => "Alice"
+      })
 
-    user_b = create_user(%{
-      "email" => "bob@example.com",
-      "password" => "password123",
-      "display_name" => "Bob"
-    })
+    user_b =
+      create_user(%{
+        "email" => "bob@example.com",
+        "password" => "password123",
+        "display_name" => "Bob"
+      })
 
     group = create_group(user_a, %{"name" => "Family"})
 
@@ -57,9 +59,7 @@ defmodule FenceWeb.WebCrossUserTest do
       {:ok, _view, html} =
         login_conn
         |> recycle()
-        |> Phoenix.LiveViewTest.live(
-          "/web/groups/#{group.id}/geofences/#{geofence.id}"
-        )
+        |> Phoenix.LiveViewTest.live("/web/groups/#{group.id}/geofences/#{geofence.id}")
 
       assert html =~ "School"
       assert html =~ "Notify on entry"
@@ -77,9 +77,7 @@ defmodule FenceWeb.WebCrossUserTest do
       {:ok, view, _html} =
         login_conn
         |> recycle()
-        |> Phoenix.LiveViewTest.live(
-          "/web/groups/#{group.id}/geofences/#{geofence.id}"
-        )
+        |> Phoenix.LiveViewTest.live("/web/groups/#{group.id}/geofences/#{geofence.id}")
 
       render_click(view, "toggle_opt_out")
 
@@ -99,9 +97,7 @@ defmodule FenceWeb.WebCrossUserTest do
       {:ok, view, _html} =
         login_conn
         |> recycle()
-        |> Phoenix.LiveViewTest.live(
-          "/web/groups/#{group.id}/geofences/#{geofence.id}"
-        )
+        |> Phoenix.LiveViewTest.live("/web/groups/#{group.id}/geofences/#{geofence.id}")
 
       render_click(view, "toggle_entry")
       render_click(view, "toggle_exit")
@@ -152,9 +148,7 @@ defmodule FenceWeb.WebCrossUserTest do
       {:ok, detail_view, _html} =
         login_conn_a
         |> recycle()
-        |> Phoenix.LiveViewTest.live(
-          "/web/groups/#{group.id}/geofences/#{geofence.id}"
-        )
+        |> Phoenix.LiveViewTest.live("/web/groups/#{group.id}/geofences/#{geofence.id}")
 
       render_click(detail_view, "delete")
       assert Geofences.get_geofence(geofence.id) == nil
@@ -210,11 +204,12 @@ defmodule FenceWeb.WebCrossUserTest do
       geofence = create_geofence(group, user_a, %{"name" => "Private"})
 
       # Create an outsider
-      outsider = create_user(%{
-        "email" => "outsider@example.com",
-        "password" => "password123",
-        "display_name" => "Outsider"
-      })
+      outsider =
+        create_user(%{
+          "email" => "outsider@example.com",
+          "password" => "password123",
+          "display_name" => "Outsider"
+        })
 
       _other_group = create_group(outsider, %{"name" => "Other Group"})
 
@@ -227,9 +222,7 @@ defmodule FenceWeb.WebCrossUserTest do
       {:error, {:live_redirect, %{to: "/web/map"}}} =
         login_conn
         |> recycle()
-        |> Phoenix.LiveViewTest.live(
-          "/web/groups/#{outsider_group.id}/geofences/#{geofence.id}"
-        )
+        |> Phoenix.LiveViewTest.live("/web/groups/#{outsider_group.id}/geofences/#{geofence.id}")
     end
   end
 end

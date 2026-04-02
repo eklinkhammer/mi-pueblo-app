@@ -27,6 +27,14 @@ defmodule Fence.Accounts.User do
     |> put_password_hash()
   end
 
+  def password_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:password])
+    |> validate_required([:password])
+    |> validate_length(:password, min: 8)
+    |> put_password_hash()
+  end
+
   def update_changeset(user, attrs) do
     user
     |> cast(attrs, [:display_name, :locale])

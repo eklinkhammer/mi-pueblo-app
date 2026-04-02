@@ -69,7 +69,7 @@ defmodule FenceWeb.DashboardLive do
     locations =
       case socket.assigns.selected_group_id do
         nil -> Locations.get_all_last_locations()
-        group_id -> Locations.get_group_last_locations(group_id)
+        group_id -> Locations.get_group_last_locations(group_id, socket.assigns.current_user.id)
       end
 
     location_data =

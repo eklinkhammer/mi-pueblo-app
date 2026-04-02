@@ -25,10 +25,11 @@ defmodule FenceWeb.MapLiveTest do
       assert html =~ "Select a group to view the map"
     end
 
-    test "unauthenticated access returns 401", %{conn: conn} do
+    test "unauthenticated access redirects to login", %{conn: conn} do
       conn = get(conn, "/web/map")
 
-      assert conn.status == 401
+      assert conn.status == 302
+      assert redirected_to(conn) =~ "/web/login"
     end
 
     test "select_group loads geofence and member data", %{conn: conn, user: user, group: group} do

@@ -73,6 +73,30 @@ defmodule Fence.Accounts.UserTest do
     end
   end
 
+  describe "password_changeset/2" do
+    test "valid password produces valid changeset" do
+      changeset = User.password_changeset(%User{}, %{password: "newpassword123"})
+      assert changeset.valid?
+      assert changeset.changes[:password_hash]
+    end
+
+    test "requires password" do
+      changeset = User.password_changeset(%User{}, %{})
+      assert %{password: ["can't be blank"]} = errors_on(changeset)
+    end
+
+    test "validates password minimum length" do
+      changeset = User.password_changeset(%User{}, %{password: "short"})
+      assert %{password: [msg]} = errors_on(changeset)
+      assert msg =~ "at least"
+    end
+
+    test "hashes password" do
+      changeset = User.password_changeset(%User{}, %{password: "newpassword123"})
+      assert Bcrypt.verify_pass("newpassword123", changeset.changes[:password_hash])
+    end
+  end
+
   describe "oauth_changeset/2" do
     @oauth_attrs %{email: "oauth@example.com", display_name: "OAuth User", google_id: "g_123"}
 

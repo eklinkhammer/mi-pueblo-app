@@ -61,6 +61,9 @@ config :fence, FenceWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+# Swoosh: disable API client in dev (use local adapter)
+config :swoosh, :api_client, false
+
 # Enable dev routes for dashboard
 config :fence, dev_routes: true
 

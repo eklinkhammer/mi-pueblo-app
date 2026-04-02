@@ -2,6 +2,7 @@ defmodule Fence.Groups do
   import Ecto.Query
   alias Fence.Groups.{Group, Invite, Membership, VisibilityPair}
   alias Fence.Repo
+  alias Fence.Workers.PushNotificationWorker
 
   def create_group(user, attrs) do
     Repo.transaction(fn ->
@@ -73,14 +74,8 @@ defmodule Fence.Groups do
         {:error, :not_found}
 
       membership ->
-        Repo.transaction(fn ->
-          delete_visibility_pairs_for_member(group_id, user_id)
-
-          case Repo.delete(membership) do
-            {:ok, m} -> m
-            {:error, changeset} -> Repo.rollback(changeset)
-          end
-        end)
+        delete_visibility_pairs_for_member(group_id, user_id)
+        Repo.delete(membership)
     end
   end
 
@@ -138,7 +133,9 @@ defmodule Fence.Groups do
 
   def update_notification_preferences(user_id, group_id, attrs) do
     case get_membership(user_id, group_id) do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       membership ->
         membership
         |> Membership.notification_prefs_changeset(attrs)
@@ -155,7 +152,7 @@ defmodule Fence.Groups do
         create_pending_visibility_pairs(group_id, user_id)
 
         %{type: "member_joined", group_id: group_id, user_id: user_id}
-        |> Fence.Workers.PushNotificationWorker.new()
+        |> PushNotificationWorker.new()
         |> Oban.insert()
 
         {:ok, Repo.preload(membership, :group)}
@@ -182,7 +179,8 @@ defmodule Fence.Groups do
 
     entries =
       Enum.map(existing_member_ids, fn member_id ->
-        {a, b} = if new_user_id < member_id, do: {new_user_id, member_id}, else: {member_id, new_user_id}
+        {a, b} =
+          if new_user_id < member_id, do: {new_user_id, member_id}, else: {member_id, new_user_id}
 
         %{
           id: Ecto.UUID.generate(),
@@ -207,8 +205,10 @@ defmodule Fence.Groups do
   def list_visibility_pairs(user_id, group_id) do
     from(vp in VisibilityPair,
       where: vp.group_id == ^group_id and (vp.user_a_id == ^user_id or vp.user_b_id == ^user_id),
-      join: ua in Fence.Accounts.User, on: ua.id == vp.user_a_id,
-      join: ub in Fence.Accounts.User, on: ub.id == vp.user_b_id,
+      join: ua in Fence.Accounts.User,
+      on: ua.id == vp.user_a_id,
+      join: ub in Fence.Accounts.User,
+      on: ub.id == vp.user_b_id,
       select: %{
         id: vp.id,
         user_a_id: vp.user_a_id,
@@ -239,12 +239,15 @@ defmodule Fence.Groups do
   end
 
   def grant_visibility(granting_user_id, group_id, other_user_id) do
-    {a, b} = if granting_user_id < other_user_id,
-      do: {granting_user_id, other_user_id},
-      else: {other_user_id, granting_user_id}
+    {a, b} =
+      if granting_user_id < other_user_id,
+        do: {granting_user_id, other_user_id},
+        else: {other_user_id, granting_user_id}
 
     case Repo.get_by(VisibilityPair, group_id: group_id, user_a_id: a, user_b_id: b) do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       pair ->
         pair
         |> Ecto.Changeset.change(%{
@@ -257,12 +260,15 @@ defmodule Fence.Groups do
   end
 
   def revoke_visibility(revoking_user_id, group_id, other_user_id) do
-    {a, b} = if revoking_user_id < other_user_id,
-      do: {revoking_user_id, other_user_id},
-      else: {other_user_id, revoking_user_id}
+    {a, b} =
+      if revoking_user_id < other_user_id,
+        do: {revoking_user_id, other_user_id},
+        else: {other_user_id, revoking_user_id}
 
     case Repo.get_by(VisibilityPair, group_id: group_id, user_a_id: a, user_b_id: b) do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       pair ->
         pair
         |> Ecto.Changeset.change(%{
@@ -277,8 +283,9 @@ defmodule Fence.Groups do
   def visible_user_ids(user_id, group_id) do
     pairs =
       from(vp in VisibilityPair,
-        where: vp.group_id == ^group_id and vp.status == "active" and
-               (vp.user_a_id == ^user_id or vp.user_b_id == ^user_id),
+        where:
+          vp.group_id == ^group_id and vp.status == "active" and
+            (vp.user_a_id == ^user_id or vp.user_b_id == ^user_id),
         select: {vp.user_a_id, vp.user_b_id}
       )
       |> Repo.all()
@@ -292,8 +299,9 @@ defmodule Fence.Groups do
     {a, b} = if user_id_1 < user_id_2, do: {user_id_1, user_id_2}, else: {user_id_2, user_id_1}
 
     from(vp in VisibilityPair,
-      where: vp.group_id == ^group_id and vp.user_a_id == ^a and vp.user_b_id == ^b and
-             vp.status == "active"
+      where:
+        vp.group_id == ^group_id and vp.user_a_id == ^a and vp.user_b_id == ^b and
+          vp.status == "active"
     )
     |> Repo.exists?()
   end

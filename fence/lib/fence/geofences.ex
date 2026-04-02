@@ -2,6 +2,7 @@ defmodule Fence.Geofences do
   import Ecto.Query
   require Logger
   alias Fence.Geofences.{Geofence, OptOut, Subscription}
+  alias Fence.Groups.Membership, as: GroupMembership
   alias Fence.Repo
   alias Fence.Workers.MergeGeofencesWorker
 
@@ -150,7 +151,7 @@ defmodule Fence.Geofences do
     now = DateTime.utc_now()
 
     from(g in Geofence,
-      join: m in Fence.Groups.Membership,
+      join: m in GroupMembership,
       on: m.group_id == g.group_id,
       left_join: oo in OptOut,
       on: oo.geofence_id == g.id and oo.user_id == ^user_id,
@@ -169,7 +170,7 @@ defmodule Fence.Geofences do
 
       membership ->
         membership
-        |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: geofence_id})
+        |> GroupMembership.set_home_changeset(%{home_geofence_id: geofence_id})
         |> Repo.update()
     end
   end
@@ -181,13 +182,13 @@ defmodule Fence.Geofences do
 
       membership ->
         membership
-        |> Fence.Groups.Membership.set_home_changeset(%{home_geofence_id: nil})
+        |> GroupMembership.set_home_changeset(%{home_geofence_id: nil})
         |> Repo.update()
     end
   end
 
   def list_residents(geofence_id) do
-    from(m in Fence.Groups.Membership,
+    from(m in GroupMembership,
       where: m.home_geofence_id == ^geofence_id,
       join: u in assoc(m, :user),
       select: %{id: u.id, display_name: u.display_name}

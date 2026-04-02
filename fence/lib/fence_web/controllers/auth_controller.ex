@@ -26,7 +26,12 @@ defmodule FenceWeb.AuthController do
   def register(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: %{code: "missing_fields", message: "Missing required fields: email, password, display_name"}})
+    |> json(%{
+      error: %{
+        code: "missing_fields",
+        message: "Missing required fields: email, password, display_name"
+      }
+    })
   end
 
   def login(conn, %{"email" => email, "password" => password}) do
@@ -48,7 +53,8 @@ defmodule FenceWeb.AuthController do
   end
 
   def google(conn, %{"id_token" => id_token}) do
-    google_token_mod = Application.get_env(:fence, :google_token_module, Fence.Accounts.GoogleToken)
+    google_token_mod =
+      Application.get_env(:fence, :google_token_module, Fence.Accounts.GoogleToken)
 
     case google_token_mod.verify_and_extract(id_token) do
       {:ok, claims} ->
@@ -112,6 +118,18 @@ defmodule FenceWeb.AuthController do
     end
   end
 
+  def delete_me(conn, _params) do
+    case Accounts.delete_user(conn.assigns.current_user) do
+      {:ok, _user} ->
+        send_resp(conn, :no_content, "")
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: %{code: "deletion_failed", message: "Failed to delete account"}})
+    end
+  end
+
   def register_device_token(conn, %{"token" => token, "platform" => platform}) do
     user = conn.assigns.current_user
 
@@ -124,6 +142,58 @@ defmodule FenceWeb.AuthController do
         |> put_status(:unprocessable_entity)
         |> json(%{errors: format_errors(changeset)})
     end
+  end
+
+  def forgot_password(conn, %{"email" => email}) do
+    Accounts.request_password_reset(email)
+    json(conn, %{message: "If that email is registered, a reset code has been sent."})
+  end
+
+  def forgot_password(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: %{code: "missing_fields", message: "Missing required field: email"}})
+  end
+
+  def reset_password(conn, %{"email" => email, "code" => code, "password" => password}) do
+    case Accounts.reset_password(email, code, password) do
+      {:ok, user} ->
+        {:ok, tokens} = Accounts.generate_tokens(user)
+
+        json(conn, %{
+          user: user_json(user),
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token
+        })
+
+      {:error, :invalid_code} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: %{code: "invalid_code", message: "Invalid reset code"}})
+
+      {:error, :code_expired} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: %{code: "code_expired", message: "Reset code has expired"}})
+
+      {:error, :max_attempts} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: %{code: "max_attempts", message: "Too many incorrect attempts"}})
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: %{code: "invalid_code", message: "Invalid reset code"}})
+    end
+  end
+
+  def reset_password(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{
+      error: %{code: "missing_fields", message: "Missing required fields: email, code, password"}
+    })
   end
 
   defp user_json(user) do

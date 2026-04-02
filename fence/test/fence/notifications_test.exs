@@ -140,7 +140,9 @@ defmodule Fence.NotificationsTest do
       }
 
       {:ok, _} = Notifications.upsert_member_notification_preference(attrs)
-      {:ok, updated} = Notifications.upsert_member_notification_preference(%{attrs | notify: false})
+
+      {:ok, updated} =
+        Notifications.upsert_member_notification_preference(%{attrs | notify: false})
 
       assert updated.notify == false
       assert updated.notify_home == true
@@ -173,7 +175,9 @@ defmodule Fence.NotificationsTest do
 
     test "returns empty when no prefs exist" do
       {observer, geofence} = create_geofence_for_test()
-      assert [] == Notifications.list_member_notification_preferences(observer.id, geofence.group_id)
+
+      assert [] ==
+               Notifications.list_member_notification_preferences(observer.id, geofence.group_id)
     end
   end
 

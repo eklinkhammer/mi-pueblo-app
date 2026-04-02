@@ -71,6 +71,9 @@ defmodule Fence.MixProject do
       {:pigeon, "~> 2.0"},
       {:goth, "~> 1.4"},
 
+      # Email
+      {:swoosh, "~> 1.17"},
+
       # CORS
       {:cors_plug, "~> 3.0"},
 
