@@ -169,9 +169,9 @@ defmodule Fence.Accounts do
   end
 
   def reset_password(email, code, new_password) do
-    Repo.transaction(fn ->
-      case verify_reset_code(email, code) do
-        {:ok, reset_code, user} ->
+    case verify_reset_code(email, code) do
+      {:ok, reset_code, user} ->
+        Repo.transaction(fn ->
           user
           |> User.password_changeset(%{password: new_password})
           |> Repo.update!()
@@ -181,11 +181,11 @@ defmodule Fence.Accounts do
           |> Repo.update!()
 
           user
+        end)
 
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp verify_reset_code(email, code) do
