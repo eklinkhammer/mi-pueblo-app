@@ -7,7 +7,10 @@ defmodule Fence.Accounts.PasswordResetCodeTest do
   describe "changeset/2" do
     test "valid attrs produce valid changeset" do
       user = create_user()
-      changeset = PasswordResetCode.changeset(%PasswordResetCode{}, %{user_id: user.id, code: "123456"})
+
+      changeset =
+        PasswordResetCode.changeset(%PasswordResetCode{}, %{user_id: user.id, code: "123456"})
+
       assert changeset.valid?
       assert changeset.changes[:code_hash]
       assert changeset.changes[:expires_at]
@@ -26,13 +29,19 @@ defmodule Fence.Accounts.PasswordResetCodeTest do
 
     test "hashes code with bcrypt" do
       user = create_user()
-      changeset = PasswordResetCode.changeset(%PasswordResetCode{}, %{user_id: user.id, code: "123456"})
+
+      changeset =
+        PasswordResetCode.changeset(%PasswordResetCode{}, %{user_id: user.id, code: "123456"})
+
       assert Bcrypt.verify_pass("123456", changeset.changes[:code_hash])
     end
 
     test "sets expires_at ~15 minutes in the future" do
       user = create_user()
-      changeset = PasswordResetCode.changeset(%PasswordResetCode{}, %{user_id: user.id, code: "123456"})
+
+      changeset =
+        PasswordResetCode.changeset(%PasswordResetCode{}, %{user_id: user.id, code: "123456"})
+
       expires_at = changeset.changes[:expires_at]
       diff = DateTime.diff(expires_at, DateTime.utc_now())
       # Should be ~900 seconds (15 min), allow 5 second tolerance

@@ -188,7 +188,10 @@ defmodule FenceWeb.AuthControllerTest do
 
       %Fence.Accounts.PasswordResetCode{}
       |> Fence.Accounts.PasswordResetCode.changeset(%{user_id: user.id, code: code})
-      |> Ecto.Changeset.put_change(:expires_at, DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second))
+      |> Ecto.Changeset.put_change(
+        :expires_at,
+        DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
+      )
       |> Fence.Repo.insert!()
 
       conn =

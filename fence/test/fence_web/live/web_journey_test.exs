@@ -9,22 +9,30 @@ defmodule FenceWeb.WebJourneyTest do
   describe "Register → Map → Group creation journey" do
     test "register via web → mount map → sees create group prompt", %{conn: conn} do
       {:ok, _view, html} =
-        live_after_register(conn, %{
-          email: "fresh@example.com",
-          display_name: "Fresh User",
-          password: "password123"
-        }, "/web/map")
+        live_after_register(
+          conn,
+          %{
+            email: "fresh@example.com",
+            display_name: "Fresh User",
+            password: "password123"
+          },
+          "/web/map"
+        )
 
       assert html =~ "Create a group to get started"
     end
 
     test "register → create group → group appears in dropdown", %{conn: conn} do
       {:ok, view, _html} =
-        live_after_register(conn, %{
-          email: "grouper@example.com",
-          display_name: "Grouper",
-          password: "password123"
-        }, "/web/map")
+        live_after_register(
+          conn,
+          %{
+            email: "grouper@example.com",
+            display_name: "Grouper",
+            password: "password123"
+          },
+          "/web/map"
+        )
 
       html = render_submit(view, "create_group", %{"name" => "My Family"})
 
@@ -34,11 +42,15 @@ defmodule FenceWeb.WebJourneyTest do
 
     test "create group form has required name input", %{conn: conn} do
       {:ok, _view, html} =
-        live_after_register(conn, %{
-          email: "emptygroup@example.com",
-          display_name: "Empty Grouper",
-          password: "password123"
-        }, "/web/map")
+        live_after_register(
+          conn,
+          %{
+            email: "emptygroup@example.com",
+            display_name: "Empty Grouper",
+            password: "password123"
+          },
+          "/web/map"
+        )
 
       assert html =~ "Create a group to get started"
       assert html =~ ~s(name="name")
@@ -47,11 +59,15 @@ defmodule FenceWeb.WebJourneyTest do
 
     test "create group → + Geofence link and map visible", %{conn: conn} do
       {:ok, view, _html} =
-        live_after_register(conn, %{
-          email: "mapuser@example.com",
-          display_name: "Map User",
-          password: "password123"
-        }, "/web/map")
+        live_after_register(
+          conn,
+          %{
+            email: "mapuser@example.com",
+            display_name: "Map User",
+            password: "password123"
+          },
+          "/web/map"
+        )
 
       html = render_submit(view, "create_group", %{"name" => "Test Group"})
 
@@ -74,7 +90,8 @@ defmodule FenceWeb.WebJourneyTest do
     } do
       _geofence = create_geofence(group, user, %{"name" => "Park"})
 
-      {:ok, view, _html} = live_via_session(conn, "journey@example.com", "password123", "/web/map")
+      {:ok, view, _html} =
+        live_via_session(conn, "journey@example.com", "password123", "/web/map")
 
       html = render_change(view, :select_group, %{"group_id" => group.id})
 
@@ -112,7 +129,8 @@ defmodule FenceWeb.WebJourneyTest do
     } do
       geofence = create_geofence(group, user, %{"name" => "Office"})
 
-      {:ok, view, _html} = live_via_session(conn, "journey@example.com", "password123", "/web/map")
+      {:ok, view, _html} =
+        live_via_session(conn, "journey@example.com", "password123", "/web/map")
 
       html = render_change(view, :select_group, %{"group_id" => group.id})
       assert html =~ "Office"
@@ -123,9 +141,7 @@ defmodule FenceWeb.WebJourneyTest do
       {:ok, _detail_view, detail_html} =
         login_conn
         |> recycle()
-        |> Phoenix.LiveViewTest.live(
-          "/web/groups/#{group.id}/geofences/#{geofence.id}"
-        )
+        |> Phoenix.LiveViewTest.live("/web/groups/#{group.id}/geofences/#{geofence.id}")
 
       assert detail_html =~ "Office"
       assert detail_html =~ "Notify on entry"
@@ -143,9 +159,7 @@ defmodule FenceWeb.WebJourneyTest do
       {:ok, detail_view, _html} =
         login_conn
         |> recycle()
-        |> Phoenix.LiveViewTest.live(
-          "/web/groups/#{group.id}/geofences/#{geofence.id}"
-        )
+        |> Phoenix.LiveViewTest.live("/web/groups/#{group.id}/geofences/#{geofence.id}")
 
       # Toggle entry notification (auto-subscribe starts with true, so toggle turns it off)
       render_click(detail_view, "toggle_entry")
@@ -169,11 +183,15 @@ defmodule FenceWeb.WebJourneyTest do
     } do
       # Step 1: Register and mount map
       {:ok, map_view, html} =
-        live_after_register(conn, %{
-          email: "onboard@example.com",
-          display_name: "Onboard User",
-          password: "password123"
-        }, "/web/map")
+        live_after_register(
+          conn,
+          %{
+            email: "onboard@example.com",
+            display_name: "Onboard User",
+            password: "password123"
+          },
+          "/web/map"
+        )
 
       assert html =~ "Create a group to get started"
 
@@ -208,9 +226,7 @@ defmodule FenceWeb.WebJourneyTest do
       {:ok, detail_view, detail_html} =
         login_conn2
         |> recycle()
-        |> Phoenix.LiveViewTest.live(
-          "/web/groups/#{group.id}/geofences/#{geofence.id}"
-        )
+        |> Phoenix.LiveViewTest.live("/web/groups/#{group.id}/geofences/#{geofence.id}")
 
       assert detail_html =~ "HQ"
 

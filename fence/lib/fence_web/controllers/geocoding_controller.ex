@@ -18,7 +18,9 @@ defmodule FenceWeb.GeocodingController do
       {:error, _} ->
         conn
         |> put_status(:bad_gateway)
-        |> json(%{error: %{code: "geocoding_unavailable", message: "Geocoding service unavailable"}})
+        |> json(%{
+          error: %{code: "geocoding_unavailable", message: "Geocoding service unavailable"}
+        })
     end
   end
 

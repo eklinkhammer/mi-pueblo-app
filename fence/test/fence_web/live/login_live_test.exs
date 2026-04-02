@@ -87,5 +87,4 @@ defmodule FenceWeb.LoginLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
     end
   end
-
 end

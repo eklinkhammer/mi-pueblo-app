@@ -26,7 +26,12 @@ defmodule FenceWeb.AuthController do
   def register(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: %{code: "missing_fields", message: "Missing required fields: email, password, display_name"}})
+    |> json(%{
+      error: %{
+        code: "missing_fields",
+        message: "Missing required fields: email, password, display_name"
+      }
+    })
   end
 
   def login(conn, %{"email" => email, "password" => password}) do
@@ -48,7 +53,8 @@ defmodule FenceWeb.AuthController do
   end
 
   def google(conn, %{"id_token" => id_token}) do
-    google_token_mod = Application.get_env(:fence, :google_token_module, Fence.Accounts.GoogleToken)
+    google_token_mod =
+      Application.get_env(:fence, :google_token_module, Fence.Accounts.GoogleToken)
 
     case google_token_mod.verify_and_extract(id_token) do
       {:ok, claims} ->
@@ -185,7 +191,9 @@ defmodule FenceWeb.AuthController do
   def reset_password(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: %{code: "missing_fields", message: "Missing required fields: email, code, password"}})
+    |> json(%{
+      error: %{code: "missing_fields", message: "Missing required fields: email, code, password"}
+    })
   end
 
   defp user_json(user) do

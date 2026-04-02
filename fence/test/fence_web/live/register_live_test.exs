@@ -44,11 +44,15 @@ defmodule FenceWeb.RegisterLiveTest do
 
     test "successful registration puts share_token in session", %{conn: conn} do
       {:ok, _view, html} =
-        live_after_register(conn, %{
-          email: "session@example.com",
-          display_name: "Session User",
-          password: "password123"
-        }, "/web/map")
+        live_after_register(
+          conn,
+          %{
+            email: "session@example.com",
+            display_name: "Session User",
+            password: "password123"
+          },
+          "/web/map"
+        )
 
       assert html =~ "Map"
     end

@@ -15,7 +15,10 @@ defmodule Fence.Workers.CleanupPasswordResetCodesWorkerTest do
       expired_code =
         %PasswordResetCode{}
         |> PasswordResetCode.changeset(%{user_id: user.id, code: "111111"})
-        |> Ecto.Changeset.put_change(:expires_at, DateTime.utc_now() |> DateTime.add(-25 * 3600) |> DateTime.truncate(:second))
+        |> Ecto.Changeset.put_change(
+          :expires_at,
+          DateTime.utc_now() |> DateTime.add(-25 * 3600) |> DateTime.truncate(:second)
+        )
         |> Repo.insert!()
 
       assert :ok = perform_job(CleanupPasswordResetCodesWorker, %{})
@@ -29,7 +32,10 @@ defmodule Fence.Workers.CleanupPasswordResetCodesWorkerTest do
       recent_code =
         %PasswordResetCode{}
         |> PasswordResetCode.changeset(%{user_id: user.id, code: "222222"})
-        |> Ecto.Changeset.put_change(:expires_at, DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second))
+        |> Ecto.Changeset.put_change(
+          :expires_at,
+          DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)
+        )
         |> Repo.insert!()
 
       assert :ok = perform_job(CleanupPasswordResetCodesWorker, %{})

@@ -183,74 +183,75 @@ defmodule Fence.Locations do
     if action not in ["entered", "exited"] do
       {:error, :invalid_action}
     else
-    with {:geofence, geofence} when not is_nil(geofence) <-
-           {:geofence, Fence.Geofences.get_geofence(geofence_id)},
-         {:expired, false} <-
-           {:expired, DateTime.compare(geofence.expires_at, DateTime.utc_now()) != :gt},
-         {:member, true} <-
-           {:member, Groups.member?(user_id, geofence.group_id)},
-         {:opted_out, false} <-
-           {:opted_out, Fence.Geofences.opted_out?(user_id, geofence_id)} do
-      # Insert device location record
-      location_attrs = attrs |> Map.put("user_id", user_id) |> Map.put("source", "geofence_event")
+      with {:geofence, geofence} when not is_nil(geofence) <-
+             {:geofence, Fence.Geofences.get_geofence(geofence_id)},
+           {:expired, false} <-
+             {:expired, DateTime.compare(geofence.expires_at, DateTime.utc_now()) != :gt},
+           {:member, true} <-
+             {:member, Groups.member?(user_id, geofence.group_id)},
+           {:opted_out, false} <-
+             {:opted_out, Fence.Geofences.opted_out?(user_id, geofence_id)} do
+        # Insert device location record
+        location_attrs =
+          attrs |> Map.put("user_id", user_id) |> Map.put("source", "geofence_event")
 
-      case %DeviceLocation{}
-           |> DeviceLocation.changeset(location_attrs)
-           |> Repo.insert() do
-        {:ok, location} ->
-          # Verify with PostGIS
-          verified = geofence_contains_location?(geofence_id, location.id)
-          accuracy = attrs["accuracy"] || 0.0
-          poor_accuracy = accuracy > 100.0
+        case %DeviceLocation{}
+             |> DeviceLocation.changeset(location_attrs)
+             |> Repo.insert() do
+          {:ok, location} ->
+            # Verify with PostGIS
+            verified = geofence_contains_location?(geofence_id, location.id)
+            accuracy = attrs["accuracy"] || 0.0
+            poor_accuracy = accuracy > 100.0
 
-          should_trust =
-            case action do
-              "entered" -> verified or poor_accuracy
-              "exited" -> not verified or poor_accuracy
-            end
-
-          if should_trust do
-            previous_ids = get_user_geofence_ids(user_id)
-
-            {entered_ids, exited_ids} =
+            should_trust =
               case action do
-                "entered" ->
-                  if MapSet.member?(previous_ids, geofence_id),
-                    do: {MapSet.new(), MapSet.new()},
-                    else: {MapSet.new([geofence_id]), MapSet.new()}
-
-                "exited" ->
-                  if MapSet.member?(previous_ids, geofence_id),
-                    do: {MapSet.new(), MapSet.new([geofence_id])},
-                    else: {MapSet.new(), MapSet.new()}
+                "entered" -> verified or poor_accuracy
+                "exited" -> not verified or poor_accuracy
               end
 
-            update_geofence_state(user_id, entered_ids, exited_ids)
+            if should_trust do
+              previous_ids = get_user_geofence_ids(user_id)
 
-            for gid <- entered_ids do
-              %{user_id: user_id, geofence_id: gid, event: "entered"}
-              |> PushNotificationWorker.new()
-              |> Oban.insert()
+              {entered_ids, exited_ids} =
+                case action do
+                  "entered" ->
+                    if MapSet.member?(previous_ids, geofence_id),
+                      do: {MapSet.new(), MapSet.new()},
+                      else: {MapSet.new([geofence_id]), MapSet.new()}
+
+                  "exited" ->
+                    if MapSet.member?(previous_ids, geofence_id),
+                      do: {MapSet.new(), MapSet.new([geofence_id])},
+                      else: {MapSet.new(), MapSet.new()}
+                end
+
+              update_geofence_state(user_id, entered_ids, exited_ids)
+
+              for gid <- entered_ids do
+                %{user_id: user_id, geofence_id: gid, event: "entered"}
+                |> PushNotificationWorker.new()
+                |> Oban.insert()
+              end
+
+              for gid <- exited_ids do
+                %{user_id: user_id, geofence_id: gid, event: "exited"}
+                |> PushNotificationWorker.new()
+                |> Oban.insert()
+              end
             end
 
-            for gid <- exited_ids do
-              %{user_id: user_id, geofence_id: gid, event: "exited"}
-              |> PushNotificationWorker.new()
-              |> Oban.insert()
-            end
-          end
+            {:ok, %{verified: verified}}
 
-          {:ok, %{verified: verified}}
-
-        {:error, changeset} ->
-          {:error, changeset}
+          {:error, changeset} ->
+            {:error, changeset}
+        end
+      else
+        {:geofence, nil} -> {:error, :not_found}
+        {:expired, true} -> {:error, :expired}
+        {:member, false} -> {:error, :forbidden}
+        {:opted_out, true} -> {:error, :opted_out}
       end
-    else
-      {:geofence, nil} -> {:error, :not_found}
-      {:expired, true} -> {:error, :expired}
-      {:member, false} -> {:error, :forbidden}
-      {:opted_out, true} -> {:error, :opted_out}
-    end
     end
   end
 

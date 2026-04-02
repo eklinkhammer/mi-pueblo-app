@@ -23,10 +23,12 @@ defmodule Fence.Workers.PushNotificationWorker do
 
         {title, body} =
           Gettext.with_locale(FenceWeb.Gettext, locale, fn ->
-            t = gettext("%{user_name} joined %{group_name}",
-              user_name: new_user.display_name,
-              group_name: group.name
-            )
+            t =
+              gettext("%{user_name} joined %{group_name}",
+                user_name: new_user.display_name,
+                group_name: group.name
+              )
+
             b = gettext("Grant visibility to see each other's location")
             {t, b}
           end)
@@ -116,6 +118,7 @@ defmodule Fence.Workers.PushNotificationWorker do
 
   defp should_skip?(subscription, triggering_user, event, prefs_context) do
     subscriber_id = subscription.user_id
+
     %{
       memberships_by_user: memberships_by_user,
       prefs_by_observer: prefs_by_observer,

@@ -220,7 +220,8 @@ defmodule Fence.AccountsTest do
     end
 
     test "rejects wrong code", %{user: user} do
-      assert {:error, :invalid_code} = Accounts.reset_password(user.email, "000000", "newpassword123")
+      assert {:error, :invalid_code} =
+               Accounts.reset_password(user.email, "000000", "newpassword123")
     end
 
     test "rejects expired code" do
@@ -229,7 +230,10 @@ defmodule Fence.AccountsTest do
 
       %Fence.Accounts.PasswordResetCode{}
       |> Fence.Accounts.PasswordResetCode.changeset(%{user_id: user.id, code: code})
-      |> Ecto.Changeset.put_change(:expires_at, DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second))
+      |> Ecto.Changeset.put_change(
+        :expires_at,
+        DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
+      )
       |> Repo.insert!()
 
       assert {:error, :code_expired} = Accounts.reset_password(user.email, code, "newpassword123")
@@ -248,7 +252,8 @@ defmodule Fence.AccountsTest do
     end
 
     test "rejects for non-existent email" do
-      assert {:error, :invalid_code} = Accounts.reset_password("nonexistent@example.com", "123456", "newpass123")
+      assert {:error, :invalid_code} =
+               Accounts.reset_password("nonexistent@example.com", "123456", "newpass123")
     end
   end
 

@@ -72,9 +72,16 @@ defmodule FenceWeb.GeofenceController do
       broadcast_geofences_changed(group_id)
       json(conn, %{ok: true})
     else
-      nil -> not_found(conn)
-      false -> forbidden(conn)
-      {:error, _} -> conn |> put_status(:unprocessable_entity) |> json(%{error: %{code: "claim_failed", message: "Could not claim home"}})
+      nil ->
+        not_found(conn)
+
+      false ->
+        forbidden(conn)
+
+      {:error, _} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: %{code: "claim_failed", message: "Could not claim home"}})
     end
   end
 
@@ -88,7 +95,9 @@ defmodule FenceWeb.GeofenceController do
           json(conn, %{ok: true})
 
         {:error, _} ->
-          conn |> put_status(:unprocessable_entity) |> json(%{error: %{code: "unclaim_failed", message: "Could not unclaim home"}})
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: %{code: "unclaim_failed", message: "Could not unclaim home"}})
       end
     else
       forbidden(conn)
@@ -187,8 +196,13 @@ defmodule FenceWeb.GeofenceController do
     user = conn.assigns.current_user
 
     case Geofences.create_opt_out(user.id, geofence_id) do
-      {:ok, _} -> json(conn, %{ok: true})
-      {:error, _} -> conn |> put_status(:conflict) |> json(%{error: %{code: "already_opted_out", message: "Already opted out"}})
+      {:ok, _} ->
+        json(conn, %{ok: true})
+
+      {:error, _} ->
+        conn
+        |> put_status(:conflict)
+        |> json(%{error: %{code: "already_opted_out", message: "Already opted out"}})
     end
   end
 

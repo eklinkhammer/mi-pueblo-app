@@ -76,13 +76,19 @@ defmodule FenceWeb.GroupController do
         json(conn, %{group: group_json(membership.group)})
 
       {:error, :invalid_code} ->
-        conn |> put_status(:not_found) |> json(%{error: %{code: "invalid_invite_code", message: "Invalid invite code"}})
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: %{code: "invalid_invite_code", message: "Invalid invite code"}})
 
       {:error, :expired} ->
-        conn |> put_status(:gone) |> json(%{error: %{code: "invite_code_expired", message: "Invite code expired"}})
+        conn
+        |> put_status(:gone)
+        |> json(%{error: %{code: "invite_code_expired", message: "Invite code expired"}})
 
       {:error, :already_member} ->
-        conn |> put_status(:conflict) |> json(%{error: %{code: "already_member", message: "Already a member"}})
+        conn
+        |> put_status(:conflict)
+        |> json(%{error: %{code: "already_member", message: "Already a member"}})
     end
   end
 
@@ -136,7 +142,9 @@ defmodule FenceWeb.GroupController do
         forbidden(conn)
 
       {:error, _} ->
-        conn |> put_status(:unprocessable_entity) |> json(%{error: %{code: "could_not_create_invite", message: "Could not create invite"}})
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: %{code: "could_not_create_invite", message: "Could not create invite"}})
     end
   end
 
