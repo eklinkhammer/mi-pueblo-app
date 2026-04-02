@@ -123,6 +123,7 @@ defmodule Fence.Metrics.Collector do
 
       sorted ->
         len = length(sorted)
+
         %{
           p50: percentile_at(sorted, len, 0.50),
           p90: percentile_at(sorted, len, 0.90),
