@@ -39,7 +39,8 @@ config :fence, Oban,
     {Oban.Plugins.Pruner, max_age: 7 * 24 * 60 * 60},
     {Oban.Plugins.Cron,
      crontab: [
-       {"0 * * * *", Fence.Workers.ExpireGeofencesWorker}
+       {"0 * * * *", Fence.Workers.ExpireGeofencesWorker},
+       {"0 */6 * * *", Fence.Workers.CleanupPasswordResetCodesWorker}
      ]}
   ]
 
@@ -72,6 +73,9 @@ config :tailwind,
 
 # Google OAuth
 config :fence, :google_oauth_client_ids, []
+
+# Swoosh mailer
+config :fence, Fence.Mailer, adapter: Swoosh.Adapters.Local
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
