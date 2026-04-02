@@ -30,6 +30,8 @@ defmodule FenceWeb.Router do
     post "/auth/login", AuthController, :login
     post "/auth/google", AuthController, :google
     post "/auth/refresh", AuthController, :refresh
+    post "/auth/forgot-password", AuthController, :forgot_password
+    post "/auth/reset-password", AuthController, :reset_password
   end
 
   scope "/api/v1", FenceWeb do
@@ -37,6 +39,7 @@ defmodule FenceWeb.Router do
 
     get "/me", AuthController, :me
     put "/me", AuthController, :update_me
+    delete "/me", AuthController, :delete_me
     post "/me/device-token", AuthController, :register_device_token
 
     # Groups
@@ -123,6 +126,7 @@ defmodule FenceWeb.Router do
       pipe_through [:fetch_session, :protect_from_forgery]
 
       live_dashboard "/dashboard", metrics: FenceWeb.Telemetry
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 end
