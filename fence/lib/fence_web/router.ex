@@ -98,6 +98,7 @@ defmodule FenceWeb.Router do
     pipe_through [:browser, :web_authenticated]
 
     live_session :authenticated, on_mount: [{FenceWeb.WebAuth, :ensure_authenticated}] do
+      live "/dashboard", DashboardLive
       live "/map", MapLive
       live "/groups/:group_id/geofences/new", GeofenceCreateLive
       live "/groups/:group_id/geofences/:id", GeofenceDetailLive

@@ -36,6 +36,25 @@ defmodule Fence.Locations do
     |> Repo.one()
   end
 
+  def get_all_last_locations do
+    from(l in DeviceLocation,
+      join: u in Fence.Accounts.User,
+      on: u.id == l.user_id,
+      distinct: l.user_id,
+      order_by: [asc: l.user_id, desc: l.inserted_at],
+      select: %{
+        user_id: l.user_id,
+        display_name: u.display_name,
+        point: l.point,
+        accuracy: l.accuracy,
+        speed: l.speed,
+        battery_level: l.battery_level,
+        updated_at: l.inserted_at
+      }
+    )
+    |> Repo.all()
+  end
+
   def get_group_last_locations(group_id) do
     from(l in DeviceLocation,
       join: m in Fence.Groups.Membership,
