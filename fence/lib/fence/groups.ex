@@ -1,6 +1,6 @@
 defmodule Fence.Groups do
   import Ecto.Query
-  alias Fence.Groups.{Group, Invite, Membership}
+  alias Fence.Groups.{Group, Invite, Membership, VisibilityPair}
   alias Fence.Repo
 
   def create_group(user, attrs) do
@@ -69,8 +69,18 @@ defmodule Fence.Groups do
 
   def remove_member(group_id, user_id) do
     case get_membership(user_id, group_id) do
-      nil -> {:error, :not_found}
-      membership -> Repo.delete(membership)
+      nil ->
+        {:error, :not_found}
+
+      membership ->
+        Repo.transaction(fn ->
+          delete_visibility_pairs_for_member(group_id, user_id)
+
+          case Repo.delete(membership) do
+            {:ok, m} -> m
+            {:error, changeset} -> Repo.rollback(changeset)
+          end
+        end)
     end
   end
 
@@ -141,9 +151,157 @@ defmodule Fence.Groups do
     |> Membership.changeset(%{user_id: user_id, group_id: group_id, role: "member"})
     |> Repo.insert()
     |> case do
-      {:ok, membership} -> {:ok, Repo.preload(membership, :group)}
-      {:error, %{errors: [{:user_id, _} | _]}} -> {:error, :already_member}
-      error -> error
+      {:ok, membership} ->
+        create_pending_visibility_pairs(group_id, user_id)
+
+        %{type: "member_joined", group_id: group_id, user_id: user_id}
+        |> Fence.Workers.PushNotificationWorker.new()
+        |> Oban.insert()
+
+        {:ok, Repo.preload(membership, :group)}
+
+      {:error, %{errors: [{:user_id, _} | _]}} ->
+        {:error, :already_member}
+
+      error ->
+        error
     end
+  end
+
+  # --- Visibility Pairs ---
+
+  def create_pending_visibility_pairs(group_id, new_user_id) do
+    existing_member_ids =
+      from(m in Membership,
+        where: m.group_id == ^group_id and m.user_id != ^new_user_id,
+        select: m.user_id
+      )
+      |> Repo.all()
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    entries =
+      Enum.map(existing_member_ids, fn member_id ->
+        {a, b} = if new_user_id < member_id, do: {new_user_id, member_id}, else: {member_id, new_user_id}
+
+        %{
+          id: Ecto.UUID.generate(),
+          group_id: group_id,
+          user_a_id: a,
+          user_b_id: b,
+          status: "pending",
+          granted_by_id: nil,
+          granted_at: nil,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    if entries != [] do
+      Repo.insert_all(VisibilityPair, entries, on_conflict: :nothing)
+    end
+
+    :ok
+  end
+
+  def list_visibility_pairs(user_id, group_id) do
+    from(vp in VisibilityPair,
+      where: vp.group_id == ^group_id and (vp.user_a_id == ^user_id or vp.user_b_id == ^user_id),
+      join: ua in Fence.Accounts.User, on: ua.id == vp.user_a_id,
+      join: ub in Fence.Accounts.User, on: ub.id == vp.user_b_id,
+      select: %{
+        id: vp.id,
+        user_a_id: vp.user_a_id,
+        user_b_id: vp.user_b_id,
+        user_a_display_name: ua.display_name,
+        user_b_display_name: ub.display_name,
+        status: vp.status,
+        granted_by_id: vp.granted_by_id,
+        granted_at: vp.granted_at
+      }
+    )
+    |> Repo.all()
+    |> Enum.map(fn row ->
+      {other_id, other_name} =
+        if row.user_a_id == user_id,
+          do: {row.user_b_id, row.user_b_display_name},
+          else: {row.user_a_id, row.user_a_display_name}
+
+      %{
+        id: row.id,
+        other_user_id: other_id,
+        other_display_name: other_name,
+        status: row.status,
+        granted_by_id: row.granted_by_id,
+        granted_at: row.granted_at
+      }
+    end)
+  end
+
+  def grant_visibility(granting_user_id, group_id, other_user_id) do
+    {a, b} = if granting_user_id < other_user_id,
+      do: {granting_user_id, other_user_id},
+      else: {other_user_id, granting_user_id}
+
+    case Repo.get_by(VisibilityPair, group_id: group_id, user_a_id: a, user_b_id: b) do
+      nil -> {:error, :not_found}
+      pair ->
+        pair
+        |> Ecto.Changeset.change(%{
+          status: "active",
+          granted_by_id: granting_user_id,
+          granted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        })
+        |> Repo.update()
+    end
+  end
+
+  def revoke_visibility(revoking_user_id, group_id, other_user_id) do
+    {a, b} = if revoking_user_id < other_user_id,
+      do: {revoking_user_id, other_user_id},
+      else: {other_user_id, revoking_user_id}
+
+    case Repo.get_by(VisibilityPair, group_id: group_id, user_a_id: a, user_b_id: b) do
+      nil -> {:error, :not_found}
+      pair ->
+        pair
+        |> Ecto.Changeset.change(%{
+          status: "pending",
+          granted_by_id: nil,
+          granted_at: nil
+        })
+        |> Repo.update()
+    end
+  end
+
+  def visible_user_ids(user_id, group_id) do
+    pairs =
+      from(vp in VisibilityPair,
+        where: vp.group_id == ^group_id and vp.status == "active" and
+               (vp.user_a_id == ^user_id or vp.user_b_id == ^user_id),
+        select: {vp.user_a_id, vp.user_b_id}
+      )
+      |> Repo.all()
+
+    pairs
+    |> Enum.map(fn {a, b} -> if a == user_id, do: b, else: a end)
+    |> MapSet.new()
+  end
+
+  def visible_to?(user_id_1, user_id_2, group_id) do
+    {a, b} = if user_id_1 < user_id_2, do: {user_id_1, user_id_2}, else: {user_id_2, user_id_1}
+
+    from(vp in VisibilityPair,
+      where: vp.group_id == ^group_id and vp.user_a_id == ^a and vp.user_b_id == ^b and
+             vp.status == "active"
+    )
+    |> Repo.exists?()
+  end
+
+  def delete_visibility_pairs_for_member(group_id, user_id) do
+    from(vp in VisibilityPair,
+      where: vp.group_id == ^group_id and (vp.user_a_id == ^user_id or vp.user_b_id == ^user_id)
+    )
+    |> Repo.delete_all()
   end
 end

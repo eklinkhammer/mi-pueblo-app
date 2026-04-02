@@ -25,6 +25,12 @@ class GroupDetailScreen extends ConsumerWidget {
         title: Text(l10n.group),
         actions: [
           IconButton(
+            icon: const Icon(Icons.visibility_outlined),
+            onPressed: () =>
+                context.go('/groups/$groupId/visibility'),
+            tooltip: l10n.whoCanSeeMe,
+          ),
+          IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () =>
                 context.go('/groups/$groupId/notification-settings'),

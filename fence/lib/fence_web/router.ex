@@ -28,6 +28,7 @@ defmodule FenceWeb.Router do
 
     post "/auth/register", AuthController, :register
     post "/auth/login", AuthController, :login
+    post "/auth/google", AuthController, :google
     post "/auth/refresh", AuthController, :refresh
   end
 
@@ -52,6 +53,10 @@ defmodule FenceWeb.Router do
     put "/groups/:id/notification-preferences", GroupController, :update_notification_preferences
     get "/groups/:id/member-preferences", GroupController, :list_member_preferences
     put "/groups/:id/member-preferences/:subject_id", GroupController, :upsert_member_preference
+
+    # Visibility
+    get "/groups/:id/visibility", VisibilityController, :index
+    put "/groups/:id/visibility/:user_id", VisibilityController, :update
 
     # Geofences
     get "/my-geofences", GeofenceController, :my_geofences

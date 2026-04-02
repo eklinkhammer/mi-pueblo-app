@@ -239,6 +239,86 @@ defmodule Fence.GroupsTest do
     end
   end
 
+  describe "visibility pairs" do
+    defp setup_group_with_joiner do
+      admin = create_user(%{"display_name" => "Admin"})
+      joiner = create_user(%{"display_name" => "Joiner"})
+      group = create_group(admin)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Groups.join_by_invite_code(joiner.id, invite.code)
+      {admin, joiner, group}
+    end
+
+    test "join_by_invite_code creates pending pairs automatically" do
+      {admin, joiner, group} = setup_group_with_joiner()
+
+      pairs = Groups.list_visibility_pairs(admin.id, group.id)
+      assert length(pairs) == 1
+      pair = hd(pairs)
+      assert pair.other_user_id == joiner.id
+      assert pair.status == "pending"
+      assert is_nil(pair.granted_by_id)
+    end
+
+    test "grant_visibility updates to active with granted_by_id" do
+      {admin, joiner, group} = setup_group_with_joiner()
+
+      assert {:ok, pair} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      assert pair.status == "active"
+      assert pair.granted_by_id == admin.id
+      assert pair.granted_at
+    end
+
+    test "revoke_visibility resets to pending and clears grant fields" do
+      {admin, joiner, group} = setup_group_with_joiner()
+
+      {:ok, _} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      assert {:ok, pair} = Groups.revoke_visibility(admin.id, group.id, joiner.id)
+      assert pair.status == "pending"
+      assert is_nil(pair.granted_by_id)
+      assert is_nil(pair.granted_at)
+    end
+
+    test "grant_visibility returns not_found for missing pair" do
+      admin = create_user()
+      group = create_group(admin)
+
+      assert {:error, :not_found} =
+               Groups.grant_visibility(admin.id, group.id, Ecto.UUID.generate())
+    end
+
+    test "visible_user_ids returns only active pairs" do
+      {admin, joiner, group} = setup_group_with_joiner()
+
+      # Pending — should be empty
+      assert MapSet.size(Groups.visible_user_ids(admin.id, group.id)) == 0
+
+      # Grant — should include joiner
+      {:ok, _} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      visible = Groups.visible_user_ids(admin.id, group.id)
+      assert MapSet.member?(visible, joiner.id)
+    end
+
+    test "visible_to? true when active, false when pending" do
+      {admin, joiner, group} = setup_group_with_joiner()
+
+      refute Groups.visible_to?(admin.id, joiner.id, group.id)
+
+      {:ok, _} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      assert Groups.visible_to?(admin.id, joiner.id, group.id)
+    end
+
+    test "remove_member cleans up all visibility pairs" do
+      {admin, joiner, group} = setup_group_with_joiner()
+
+      {:ok, _} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      assert length(Groups.list_visibility_pairs(admin.id, group.id)) == 1
+
+      {:ok, _} = Groups.remove_member(group.id, joiner.id)
+      assert Groups.list_visibility_pairs(admin.id, group.id) == []
+    end
+  end
+
   describe "update_notification_preferences/3" do
     test "updates silence and household flags" do
       user = create_user()

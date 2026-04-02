@@ -15,6 +15,9 @@
 
   "registrationFailed": "Registration failed",
   "invalidEmailOrPassword": "Invalid email or password",
+  "signInWithGoogle": "Sign in with Google",
+  "googleSignInFailed": "Google sign-in failed",
+  "or": "or",
 
   "map": "Map",
   "groups": "Groups",
@@ -188,5 +191,11 @@
   "notifyHousehold": "Always Notify Household",
   "notifyHouseholdSubtitle": "Override silence settings for members who share your home geofence",
   "memberNotifications": "Per-Member Notifications",
-  "homeNotifications": "Home Notifications"
+  "homeNotifications": "Home Notifications",
+
+  "whoCanSeeMe": "Who Can See Me?",
+  "pendingVisibility": "Pending Requests",
+  "visibleMembers": "Visible Members",
+  "grant": "Grant",
+  "noVisibilityPairsYet": "No group members yet. Invite someone to get started."
 }

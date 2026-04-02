@@ -28,6 +28,9 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
         "throttle_seconds" => 0
       })
 
+    # Grant mutual visibility so notifications can flow
+    {:ok, _} = Fence.Groups.grant_visibility(triggering_user.id, group.id, subscriber.id)
+
     {triggering_user, subscriber, geofence, group}
   end
 
@@ -155,6 +158,52 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
       }
 
       assert topic == "group:#{group.id}"
+    end
+
+    test "member_joined sends notification to existing members, skips joining user" do
+      admin = create_user(%{"display_name" => "Admin"})
+      group = create_group(admin)
+      joiner = create_user(%{"display_name" => "Joiner"})
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(joiner.id, invite.code)
+
+      # The worker should complete without error
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "type" => "member_joined",
+                 "group_id" => group.id,
+                 "user_id" => joiner.id
+               })
+    end
+
+    test "skips geofence notification when visibility not granted" do
+      triggering_user = create_user(%{"display_name" => "Trigger"})
+      subscriber = create_user(%{"display_name" => "Subscriber"})
+      group = create_group(triggering_user)
+
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, triggering_user.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(subscriber.id, invite.code)
+
+      geofence = create_geofence(group, triggering_user)
+
+      {:ok, _} =
+        Geofences.upsert_subscription(%{
+          "user_id" => subscriber.id,
+          "geofence_id" => geofence.id,
+          "throttle_seconds" => 0
+        })
+
+      # Do NOT grant visibility — pair stays pending
+
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "user_id" => triggering_user.id,
+                 "geofence_id" => geofence.id,
+                 "event" => "entered"
+               })
+
+      # No notification because visibility is pending
+      assert is_nil(Notifications.last_notification_time(subscriber.id, geofence.id))
     end
 
     test "handles deleted geofence gracefully" do

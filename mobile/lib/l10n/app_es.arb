@@ -15,6 +15,9 @@
 
   "registrationFailed": "Error en el registro",
   "invalidEmailOrPassword": "Correo o contraseña inválidos",
+  "signInWithGoogle": "Iniciar sesión con Google",
+  "googleSignInFailed": "Error al iniciar sesión con Google",
+  "or": "o",
 
   "map": "Mapa",
   "groups": "Grupos",
@@ -143,5 +146,11 @@
   "notifyHousehold": "Siempre notificar del hogar",
   "notifyHouseholdSubtitle": "Anular ajustes de silencio para miembros que comparten tu geocerca de hogar",
   "memberNotifications": "Notificaciones por miembro",
-  "homeNotifications": "Notificaciones de hogar"
+  "homeNotifications": "Notificaciones de hogar",
+
+  "whoCanSeeMe": "¿Quién puede verme?",
+  "pendingVisibility": "Solicitudes pendientes",
+  "visibleMembers": "Miembros visibles",
+  "grant": "Conceder",
+  "noVisibilityPairsYet": "Aún no hay miembros en el grupo. Invita a alguien para comenzar."
 }

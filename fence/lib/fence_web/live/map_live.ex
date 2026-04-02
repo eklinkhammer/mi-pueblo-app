@@ -123,7 +123,7 @@ defmodule FenceWeb.MapLive do
   end
 
   defp load_data(socket, group_id) do
-    locations = Locations.get_group_last_locations(group_id)
+    locations = Locations.get_group_last_locations(group_id, socket.assigns.current_user.id)
     geofences = Geofences.list_active_group_geofences(group_id)
 
     location_data =

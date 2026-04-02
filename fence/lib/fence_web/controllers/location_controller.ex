@@ -21,7 +21,7 @@ defmodule FenceWeb.LocationController do
     user = conn.assigns.current_user
 
     if Groups.member?(user.id, group_id) do
-      locations = Locations.get_group_last_locations(group_id)
+      locations = Locations.get_group_last_locations(group_id, user.id)
 
       json(conn, %{
         locations:

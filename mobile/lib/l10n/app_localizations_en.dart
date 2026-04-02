@@ -417,4 +417,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeNotifications => 'Home Notifications';
+
+  @override
+  String get whoCanSeeMe => 'Who Can See Me?';
+
+  @override
+  String get pendingVisibility => 'Pending Requests';
+
+  @override
+  String get visibleMembers => 'Visible Members';
+
+  @override
+  String get grant => 'Grant';
+
+  @override
+  String get noVisibilityPairsYet =>
+      'No group members yet. Invite someone to get started.';
 }

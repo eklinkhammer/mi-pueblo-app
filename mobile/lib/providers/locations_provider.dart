@@ -8,7 +8,8 @@ import 'package:fence/services/websocket_service.dart';
 
 class GroupLocationsNotifier
     extends FamilyAsyncNotifier<List<MemberLocation>, String> {
-  StreamSubscription<Map<String, dynamic>>? _wsSubscription;
+  StreamSubscription<Map<String, dynamic>>? _locationSubscription;
+  StreamSubscription<Map<String, dynamic>>? _visibilitySubscription;
   Timer? _pollTimer;
 
   @override
@@ -17,7 +18,8 @@ class GroupLocationsNotifier
     _listenToWebSocket(arg);
     _startPeriodicRefresh(arg);
     ref.onDispose(() {
-      _wsSubscription?.cancel();
+      _locationSubscription?.cancel();
+      _visibilitySubscription?.cancel();
       _pollTimer?.cancel();
     });
     return locations;
@@ -34,13 +36,31 @@ class GroupLocationsNotifier
 
   void _listenToWebSocket(String groupId) {
     final wsService = ref.read(websocketServiceProvider);
-    _wsSubscription = wsService.messages
+    _locationSubscription = wsService.messages
         .where((msg) =>
             msg['topic'] == 'group:$groupId' &&
             msg['event'] == 'location:updated')
         .listen((msg) {
       final payload = msg['payload'] as Map<String, dynamic>;
       _applyLocationUpdate(payload);
+    });
+
+    // Re-fetch locations when visibility changes
+    _visibilitySubscription = wsService.messages
+        .where((msg) =>
+            msg['topic'] == 'group:$groupId' &&
+            msg['event'] == 'visibility:changed')
+        .listen((_) async {
+      try {
+        final locations = await _fetchLocations(groupId);
+        state = AsyncValue.data(locations);
+      } on Exception catch (e) {
+        developer.log(
+          'Visibility-triggered refresh failed for group $groupId',
+          error: e,
+          name: 'GroupLocationsNotifier',
+        );
+      }
     });
   }
 
@@ -49,14 +69,10 @@ class GroupLocationsNotifier
     if (current == null) return;
 
     final updated = MemberLocation.fromJson(payload);
+    // Only update existing entries; new users appear on next poll
     final newList = current.map((loc) {
       return loc.userId == updated.userId ? updated : loc;
     }).toList();
-
-    // Add if not already in list
-    if (!current.any((loc) => loc.userId == updated.userId)) {
-      newList.add(updated);
-    }
 
     state = AsyncValue.data(newList);
   }

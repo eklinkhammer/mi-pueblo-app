@@ -49,4 +49,71 @@ defmodule FenceWeb.GroupChannelTest do
       assert_reply ref, :ok
     end
   end
+
+  describe "handle_in visibility:grant" do
+    setup %{admin: admin, group: group} do
+      member = create_user(%{"display_name" => "Member"})
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
+      %{member: member}
+    end
+
+    test "broadcasts visibility:changed with active status", %{
+      socket: socket,
+      admin: admin,
+      group: group,
+      member: member
+    } do
+      {:ok, _, socket} = subscribe_and_join(socket, "group:#{group.id}", %{})
+
+      ref = push(socket, "visibility:grant", %{"user_id" => member.id})
+      assert_reply ref, :ok
+
+      {a, b} = if admin.id < member.id, do: {admin.id, member.id}, else: {member.id, admin.id}
+
+      assert_broadcast "visibility:changed", %{
+        user_a_id: ^a,
+        user_b_id: ^b,
+        status: "active"
+      }
+    end
+
+    test "returns error for invalid pair", %{socket: socket, group: group} do
+      {:ok, _, socket} = subscribe_and_join(socket, "group:#{group.id}", %{})
+
+      ref = push(socket, "visibility:grant", %{"user_id" => Ecto.UUID.generate()})
+      assert_reply ref, :error, %{reason: "not_found"}
+    end
+  end
+
+  describe "handle_in visibility:revoke" do
+    setup %{admin: admin, group: group} do
+      member = create_user(%{"display_name" => "Member"})
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
+      # Grant first so we can revoke
+      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+      %{member: member}
+    end
+
+    test "broadcasts visibility:changed with pending status", %{
+      socket: socket,
+      admin: admin,
+      group: group,
+      member: member
+    } do
+      {:ok, _, socket} = subscribe_and_join(socket, "group:#{group.id}", %{})
+
+      ref = push(socket, "visibility:revoke", %{"user_id" => member.id})
+      assert_reply ref, :ok
+
+      {a, b} = if admin.id < member.id, do: {admin.id, member.id}, else: {member.id, admin.id}
+
+      assert_broadcast "visibility:changed", %{
+        user_a_id: ^a,
+        user_b_id: ^b,
+        status: "pending"
+      }
+    end
+  end
 end

@@ -55,12 +55,16 @@ defmodule Fence.Locations do
     |> Repo.all()
   end
 
-  def get_group_last_locations(group_id) do
+  def get_group_last_locations(group_id, viewer_user_id) do
+    visible_ids = Groups.visible_user_ids(viewer_user_id, group_id)
+    allowed_ids = MapSet.put(visible_ids, viewer_user_id) |> MapSet.to_list()
+
     from(l in DeviceLocation,
       join: m in Fence.Groups.Membership,
       on: m.user_id == l.user_id and m.group_id == ^group_id,
       join: u in Fence.Accounts.User,
       on: u.id == l.user_id,
+      where: l.user_id in ^allowed_ids,
       distinct: l.user_id,
       order_by: [asc: l.user_id, desc: l.inserted_at],
       select: %{

@@ -421,4 +421,20 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeNotifications => 'Notificaciones de hogar';
+
+  @override
+  String get whoCanSeeMe => '¿Quién puede verme?';
+
+  @override
+  String get pendingVisibility => 'Solicitudes pendientes';
+
+  @override
+  String get visibleMembers => 'Miembros visibles';
+
+  @override
+  String get grant => 'Conceder';
+
+  @override
+  String get noVisibilityPairsYet =>
+      'Aún no hay miembros en el grupo. Invita a alguien para comenzar.';
 }

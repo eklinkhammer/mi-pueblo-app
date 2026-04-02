@@ -97,6 +97,12 @@ class ApiClient {
     });
   }
 
+  Future<Response<Map<String, dynamic>>> googleSignIn(String idToken) {
+    return _dio.post<Map<String, dynamic>>('/auth/google', data: {
+      'id_token': idToken,
+    });
+  }
+
   Future<Response<Map<String, dynamic>>> getMe() =>
       _dio.get<Map<String, dynamic>>('/me');
 
@@ -198,6 +204,15 @@ class ApiClient {
           String groupId, String geofenceId) =>
       _dio.delete<Map<String, dynamic>>(
           '/groups/$groupId/geofences/$geofenceId/claim-home');
+
+  // Visibility
+  Future<Response<Map<String, dynamic>>> getVisibilityPairs(String groupId) =>
+      _dio.get<Map<String, dynamic>>('/groups/$groupId/visibility');
+
+  Future<Response<Map<String, dynamic>>> updateVisibility(
+          String groupId, String userId, {required bool visible}) =>
+      _dio.put<Map<String, dynamic>>('/groups/$groupId/visibility/$userId',
+          data: {'visible': visible});
 
   // Subscriptions
   Future<Response<Map<String, dynamic>>> getSubscription(

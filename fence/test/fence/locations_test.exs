@@ -46,8 +46,8 @@ defmodule Fence.LocationsTest do
     end
   end
 
-  describe "get_group_last_locations/1" do
-    test "returns latest location per group member" do
+  describe "get_group_last_locations/2" do
+    test "returns latest location per group member filtered by visibility" do
       admin = create_user(%{"display_name" => "Admin"})
       member = create_user(%{"display_name" => "Member"})
       group = create_group(admin)
@@ -61,7 +61,16 @@ defmodule Fence.LocationsTest do
       {:ok, _} =
         Locations.report_location(member.id, %{"latitude" => 40.0, "longitude" => -74.0})
 
-      locations = Locations.get_group_last_locations(group.id)
+      # Before granting visibility, admin can only see their own location
+      locations = Locations.get_group_last_locations(group.id, admin.id)
+      assert length(locations) == 1
+      assert hd(locations).user_id == admin.id
+
+      # Grant visibility
+      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+
+      # Now admin can see both
+      locations = Locations.get_group_last_locations(group.id, admin.id)
       assert length(locations) == 2
       user_ids = Enum.map(locations, & &1.user_id) |> MapSet.new()
       assert MapSet.member?(user_ids, admin.id)

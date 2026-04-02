@@ -859,6 +859,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Home Notifications'**
   String get homeNotifications;
+
+  /// No description provided for @whoCanSeeMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Who Can See Me?'**
+  String get whoCanSeeMe;
+
+  /// No description provided for @pendingVisibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Requests'**
+  String get pendingVisibility;
+
+  /// No description provided for @visibleMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible Members'**
+  String get visibleMembers;
+
+  /// No description provided for @grant.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant'**
+  String get grant;
+
+  /// No description provided for @noVisibilityPairsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No group members yet. Invite someone to get started.'**
+  String get noVisibilityPairsYet;
 }
 
 class _AppLocalizationsDelegate

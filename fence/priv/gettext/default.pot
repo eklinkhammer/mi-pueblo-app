@@ -23,3 +23,11 @@ msgstr ""
 #: lib/fence/workers/push_notification_worker.ex
 msgid "%{user_name} has left %{geofence_name}"
 msgstr ""
+
+#: lib/fence/workers/push_notification_worker.ex
+msgid "%{user_name} joined %{group_name}"
+msgstr ""
+
+#: lib/fence/workers/push_notification_worker.ex
+msgid "Grant visibility to see each other's location"
+msgstr ""

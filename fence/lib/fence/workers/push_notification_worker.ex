@@ -8,6 +8,43 @@ defmodule Fence.Workers.PushNotificationWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{
+        args: %{"type" => "member_joined", "group_id" => group_id, "user_id" => new_user_id}
+      }) do
+    new_user = Accounts.get_user(new_user_id)
+    group = Groups.get_group(group_id)
+
+    if new_user && group do
+      members = Groups.list_members(group_id)
+
+      for member <- members, member.user_id != new_user_id do
+        tokens = Accounts.get_device_tokens(member.user_id)
+        recipient = Accounts.get_user(member.user_id)
+        locale = (recipient && recipient.locale) || "en"
+
+        {title, body} =
+          Gettext.with_locale(FenceWeb.Gettext, locale, fn ->
+            t = gettext("%{user_name} joined %{group_name}",
+              user_name: new_user.display_name,
+              group_name: group.name
+            )
+            b = gettext("Grant visibility to see each other's location")
+            {t, b}
+          end)
+
+        for token <- tokens do
+          send_fcm(token.token, title, body, %{
+            type: "member_joined",
+            group_id: group_id,
+            user_id: new_user_id
+          })
+        end
+      end
+    end
+
+    :ok
+  end
+
+  def perform(%Oban.Job{
         args: %{"user_id" => triggering_user_id, "geofence_id" => geofence_id, "event" => event}
       }) do
     geofence = Geofences.get_geofence(geofence_id)
@@ -57,11 +94,15 @@ defmodule Fence.Workers.PushNotificationWorker do
     # 4. Triggering user's home_geofence_id (for household detection)
     triggering_home_id = triggering_membership && triggering_membership.home_geofence_id
 
+    # 5. Visibility: which subscribers can see the triggering user
+    visible_set = Groups.visible_user_ids(triggering_user_id, geofence.group_id)
+
     %{
       memberships_by_user: memberships_by_user,
       prefs_by_observer: prefs_by_observer,
       is_home_geofence: is_home_geofence,
-      triggering_home_id: triggering_home_id
+      triggering_home_id: triggering_home_id,
+      visible_set: visible_set
     }
   end
 
@@ -79,39 +120,45 @@ defmodule Fence.Workers.PushNotificationWorker do
       memberships_by_user: memberships_by_user,
       prefs_by_observer: prefs_by_observer,
       is_home_geofence: is_home_geofence,
-      triggering_home_id: triggering_home_id
+      triggering_home_id: triggering_home_id,
+      visible_set: visible_set
     } = prefs_context
 
-    subscriber_membership = Map.get(memberships_by_user, subscriber_id)
-    member_pref = Map.get(prefs_by_observer, subscriber_id)
-
-    # 1. Household override: if triggering user is a household member AND notify_household is on → SEND
-    is_household =
-      triggering_home_id != nil and
-        subscriber_membership != nil and
-        subscriber_membership.home_geofence_id == triggering_home_id
-
-    if is_household and subscriber_membership != nil and subscriber_membership.notify_household do
-      # Household override — only skip if original conditions match (self, entry/exit disabled, blacklisted)
-      original_skip?(subscription, triggering_user, event)
+    # 0. Visibility check: skip if subscriber can't see triggering user
+    if not MapSet.member?(visible_set, subscriber_id) do
+      true
     else
-      # 2. Group silenced
-      group_silenced =
-        subscriber_membership != nil and subscriber_membership.silence_all_notifications
+      subscriber_membership = Map.get(memberships_by_user, subscriber_id)
+      member_pref = Map.get(prefs_by_observer, subscriber_id)
 
-      # 3. Home silenced by group
-      home_silenced =
-        is_home_geofence and subscriber_membership != nil and
-          subscriber_membership.silence_home_notifications
+      # 1. Household override: if triggering user is a household member AND notify_household is on → SEND
+      is_household =
+        triggering_home_id != nil and
+          subscriber_membership != nil and
+          subscriber_membership.home_geofence_id == triggering_home_id
 
-      # 4. User muted
-      user_muted = member_pref != nil and not member_pref.notify
-
-      # 5. User home muted
-      user_home_muted = is_home_geofence and member_pref != nil and not member_pref.notify_home
-
-      group_silenced or home_silenced or user_muted or user_home_muted or
+      if is_household and subscriber_membership != nil and subscriber_membership.notify_household do
+        # Household override — only skip if original conditions match (self, entry/exit disabled, blacklisted)
         original_skip?(subscription, triggering_user, event)
+      else
+        # 2. Group silenced
+        group_silenced =
+          subscriber_membership != nil and subscriber_membership.silence_all_notifications
+
+        # 3. Home silenced by group
+        home_silenced =
+          is_home_geofence and subscriber_membership != nil and
+            subscriber_membership.silence_home_notifications
+
+        # 4. User muted
+        user_muted = member_pref != nil and not member_pref.notify
+
+        # 5. User home muted
+        user_home_muted = is_home_geofence and member_pref != nil and not member_pref.notify_home
+
+        group_silenced or home_silenced or user_muted or user_home_muted or
+          original_skip?(subscription, triggering_user, event)
+      end
     end
   end
 
