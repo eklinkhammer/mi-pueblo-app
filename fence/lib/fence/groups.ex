@@ -1,6 +1,7 @@
 defmodule Fence.Groups do
   import Ecto.Query
   alias Fence.Groups.{Group, Invite, Membership, VisibilityPair}
+  alias Fence.Accounts
   alias Fence.Repo
   alias Fence.Workers.PushNotificationWorker
 
@@ -112,40 +113,47 @@ defmodule Fence.Groups do
   end
 
   def anonymous_join(code, user_attrs) do
+    case validate_invite(code) do
+      {:ok, invite} -> do_anonymous_join(invite, user_attrs)
+      {:error, _} = error -> error
+    end
+  end
+
+  defp validate_invite(code) do
     case Repo.get_by(Invite, code: code) do
       nil ->
         {:error, :invalid_code}
 
       %Invite{} = invite ->
-        if invite_expired?(invite) do
-          {:error, :expired}
-        else
-          Repo.transaction(fn ->
-            case Fence.Accounts.create_anonymous_user(user_attrs) do
-              {:ok, user} ->
-                %Membership{}
-                |> Membership.changeset(%{
-                  user_id: user.id,
-                  group_id: invite.group_id,
-                  role: "member"
-                })
-                |> Repo.insert!()
-
-                create_pending_visibility_pairs(invite.group_id, user.id)
-
-                %{type: "member_joined", group_id: invite.group_id, user_id: user.id}
-                |> Fence.Workers.PushNotificationWorker.new()
-                |> Oban.insert()
-
-                group = Repo.get!(Group, invite.group_id)
-                {user, group}
-
-              {:error, changeset} ->
-                Repo.rollback(changeset)
-            end
-          end)
-        end
+        if invite_expired?(invite), do: {:error, :expired}, else: {:ok, invite}
     end
+  end
+
+  defp do_anonymous_join(invite, user_attrs) do
+    Repo.transaction(fn ->
+      case Accounts.create_anonymous_user(user_attrs) do
+        {:ok, user} ->
+          %Membership{}
+          |> Membership.changeset(%{
+            user_id: user.id,
+            group_id: invite.group_id,
+            role: "member"
+          })
+          |> Repo.insert!()
+
+          create_pending_visibility_pairs(invite.group_id, user.id)
+
+          %{type: "member_joined", group_id: invite.group_id, user_id: user.id}
+          |> PushNotificationWorker.new()
+          |> Oban.insert()
+
+          group = Repo.get!(Group, invite.group_id)
+          {user, group}
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
   end
 
   def join_by_invite_code(user_id, code) do

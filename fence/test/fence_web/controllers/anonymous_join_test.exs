@@ -1,6 +1,8 @@
 defmodule FenceWeb.AnonymousJoinTest do
   use FenceWeb.ConnCase, async: true
 
+  alias Fence.Groups.Invite
+
   import Fence.Factory
 
   setup do
@@ -60,8 +62,8 @@ defmodule FenceWeb.AnonymousJoinTest do
       expired_at = DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)
 
       {:ok, expired_invite} =
-        %Fence.Groups.Invite{}
-        |> Fence.Groups.Invite.changeset(%{group_id: group.id, created_by_id: owner.id})
+        %Invite{}
+        |> Invite.changeset(%{group_id: group.id, created_by_id: owner.id})
         |> Ecto.Changeset.put_change(:expires_at, expired_at)
         |> Fence.Repo.insert()
 

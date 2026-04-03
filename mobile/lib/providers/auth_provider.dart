@@ -118,18 +118,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
       unawaited(_initNotifications());
     } on DioException catch (e) {
-      final data = e.response?.data;
-      final code = (data is Map) ? data['error']?['code'] : null;
-      if (code == 'invalid_invite_code') {
-        state = state.copyWith(errorKey: AuthErrorKey.invalidInviteCode);
-      } else if (code == 'invite_code_expired') {
-        state = state.copyWith(errorKey: AuthErrorKey.inviteCodeExpired);
-      } else {
-        state = state.copyWith(errorKey: AuthErrorKey.anonymousJoinFailed);
-      }
+      final errorKey = _parseAnonymousJoinError(e);
+      state = state.copyWith(errorKey: errorKey);
     } on Exception catch (_) {
       state = state.copyWith(errorKey: AuthErrorKey.anonymousJoinFailed);
     }
+  }
+
+  AuthErrorKey _parseAnonymousJoinError(DioException e) {
+    final data = e.response?.data;
+    if (data is! Map) return AuthErrorKey.anonymousJoinFailed;
+    final code = (data['error'] as Map?)?['code'];
+    if (code == 'invalid_invite_code') return AuthErrorKey.invalidInviteCode;
+    if (code == 'invite_code_expired') return AuthErrorKey.inviteCodeExpired;
+    return AuthErrorKey.anonymousJoinFailed;
   }
 
   Future<void> signInWithGoogle() async {
