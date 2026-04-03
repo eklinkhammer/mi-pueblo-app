@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:fence/providers/onboarding_provider.dart';
+import 'package:fence/utils/user_colors.dart';
 import 'package:fence/widgets/member_marker.dart';
 
 // Geofence locations
@@ -25,9 +26,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   bool _peopleVisible = false;
 
   static const _items = [
-    'Want to let your family know when you\u2019re hosting?',
-    'Tired of always arriving too late for the good tamales?',
-    'Looking to coordinate with your cousins?',
+    'Trying to find the most convenient place for all the cousins?',
+    'Wish you knew when the party actually gets going, and how much to bring?',
+    'Tired of guessing if that one uncle is actually on his way?',
   ];
 
   @override
@@ -57,6 +58,55 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     // Wait 1 more second, then start text animation
     await Future<void>.delayed(const Duration(seconds: 1));
     if (mounted) await _controller.forward();
+  }
+
+  Widget _buildAvatarGroup(List<(String userId, String name)> members) {
+    const size = 28.0;
+    const overlap = 10.0;
+    return SizedBox(
+      width: size + (members.length - 1) * (size - overlap),
+      height: size,
+      child: Stack(
+        children: [
+          for (var i = 0; i < members.length; i++)
+            Positioned(
+              left: i * (size - overlap),
+              child: _buildAvatar(members[i].$1, members[i].$2, size),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String userId, String name, double size) {
+    final bgColor = colorForUser(userId);
+    final textColor =
+        bgColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: bgColor,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        getInitials(name),
+        style: TextStyle(
+          color: textColor,
+          fontSize: size * 0.38,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 
   double _itemProgress(int index, double overall) {
@@ -147,87 +197,106 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ),
                   ],
                 ),
-                // Geofence labels (offset below geofence edge)
+                // Geofence labels with occupant lists
                 MarkerLayer(
                   markers: [
                     Marker(
                       point: const LatLng(36.215, -115.10),
-                      width: 120,
-                      height: 24,
+                      width: 140,
+                      height: 44,
                       child: Center(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                              horizontal: 6, vertical: 3),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.85),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
-                            "Primo's House",
-                            style: TextStyle(
-                                fontSize: 11, fontWeight: FontWeight.w600),
-                            overflow: TextOverflow.ellipsis,
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "Primo's House",
+                                style: TextStyle(
+                                    fontSize: 11, fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Primo, Tía',
+                                style: TextStyle(fontSize: 10),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                     Marker(
                       point: const LatLng(36.145, -115.17),
-                      width: 120,
-                      height: 24,
+                      width: 140,
+                      height: 44,
                       child: Center(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                              horizontal: 6, vertical: 3),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.85),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
-                            "Abuela's House",
-                            style: TextStyle(
-                                fontSize: 11, fontWeight: FontWeight.w600),
-                            overflow: TextOverflow.ellipsis,
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "Abuela's House",
+                                style: TextStyle(
+                                    fontSize: 11, fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Abuela',
+                                style: TextStyle(fontSize: 10),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                // People markers
+                // Overlapping avatar groups at each geofence
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _primosHouse,
+                      width: 60,
+                      height: 30,
+                      child: _buildAvatarGroup([
+                        ('onboarding-primo', 'Primo'),
+                        ('onboarding-tia', 'Tía'),
+                      ]),
+                    ),
+                    Marker(
+                      point: _abuelasHouse,
+                      width: 40,
+                      height: 30,
+                      child: _buildAvatarGroup([
+                        ('onboarding-abuela', 'Abuela'),
+                      ]),
+                    ),
+                  ],
+                ),
+                // Standalone person not in a geofence
                 const MarkerLayer(
                   markers: [
-                    // Primo at Primo's House
                     Marker(
-                      point: LatLng(36.19, -115.112),
+                      point: LatLng(36.16, -115.05),
                       width: 60,
                       height: 48,
                       child: MemberMarker(
-                        userId: 'onboarding-primo',
-                        displayName: 'Primo',
-                        timeAgo: '5m ago',
-                      ),
-                    ),
-                    // Tía at Primo's House
-                    Marker(
-                      point: LatLng(36.19, -115.088),
-                      width: 60,
-                      height: 48,
-                      child: MemberMarker(
-                        userId: 'onboarding-tia',
-                        displayName: 'Tía',
-                        timeAgo: '3m ago',
-                      ),
-                    ),
-                    // Abuela at Abuela's House
-                    Marker(
-                      point: LatLng(36.121, -115.168),
-                      width: 60,
-                      height: 48,
-                      child: MemberMarker(
-                        userId: 'onboarding-abuela',
-                        displayName: 'Abuela',
-                        timeAgo: '2m ago',
+                        userId: 'onboarding-carlos',
+                        displayName: 'Carlos',
+                        timeAgo: '1m ago',
                       ),
                     ),
                   ],
