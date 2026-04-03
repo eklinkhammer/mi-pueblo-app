@@ -145,7 +145,7 @@ Future<void> pumpAppWithMocks(
         locationServiceProvider.overrideWithValue(locService),
         websocketServiceProvider.overrideWithValue(mockWs),
         onboardingProvider.overrideWith(
-          (_) => OnboardingNotifier.withValue(true),
+          (_) => OnboardingNotifier.completed(),
         ),
         ...extraOverrides,
       ],

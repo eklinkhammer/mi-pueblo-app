@@ -36,7 +36,7 @@ void main() {
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
           onboardingProvider.overrideWith(
-            (_) => OnboardingNotifier.withValue(true),
+            (_) => OnboardingNotifier.completed(),
           ),
         ],
       );
@@ -60,7 +60,7 @@ void main() {
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
           onboardingProvider.overrideWith(
-            (_) => OnboardingNotifier.withValue(true),
+            (_) => OnboardingNotifier.completed(),
           ),
         ],
       );
@@ -97,7 +97,7 @@ void main() {
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
           onboardingProvider.overrideWith(
-            (_) => OnboardingNotifier.withValue(true),
+            (_) => OnboardingNotifier.completed(),
           ),
         ],
       );
@@ -133,7 +133,7 @@ void main() {
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
           onboardingProvider.overrideWith(
-            (_) => OnboardingNotifier.withValue(true),
+            (_) => OnboardingNotifier.completed(),
           ),
         ],
       );

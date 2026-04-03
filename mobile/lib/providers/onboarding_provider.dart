@@ -9,10 +9,10 @@ class OnboardingNotifier extends StateNotifier<bool> {
     _load();
   }
 
-  /// Test-only constructor that starts with the given [initialValue] and
-  /// skips the async SharedPreferences load.
+  /// Test-only constructor that starts completed and skips the async
+  /// SharedPreferences load.
   @visibleForTesting
-  OnboardingNotifier.withValue(bool initialValue) : super(initialValue);
+  OnboardingNotifier.completed() : super(true);
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
