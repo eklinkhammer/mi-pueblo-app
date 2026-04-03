@@ -214,5 +214,7 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+
+  "deleteGroup": "Delete Group?"
 }

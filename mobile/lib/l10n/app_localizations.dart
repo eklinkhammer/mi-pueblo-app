@@ -973,6 +973,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sharing with {count} people'**
   String sharingWithCount(int count);
+
+  /// No description provided for @deleteGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Group?'**
+  String get deleteGroup;
 }
 
 class _AppLocalizationsDelegate

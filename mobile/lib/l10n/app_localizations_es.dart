@@ -483,4 +483,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String sharingWithCount(int count) {
     return 'Compartiendo con $count personas';
   }
+
+  @override
+  String get deleteGroup => '¿Eliminar grupo?';
 }

@@ -169,5 +169,7 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+
+  "deleteGroup": "¿Eliminar grupo?"
 }

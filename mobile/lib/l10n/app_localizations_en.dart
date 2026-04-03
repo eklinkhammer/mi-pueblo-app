@@ -478,4 +478,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String sharingWithCount(int count) {
     return 'Sharing with $count people';
   }
+
+  @override
+  String get deleteGroup => 'Delete Group?';
 }
