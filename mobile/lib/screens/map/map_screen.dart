@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
@@ -128,30 +129,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ],
           ),
           Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => context.go('/auth/join'),
-                        child: Text(l10n.joinFamilyRequiresCode),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => context.go('/auth/register'),
-                        child: Text(l10n.createAGroup),
-                      ),
-                    ),
-                  ],
-                ),
+            bottom: 32,
+            left: 32,
+            right: 32,
+            child: FilledButton(
+              onPressed: () => _showJoinSheet(context),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
+              child: Text(l10n.joinGroup),
             ),
           ),
         ],
@@ -166,6 +152,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             )
           : null,
+    );
+  }
+
+  void _showJoinSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          maxChildSize: 0.8,
+          minChildSize: 0.3,
+          expand: false,
+          builder: (_, scrollController) {
+            return _JoinSheetBody(scrollController: scrollController);
+          },
+        );
+      },
     );
   }
 
@@ -569,5 +573,151 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (diff.inMinutes < 60) return l10n.timeAgoMinutes(diff.inMinutes);
     if (diff.inHours < 24) return l10n.timeAgoHours(diff.inHours);
     return l10n.timeAgoDays(diff.inDays);
+  }
+}
+
+class _JoinSheetBody extends ConsumerStatefulWidget {
+  const _JoinSheetBody({required this.scrollController});
+  final ScrollController scrollController;
+
+  @override
+  ConsumerState<_JoinSheetBody> createState() => _JoinSheetBodyState();
+}
+
+class _JoinSheetBodyState extends ConsumerState<_JoinSheetBody> {
+  final _codeController = TextEditingController();
+  final _nameController = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _join() async {
+    final code = _codeController.text.trim().toUpperCase();
+    final name = _nameController.text.trim();
+    if (code.isEmpty || name.isEmpty) return;
+
+    setState(() => _loading = true);
+    await ref.read(authProvider.notifier).joinAsAnonymous(code, name);
+    if (mounted) {
+      final authState = ref.read(authProvider);
+      if (authState.status == AuthStatus.authenticated) {
+        Navigator.of(context).pop();
+      } else {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context);
+
+    String? errorText;
+    if (authState.errorKey == AuthErrorKey.invalidInviteCode) {
+      errorText = l10n.errorInvalidInviteCode;
+    } else if (authState.errorKey == AuthErrorKey.inviteCodeExpired) {
+      errorText = l10n.errorInviteCodeExpired;
+    } else if (authState.errorKey == AuthErrorKey.anonymousJoinFailed) {
+      errorText = l10n.anonymousJoinFailed;
+    }
+
+    return ListView(
+      controller: widget.scrollController,
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      children: [
+        Center(
+          child: Container(
+            width: 32,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Mi Pueblo',
+          style: Theme.of(context).textTheme.headlineLarge,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.appSubtitle,
+          style: Theme.of(context).textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 32),
+        TextField(
+          controller: _codeController,
+          decoration: InputDecoration(
+            labelText: l10n.groupCodePrompt,
+            border: const OutlineInputBorder(),
+          ),
+          textCapitalization: TextCapitalization.characters,
+          inputFormatters: [_UpperCaseTextFormatter()],
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _nameController,
+          decoration: InputDecoration(
+            labelText: l10n.yourName,
+            border: const OutlineInputBorder(),
+          ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _join(),
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            errorText,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
+          ),
+        ],
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: _loading ? null : _join,
+          child: _loading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(l10n.joinButton),
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton(
+          onPressed: () {
+            final router = GoRouter.of(context);
+            Navigator.of(context).pop();
+            router.go('/auth/register');
+          },
+          child: Text(l10n.createAGroup),
+        ),
+      ],
+    );
+  }
+}
+
+class _UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
+    );
   }
 }
