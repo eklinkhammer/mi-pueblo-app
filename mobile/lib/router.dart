@@ -6,6 +6,7 @@ import 'package:fence/screens/auth/anonymous_join_screen.dart';
 import 'package:fence/screens/auth/login_screen.dart';
 import 'package:fence/screens/auth/register_screen.dart';
 import 'package:fence/screens/onboarding/onboarding_screen.dart';
+import 'package:fence/screens/onboarding/permissions_screen.dart';
 import 'package:fence/screens/map/map_screen.dart';
 import 'package:fence/screens/groups/group_list_screen.dart';
 import 'package:fence/screens/groups/group_detail_screen.dart';
@@ -25,7 +26,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/map',
     redirect: (context, state) {
-      final isOnboarding = state.matchedLocation == '/onboarding';
+      final isOnboarding = state.matchedLocation.startsWith('/onboarding');
 
       if (!onboardingCompleted && !isOnboarding) return '/onboarding';
       if (onboardingCompleted && isOnboarding) return '/auth/login';
@@ -40,10 +41,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      // Onboarding route
+      // Onboarding routes
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
+        routes: [
+          GoRoute(
+            path: 'permissions',
+            builder: (context, state) => const PermissionsScreen(),
+          ),
+        ],
       ),
 
       // Auth routes

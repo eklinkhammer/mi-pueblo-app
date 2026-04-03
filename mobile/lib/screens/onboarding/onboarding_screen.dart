@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:fence/providers/onboarding_provider.dart';
 import 'package:fence/utils/user_colors.dart';
 import 'package:fence/widgets/member_marker.dart';
 
@@ -12,14 +10,14 @@ const _primosHouse = LatLng(36.19, -115.10);
 const _abuelasHouse = LatLng(36.12, -115.17);
 const _geofenceRadius = 800.0; // meters
 
-class OnboardingScreen extends ConsumerStatefulWidget {
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
+class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   bool _mapReady = false;
@@ -365,10 +363,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                             const SizedBox(height: 24),
                             FilledButton(
                               onPressed: () {
-                                ref
-                                    .read(onboardingProvider.notifier)
-                                    .completeOnboarding();
-                                context.go('/auth/login');
+                                context.go('/onboarding/permissions');
                               },
                               child: const Text('Get Started'),
                             ),
