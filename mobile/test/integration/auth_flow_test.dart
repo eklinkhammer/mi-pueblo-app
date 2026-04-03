@@ -21,8 +21,7 @@ void main() {
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
       // Should be on the map screen with anonymous CTA
-      expect(find.text('Join your family (requires code)'), findsOneWidget);
-      expect(find.text('Create a Group'), findsOneWidget);
+      expect(find.text('Join Group'), findsOneWidget);
     });
 
     testWidgets('login with valid credentials navigates to map',
@@ -35,7 +34,13 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate: map CTA → register → login
+      // Navigate: map CTA → join sheet → register → login
+      await tester.tap(find.text('Join Group'));
+      await tester.pumpAndSettle();
+
+      // Drag the sheet up to reveal "Create a Group" button
+      await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Create a Group'));
       await tester.pumpAndSettle();
 
@@ -65,7 +70,13 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate: map CTA → register → login
+      // Navigate: map CTA → join sheet → register → login
+      await tester.tap(find.text('Join Group'));
+      await tester.pumpAndSettle();
+
+      // Drag the sheet up to reveal "Create a Group" button
+      await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Create a Group'));
       await tester.pumpAndSettle();
 
@@ -96,7 +107,13 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate from map CTA to register
+      // Navigate from map CTA → join sheet → register
+      await tester.tap(find.text('Join Group'));
+      await tester.pumpAndSettle();
+
+      // Drag the sheet up to reveal "Create a Group" button
+      await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Create a Group'));
       await tester.pumpAndSettle();
 
@@ -150,8 +167,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should be on map with anonymous CTA
-      expect(find.text('Join your family (requires code)'), findsOneWidget);
-      expect(find.text('Create a Group'), findsOneWidget);
+      expect(find.text('Join Group'), findsOneWidget);
     });
 
     testWidgets('login → logout → re-login cycle', (tester) async {
@@ -163,7 +179,13 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // === Navigate: map CTA → register → login ===
+      // === Navigate: map CTA → join sheet → register → login ===
+      await tester.tap(find.text('Join Group'));
+      await tester.pumpAndSettle();
+
+      // Drag the sheet up to reveal "Create a Group" button
+      await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Create a Group'));
       await tester.pumpAndSettle();
 
@@ -192,10 +214,15 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should be on map with anonymous CTA after logout
-      expect(find.text('Join your family (requires code)'), findsOneWidget);
-      expect(find.text('Create a Group'), findsOneWidget);
+      expect(find.text('Join Group'), findsOneWidget);
 
-      // Navigate: map CTA → register → login
+      // Navigate: map CTA → join sheet → register → login
+      await tester.tap(find.text('Join Group'));
+      await tester.pumpAndSettle();
+
+      // Drag the sheet up to reveal "Create a Group" button
+      await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Create a Group'));
       await tester.pumpAndSettle();
 
