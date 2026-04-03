@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
+import 'package:fence/providers/auth_provider.dart';
 
-class ShellScaffold extends StatelessWidget {
+class ShellScaffold extends ConsumerWidget {
   final Widget child;
 
   const ShellScaffold({super.key, required this.child});
@@ -16,40 +18,45 @@ class ShellScaffold extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAuth =
+        ref.watch(authProvider.select((s) => s.status == AuthStatus.authenticated));
     final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex(context),
-        onDestinationSelected: (index) {
-          switch (index) {
-            case 0:
-              context.go('/map');
-            case 1:
-              context.go('/groups');
-            case 2:
-              context.go('/settings');
-          }
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.map_outlined),
-            selectedIcon: const Icon(Icons.map),
-            label: l10n.map,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.group_outlined),
-            selectedIcon: const Icon(Icons.group),
-            label: l10n.groups,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
-            label: l10n.settings,
-          ),
-        ],
-      ),
+      bottomNavigationBar: isAuth
+          ? NavigationBar(
+              selectedIndex: _currentIndex(context),
+              onDestinationSelected: (index) {
+                switch (index) {
+                  case 0:
+                    context.go('/map');
+                  case 1:
+                    context.go('/groups');
+                  case 2:
+                    context.go('/settings');
+                }
+              },
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.map_outlined),
+                  selectedIcon: const Icon(Icons.map),
+                  label: l10n.map,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.group_outlined),
+                  selectedIcon: const Icon(Icons.group),
+                  label: l10n.groups,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings),
+                  label: l10n.settings,
+                ),
+              ],
+            )
+          : null,
     );
   }
 }

@@ -15,6 +15,7 @@
   "groupCodePrompt": "Código de grupo",
   "yourName": "Tu nombre",
   "joinButton": "Unirse",
+  "joinFamilyRequiresCode": "Únete a tu familia (requiere código)",
   "anonymousJoinFailed": "Error al unirse al grupo",
   "anonymousAccount": "Cuenta anónima",
   "signOutAnonymousWarning": "Tienes una cuenta anónima. Cerrar sesión perderá permanentemente el acceso a esta cuenta.",

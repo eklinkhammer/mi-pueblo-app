@@ -176,6 +176,12 @@ abstract class AppLocalizations {
   /// **'Join'**
   String get joinButton;
 
+  /// No description provided for @joinFamilyRequiresCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Join your family (requires code)'**
+  String get joinFamilyRequiresCode;
+
   /// No description provided for @anonymousJoinFailed.
   ///
   /// In en, this message translates to:

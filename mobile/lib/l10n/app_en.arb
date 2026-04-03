@@ -15,6 +15,7 @@
   "groupCodePrompt": "Group Code",
   "yourName": "Your Name",
   "joinButton": "Join",
+  "joinFamilyRequiresCode": "Join your family (requires code)",
   "anonymousJoinFailed": "Failed to join group",
   "anonymousAccount": "Anonymous account",
   "signOutAnonymousWarning": "You have an anonymous account. Signing out will permanently lose access to this account.",

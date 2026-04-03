@@ -29,14 +29,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isOnboarding = state.matchedLocation.startsWith('/onboarding');
 
       if (!onboardingCompleted && !isOnboarding) return '/onboarding';
-      if (onboardingCompleted && isOnboarding) return '/auth/login';
+      if (onboardingCompleted && isOnboarding) return '/map';
 
       final isAuth = authStatus == AuthStatus.authenticated;
       final isAuthRoute =
           state.matchedLocation.startsWith('/auth') || isOnboarding;
 
       if (authStatus == AuthStatus.unknown) return null;
-      if (!isAuth && !isAuthRoute) return '/auth/join';
+      final isMapRoute = state.matchedLocation == '/map';
+      if (!isAuth && !isAuthRoute && !isMapRoute) return '/auth/join';
       if (isAuth && isAuthRoute) return '/map';
       return null;
     },

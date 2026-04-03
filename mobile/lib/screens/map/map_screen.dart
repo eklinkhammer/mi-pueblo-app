@@ -12,6 +12,7 @@ import 'package:fence/providers/selected_group_provider.dart';
 import 'package:fence/models/member_location.dart';
 import 'package:fence/models/geofence.dart';
 import 'package:fence/models/app_location.dart';
+import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/services/location_service.dart';
 import 'package:fence/utils/user_colors.dart';
@@ -28,6 +29,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   String? _centeredGroupId;
   final _mapController = MapController();
   bool _didAutoSelect = false;
+  bool _didInitialCenter = false;
   AppLocation? _myPosition;
   StreamSubscription<AppLocation>? _locationSubscription;
 
@@ -53,10 +55,27 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final position = await locationService.getCurrentPosition();
     if (position != null && mounted) {
       setState(() => _myPosition = position);
+      _autoCenterOnFirstPosition();
     }
   }
 
-  void _centerOnMe() {
+  void _autoCenterOnFirstPosition() {
+    if (_didInitialCenter || _myPosition == null) return;
+    _didInitialCenter = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapController.move(
+        LatLng(_myPosition!.latitude, _myPosition!.longitude),
+        15,
+      );
+    });
+  }
+
+  Future<void> _centerOnMe() async {
+    final locationService = ref.read(locationServiceProvider);
+    final position = await locationService.getCurrentPosition();
+    if (position != null && mounted) {
+      setState(() => _myPosition = position);
+    }
     if (_myPosition != null) {
       _mapController.move(
         LatLng(_myPosition!.latitude, _myPosition!.longitude),
@@ -80,6 +99,77 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isAuth =
+        ref.watch(authProvider.select((s) => s.status == AuthStatus.authenticated));
+
+    if (!isAuth) return _buildAnonymousView(context);
+    return _buildAuthenticatedView(context);
+  }
+
+  Widget _buildAnonymousView(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      body: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _myPosition != null
+                  ? LatLng(_myPosition!.latitude, _myPosition!.longitude)
+                  : const LatLng(37.7749, -122.4194),
+              initialZoom: 12,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.fence.app',
+              ),
+              _buildMyLocationMarker(),
+            ],
+          ),
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => context.go('/auth/join'),
+                        child: Text(l10n.joinFamilyRequiresCode),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => context.go('/auth/register'),
+                        child: Text(l10n.createAGroup),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _myPosition != null
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 80),
+              child: FloatingActionButton(
+                heroTag: 'myLocation',
+                onPressed: _centerOnMe,
+                child: const Icon(Icons.my_location),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildAuthenticatedView(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final groupsAsync = ref.watch(groupsProvider);
     final selectedGroupId = ref.watch(selectedGroupIdProvider);

@@ -15,16 +15,14 @@ void main() {
   });
 
   group('Auth flow', () {
-    testWidgets('unauthenticated user sees join screen', (tester) async {
+    testWidgets('unauthenticated user sees map with CTA', (tester) async {
       setupUnauthenticatedStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      expect(find.text('Fence'), findsOneWidget);
-      expect(find.text('Group Code'), findsOneWidget);
-      expect(find.text('Your Name'), findsOneWidget);
-      expect(find.text('Join'), findsOneWidget);
-      expect(find.text('Already have an account? Sign in'), findsOneWidget);
+      // Should be on the map screen with anonymous CTA
+      expect(find.text('Join your family (requires code)'), findsOneWidget);
+      expect(find.text('Create a Group'), findsOneWidget);
     });
 
     testWidgets('login with valid credentials navigates to map',
@@ -37,7 +35,10 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // We start on the join screen; navigate to login
+      // Navigate: map CTA → register → login
+      await tester.tap(find.text('Create a Group'));
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('Already have an account? Sign in'));
       await tester.pumpAndSettle();
 
@@ -54,7 +55,7 @@ void main() {
       await tester.tap(find.text('Sign In'));
       await tester.pumpAndSettle();
 
-      // Should now be on the map screen (AppBar title + bottom nav label)
+      // Should now be on the authenticated map screen
       expect(find.text('Select a group to view the map'), findsOneWidget);
     });
 
@@ -64,7 +65,10 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate from join screen to login
+      // Navigate: map CTA → register → login
+      await tester.tap(find.text('Create a Group'));
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('Already have an account? Sign in'));
       await tester.pumpAndSettle();
 
@@ -92,12 +96,8 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate from join screen to login first
-      await tester.tap(find.text('Already have an account? Sign in'));
-      await tester.pumpAndSettle();
-
-      // Tap "Create an account" on the login screen
-      await tester.tap(find.text('Create an account'));
+      // Navigate from map CTA to register
+      await tester.tap(find.text('Create a Group'));
       await tester.pumpAndSettle();
 
       // Should be on register screen
@@ -119,7 +119,8 @@ void main() {
       expect(find.text('Select a group to view the map'), findsOneWidget);
     });
 
-    testWidgets('logout from settings returns to join screen', (tester) async {
+    testWidgets('logout from settings returns to map with CTA',
+        (tester) async {
       setupAuthenticatedStubs(mockApi);
       setupGroupStubs(mockApi);
       setupGeofenceStubs(mockApi);
@@ -148,9 +149,9 @@ void main() {
       when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
       await tester.pumpAndSettle();
 
-      // Should be back on join screen
-      expect(find.text('Join'), findsOneWidget);
-      expect(find.text('Already have an account? Sign in'), findsOneWidget);
+      // Should be on map with anonymous CTA
+      expect(find.text('Join your family (requires code)'), findsOneWidget);
+      expect(find.text('Create a Group'), findsOneWidget);
     });
 
     testWidgets('login → logout → re-login cycle', (tester) async {
@@ -162,7 +163,10 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // === Navigate from join screen to login ===
+      // === Navigate: map CTA → register → login ===
+      await tester.tap(find.text('Create a Group'));
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('Already have an account? Sign in'));
       await tester.pumpAndSettle();
 
@@ -187,10 +191,14 @@ void main() {
       when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
       await tester.pumpAndSettle();
 
-      // Should be on join screen after logout
-      expect(find.text('Join'), findsOneWidget);
+      // Should be on map with anonymous CTA after logout
+      expect(find.text('Join your family (requires code)'), findsOneWidget);
+      expect(find.text('Create a Group'), findsOneWidget);
 
-      // Navigate from join screen back to login
+      // Navigate: map CTA → register → login
+      await tester.tap(find.text('Create a Group'));
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('Already have an account? Sign in'));
       await tester.pumpAndSettle();
 

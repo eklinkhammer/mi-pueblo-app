@@ -54,7 +54,7 @@ void main() {
       container.dispose();
     });
 
-    test('unauthenticated + protected route → redirect to /auth/join',
+    test('unauthenticated + /map → no redirect (map allowed for anonymous)',
         () async {
       final container = ProviderContainer(
         overrides: [
@@ -73,6 +73,52 @@ void main() {
       expect(state.status, AuthStatus.unauthenticated);
 
       final router = container.read(routerProvider);
+      // /map is the initial location — it should stay on /map, not redirect
+      expect(router.configuration.redirect, isNotNull);
+
+      await _pumpAsync();
+      container.dispose();
+    });
+
+    test('unauthenticated + other protected route → redirect to /auth/join',
+        () async {
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          onboardingProvider.overrideWith(
+            (_) => OnboardingNotifier.completed(),
+          ),
+        ],
+      );
+
+      container.read(authProvider);
+      await _pumpAsync();
+
+      final state = container.read(authProvider);
+      expect(state.status, AuthStatus.unauthenticated);
+
+      final router = container.read(routerProvider);
+      expect(router.configuration.redirect, isNotNull);
+
+      await _pumpAsync();
+      container.dispose();
+    });
+
+    test('post-onboarding redirects to /map', () async {
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          onboardingProvider.overrideWith(
+            (_) => OnboardingNotifier.completed(),
+          ),
+        ],
+      );
+
+      container.read(authProvider);
+      await _pumpAsync();
+
+      final router = container.read(routerProvider);
+      // Onboarding completed users should be sent to /map, not /auth/login
       expect(router.configuration.redirect, isNotNull);
 
       await _pumpAsync();

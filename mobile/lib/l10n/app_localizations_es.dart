@@ -48,6 +48,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get joinButton => 'Unirse';
 
   @override
+  String get joinFamilyRequiresCode => 'Únete a tu familia (requiere código)';
+
+  @override
   String get anonymousJoinFailed => 'Error al unirse al grupo';
 
   @override

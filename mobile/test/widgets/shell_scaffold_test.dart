@@ -1,8 +1,13 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:fence/l10n/app_localizations.dart';
+import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
+import '../helpers/mocks.dart';
 
 void main() {
   GoRouter createRouter({String initialLocation = '/map'}) {
@@ -30,15 +35,41 @@ void main() {
     );
   }
 
+  late MockApiClient mockApi;
+
+  setUp(() {
+    mockApi = MockApiClient();
+    when(() => mockApi.getAccessToken()).thenAnswer((_) async => 'valid-token');
+    when(() => mockApi.getMe()).thenAnswer((_) async {
+      return Response(
+        data: {
+          'user': {
+            'id': 'uid',
+            'email': 'a@b.com',
+            'display_name': 'A',
+            'inserted_at': '2025-01-01T00:00:00Z',
+          }
+        },
+        statusCode: 200,
+        requestOptions: RequestOptions(path: '/fake'),
+      );
+    });
+  });
+
   group('ShellScaffold', () {
-    testWidgets('shows 3 navigation destinations', (tester) async {
+    testWidgets('shows 3 navigation destinations when authenticated',
+        (tester) async {
       final router = createRouter();
-      await tester
-          .pumpWidget(MaterialApp.router(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: router,
-          ));
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+        ],
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ));
       await tester.pumpAndSettle();
 
       expect(find.byType(NavigationDestination), findsNWidgets(3));
@@ -49,12 +80,16 @@ void main() {
 
     testWidgets('correct tab selected for /map route', (tester) async {
       final router = createRouter(initialLocation: '/map');
-      await tester
-          .pumpWidget(MaterialApp.router(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: router,
-          ));
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+        ],
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ));
       await tester.pumpAndSettle();
 
       final navBar =
@@ -64,12 +99,16 @@ void main() {
 
     testWidgets('correct tab selected for /groups route', (tester) async {
       final router = createRouter(initialLocation: '/groups');
-      await tester
-          .pumpWidget(MaterialApp.router(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: router,
-          ));
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+        ],
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ));
       await tester.pumpAndSettle();
 
       final navBar =
@@ -79,17 +118,42 @@ void main() {
 
     testWidgets('correct tab selected for /settings route', (tester) async {
       final router = createRouter(initialLocation: '/settings');
-      await tester
-          .pumpWidget(MaterialApp.router(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: router,
-          ));
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+        ],
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ));
       await tester.pumpAndSettle();
 
       final navBar =
           tester.widget<NavigationBar>(find.byType(NavigationBar));
       expect(navBar.selectedIndex, 2);
+    });
+
+    testWidgets('no bottom nav for unauthenticated users', (tester) async {
+      final unauthApi = MockApiClient();
+      // ignore: unnecessary_lambdas
+      when(() => unauthApi.getAccessToken()).thenAnswer((_) async => null);
+
+      final router = createRouter();
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith((ref) => AuthNotifier(unauthApi)),
+        ],
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NavigationBar), findsNothing);
     });
   });
 }

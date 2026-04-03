@@ -48,6 +48,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get joinButton => 'Join';
 
   @override
+  String get joinFamilyRequiresCode => 'Join your family (requires code)';
+
+  @override
   String get anonymousJoinFailed => 'Failed to join group';
 
   @override
