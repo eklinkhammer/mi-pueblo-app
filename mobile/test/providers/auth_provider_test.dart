@@ -159,6 +159,43 @@ void main() {
     });
   });
 
+  group('createGroupAsAnonymous', () {
+    test('success → authenticated, returns group id', () async {
+      when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
+      when(() => mockApi.anonymousCreate(any(), any()))
+          .thenAnswer((_) async => fakeResponse(anonymousCreateResponseJson));
+      when(() => mockApi.setTokens(any(), any())).thenAnswer((_) async {});
+
+      final notifier = createNotifier();
+      await Future<void>.delayed(Duration.zero);
+
+      final groupId =
+          await notifier.createGroupAsAnonymous('New Group', 'Anon Creator');
+
+      expect(groupId, '660e8400-e29b-41d4-a716-446655440099');
+      expect(notifier.state.status, AuthStatus.authenticated);
+      expect(notifier.state.user, isNotNull);
+      expect(notifier.state.user!.displayName, 'Anon Creator');
+      verify(() => mockApi.setTokens(
+          'test-access-token', 'test-refresh-token')).called(1);
+    });
+
+    test('failure → returns null, error key set', () async {
+      when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
+      when(() => mockApi.anonymousCreate(any(), any()))
+          .thenThrow(Exception('server error'));
+
+      final notifier = createNotifier();
+      await Future<void>.delayed(Duration.zero);
+
+      final groupId =
+          await notifier.createGroupAsAnonymous('Group', 'Name');
+
+      expect(groupId, isNull);
+      expect(notifier.state.errorKey, AuthErrorKey.anonymousCreateFailed);
+    });
+  });
+
   group('AuthState defaults', () {
     test('has correct default values', () {
       const state = AuthState();

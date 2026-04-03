@@ -151,7 +151,7 @@ class PermissionsScreen extends ConsumerWidget {
                       ref
                           .read(onboardingProvider.notifier)
                           .completeOnboarding();
-                      context.go('/auth/login');
+                      context.go('/auth/create');
                     },
                     child: const Text('Continue'),
                   ),

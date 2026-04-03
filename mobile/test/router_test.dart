@@ -80,7 +80,7 @@ void main() {
       container.dispose();
     });
 
-    test('unauthenticated + other protected route → redirect to /auth/join',
+    test('unauthenticated + other protected route → redirect to /auth/create',
         () async {
       final container = ProviderContainer(
         overrides: [

@@ -88,6 +88,38 @@ defmodule FenceWeb.AuthController do
     |> json(%{error: %{code: "missing_fields", message: "Missing required field: id_token"}})
   end
 
+  def anonymous_create(conn, %{"group_name" => group_name, "display_name" => display_name}) do
+    case Groups.anonymous_create_group(group_name, %{"display_name" => display_name}) do
+      {:ok, {user, group}} ->
+        {:ok, tokens} = Accounts.generate_tokens(user)
+
+        conn
+        |> put_status(:created)
+        |> json(%{
+          user: user_json(user),
+          group: %{id: group.id, name: group.name},
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token
+        })
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{errors: format_errors(changeset)})
+    end
+  end
+
+  def anonymous_create(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{
+      error: %{
+        code: "missing_fields",
+        message: "Missing required fields: group_name, display_name"
+      }
+    })
+  end
+
   def anonymous_join(conn, %{"invite_code" => code, "display_name" => display_name}) do
     case Groups.anonymous_join(code, %{"display_name" => display_name}) do
       {:ok, {user, group}} ->

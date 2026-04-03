@@ -17,6 +17,9 @@
   "joinButton": "Join",
   "joinFamilyRequiresCode": "Join your family (requires code)",
   "anonymousJoinFailed": "Failed to join group",
+  "anonymousCreateFailed": "Failed to create group",
+  "haveInviteCode": "Have an invite code? Join a group",
+  "createNewGroup": "Create a new group",
   "anonymousAccount": "Anonymous account",
   "signOutAnonymousWarning": "You have an anonymous account. Signing out will permanently lose access to this account.",
 

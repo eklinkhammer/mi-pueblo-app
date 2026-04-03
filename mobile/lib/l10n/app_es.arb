@@ -17,6 +17,9 @@
   "joinButton": "Unirse",
   "joinFamilyRequiresCode": "Únete a tu familia (requiere código)",
   "anonymousJoinFailed": "Error al unirse al grupo",
+  "anonymousCreateFailed": "Error al crear el grupo",
+  "haveInviteCode": "¿Tienes un código de invitación? Únete a un grupo",
+  "createNewGroup": "Crear un grupo nuevo",
   "anonymousAccount": "Cuenta anónima",
   "signOutAnonymousWarning": "Tienes una cuenta anónima. Cerrar sesión perderá permanentemente el acceso a esta cuenta.",
 

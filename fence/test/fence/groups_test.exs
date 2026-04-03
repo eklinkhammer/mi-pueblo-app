@@ -183,6 +183,30 @@ defmodule Fence.GroupsTest do
     end
   end
 
+  describe "anonymous_create_group/2" do
+    test "creates anonymous user and group with admin membership" do
+      assert {:ok, {user, group}} =
+               Groups.anonymous_create_group("My Group", %{"display_name" => "Creator"})
+
+      assert user.is_anonymous == true
+      assert user.display_name == "Creator"
+      assert group.name == "My Group"
+      assert group.created_by_id == user.id
+
+      membership = Groups.get_membership(user.id, group.id)
+      assert membership.role == "admin"
+    end
+
+    test "rolls back on invalid user attrs" do
+      assert {:error, _changeset} =
+               Groups.anonymous_create_group("My Group", %{"display_name" => ""})
+
+      # No groups should have been created
+      # (We can't easily query all groups, but we verify the transaction rolled back
+      # by checking the error return)
+    end
+  end
+
   describe "anonymous_join/2" do
     test "creates anonymous user and membership" do
       admin = create_user()

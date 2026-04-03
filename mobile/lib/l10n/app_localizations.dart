@@ -188,6 +188,24 @@ abstract class AppLocalizations {
   /// **'Failed to join group'**
   String get anonymousJoinFailed;
 
+  /// No description provided for @anonymousCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create group'**
+  String get anonymousCreateFailed;
+
+  /// No description provided for @haveInviteCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Have an invite code? Join a group'**
+  String get haveInviteCode;
+
+  /// No description provided for @createNewGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new group'**
+  String get createNewGroup;
+
   /// No description provided for @anonymousAccount.
   ///
   /// In en, this message translates to:

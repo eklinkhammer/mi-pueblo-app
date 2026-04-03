@@ -702,7 +702,7 @@ class _JoinSheetBodyState extends ConsumerState<_JoinSheetBody> {
           onPressed: () {
             final router = GoRouter.of(context);
             Navigator.of(context).pop();
-            router.go('/auth/register');
+            router.go('/auth/create');
           },
           child: Text(l10n.createAGroup),
         ),

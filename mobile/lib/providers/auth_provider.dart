@@ -16,6 +16,7 @@ enum AuthErrorKey {
   googleSignInFailed,
   googleSignInCancelled,
   anonymousJoinFailed,
+  anonymousCreateFailed,
   invalidInviteCode,
   inviteCodeExpired,
 }
@@ -132,6 +133,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (code == 'invalid_invite_code') return AuthErrorKey.invalidInviteCode;
     if (code == 'invite_code_expired') return AuthErrorKey.inviteCodeExpired;
     return AuthErrorKey.anonymousJoinFailed;
+  }
+
+  Future<String?> createGroupAsAnonymous(
+      String groupName, String displayName) async {
+    try {
+      final response =
+          await _apiClient.anonymousCreate(groupName, displayName);
+      final data = response.data!;
+      await _apiClient.setTokens(
+        data['access_token'] as String,
+        data['refresh_token'] as String,
+      );
+      final user = User.fromJson(data['user'] as Map<String, dynamic>);
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      unawaited(_initNotifications());
+      final group = data['group'] as Map<String, dynamic>;
+      return group['id'] as String;
+    } on Exception catch (_) {
+      state = state.copyWith(errorKey: AuthErrorKey.anonymousCreateFailed);
+      return null;
+    }
   }
 
   Future<void> signInWithGoogle() async {

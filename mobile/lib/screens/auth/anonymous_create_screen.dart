@@ -1,38 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
 
-class AnonymousJoinScreen extends ConsumerStatefulWidget {
-  const AnonymousJoinScreen({super.key});
+class AnonymousCreateScreen extends ConsumerStatefulWidget {
+  const AnonymousCreateScreen({super.key});
 
   @override
-  ConsumerState<AnonymousJoinScreen> createState() =>
-      _AnonymousJoinScreenState();
+  ConsumerState<AnonymousCreateScreen> createState() =>
+      _AnonymousCreateScreenState();
 }
 
-class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
-  final _codeController = TextEditingController();
+class _AnonymousCreateScreenState
+    extends ConsumerState<AnonymousCreateScreen> {
+  final _groupNameController = TextEditingController();
   final _nameController = TextEditingController();
   bool _loading = false;
 
   @override
   void dispose() {
-    _codeController.dispose();
+    _groupNameController.dispose();
     _nameController.dispose();
     super.dispose();
   }
 
-  Future<void> _join() async {
-    final code = _codeController.text.trim().toUpperCase();
+  Future<void> _create() async {
+    final groupName = _groupNameController.text.trim();
     final name = _nameController.text.trim();
-    if (code.isEmpty || name.isEmpty) return;
+    if (groupName.isEmpty || name.isEmpty) return;
 
     setState(() => _loading = true);
-    await ref.read(authProvider.notifier).joinAsAnonymous(code, name);
-    if (mounted) setState(() => _loading = false);
+    final groupId = await ref
+        .read(authProvider.notifier)
+        .createGroupAsAnonymous(groupName, name);
+    if (mounted) {
+      setState(() => _loading = false);
+      if (groupId != null) {
+        context.go('/groups/$groupId');
+      }
+    }
   }
 
   @override
@@ -41,12 +48,8 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
     final l10n = AppLocalizations.of(context);
 
     String? errorText;
-    if (authState.errorKey == AuthErrorKey.invalidInviteCode) {
-      errorText = l10n.errorInvalidInviteCode;
-    } else if (authState.errorKey == AuthErrorKey.inviteCodeExpired) {
-      errorText = l10n.errorInviteCodeExpired;
-    } else if (authState.errorKey == AuthErrorKey.anonymousJoinFailed) {
-      errorText = l10n.anonymousJoinFailed;
+    if (authState.errorKey == AuthErrorKey.anonymousCreateFailed) {
+      errorText = l10n.anonymousCreateFailed;
     }
 
     return Scaffold(
@@ -56,13 +59,6 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.go('/map'),
-                ),
-              ),
               const Spacer(),
               Text(
                 'Mi Pueblo',
@@ -77,13 +73,13 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
               ),
               const SizedBox(height: 48),
               TextField(
-                controller: _codeController,
+                controller: _groupNameController,
                 decoration: InputDecoration(
-                  labelText: l10n.groupCodePrompt,
+                  labelText: l10n.groupName,
+                  hintText: l10n.groupNameHint,
                   border: const OutlineInputBorder(),
                 ),
-                textCapitalization: TextCapitalization.characters,
-                inputFormatters: [UpperCaseTextFormatter()],
+                textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 16),
               TextField(
@@ -93,31 +89,32 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
                   border: const OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _join(),
+                onSubmitted: (_) => _create(),
               ),
               const SizedBox(height: 24),
               if (errorText != null) ...[
                 Text(
                   errorText,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.error),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
               ],
               FilledButton(
-                onPressed: _loading ? null : _join,
+                onPressed: _loading ? null : _create,
                 child: _loading
                     ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(l10n.joinButton),
+                    : Text(l10n.createGroup),
               ),
               const SizedBox(height: 32),
               TextButton(
-                onPressed: () => context.go('/auth/create'),
-                child: Text(l10n.createNewGroup),
+                onPressed: () => context.go('/auth/join'),
+                child: Text(l10n.haveInviteCode),
               ),
               TextButton(
                 onPressed: () => context.go('/auth/login'),
@@ -128,17 +125,6 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class UpperCaseTextFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    return TextEditingValue(
-      text: newValue.text.toUpperCase(),
-      selection: newValue.selection,
     );
   }
 }

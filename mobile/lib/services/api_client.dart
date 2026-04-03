@@ -105,6 +105,14 @@ class ApiClient {
     });
   }
 
+  Future<Response<Map<String, dynamic>>> anonymousCreate(
+      String groupName, String displayName) {
+    return _dio.post<Map<String, dynamic>>('/auth/anonymous-create', data: {
+      'group_name': groupName,
+      'display_name': displayName,
+    });
+  }
+
   Future<Response<Map<String, dynamic>>> googleSignIn(String idToken) {
     return _dio.post<Map<String, dynamic>>('/auth/google', data: {
       'id_token': idToken,

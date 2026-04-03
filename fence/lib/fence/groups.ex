@@ -112,6 +112,27 @@ defmodule Fence.Groups do
     end)
   end
 
+  def anonymous_create_group(group_name, user_attrs) do
+    Repo.transaction(fn ->
+      case Accounts.create_anonymous_user(user_attrs) do
+        {:ok, user} ->
+          group =
+            %Group{}
+            |> Group.changeset(%{"name" => group_name, "created_by_id" => user.id})
+            |> Repo.insert!()
+
+          %Membership{}
+          |> Membership.changeset(%{user_id: user.id, group_id: group.id, role: "admin"})
+          |> Repo.insert!()
+
+          {user, group}
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+  end
+
   def anonymous_join(code, user_attrs) do
     case validate_invite(code) do
       {:ok, invite} -> do_anonymous_join(invite, user_attrs)

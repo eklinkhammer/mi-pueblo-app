@@ -54,6 +54,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get anonymousJoinFailed => 'Failed to join group';
 
   @override
+  String get anonymousCreateFailed => 'Failed to create group';
+
+  @override
+  String get haveInviteCode => 'Have an invite code? Join a group';
+
+  @override
+  String get createNewGroup => 'Create a new group';
+
+  @override
   String get anonymousAccount => 'Anonymous account';
 
   @override

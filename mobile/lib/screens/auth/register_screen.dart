@@ -40,6 +40,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         AuthErrorKey.googleSignInFailed => l10n.googleSignInFailed,
         AuthErrorKey.googleSignInCancelled => null,
         AuthErrorKey.anonymousJoinFailed => l10n.anonymousJoinFailed,
+        AuthErrorKey.anonymousCreateFailed => l10n.anonymousCreateFailed,
         AuthErrorKey.invalidInviteCode => l10n.anonymousJoinFailed,
         AuthErrorKey.inviteCodeExpired => l10n.anonymousJoinFailed,
       };

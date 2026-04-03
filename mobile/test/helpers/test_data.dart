@@ -93,3 +93,18 @@ const loginResponseJson = {
 };
 
 const registerResponseJson = loginResponseJson;
+
+const anonymousCreateResponseJson = {
+  'access_token': 'test-access-token',
+  'refresh_token': 'test-refresh-token',
+  'user': {
+    'id': '550e8400-e29b-41d4-a716-446655440099',
+    'email': null,
+    'display_name': 'Anon Creator',
+    'inserted_at': '2025-03-01T12:00:00Z',
+  },
+  'group': {
+    'id': '660e8400-e29b-41d4-a716-446655440099',
+    'name': 'New Group',
+  },
+};
