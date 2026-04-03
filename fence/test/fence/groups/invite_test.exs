@@ -16,7 +16,8 @@ defmodule Fence.Groups.InviteTest do
       changeset = Invite.changeset(%Invite{}, %{group_id: group.id})
       assert changeset.valid?
       assert get_change(changeset, :code)
-      assert String.length(get_change(changeset, :code)) == 8
+      assert String.length(get_change(changeset, :code)) == 6
+      assert get_change(changeset, :code) =~ ~r/^[A-Z]{6}$/
     end
 
     test "auto-generates expires_at ~7 days from now" do

@@ -45,6 +45,6 @@ defmodule Fence.Groups.Invite do
   end
 
   defp generate_code do
-    :crypto.strong_rand_bytes(6) |> Base.url_encode64(padding: false) |> String.slice(0, 8)
+    for(_ <- 1..6, into: "", do: <<Enum.random(?A..?Z)>>)
   end
 end
