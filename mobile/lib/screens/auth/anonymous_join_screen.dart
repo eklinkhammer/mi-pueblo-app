@@ -54,11 +54,18 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.go('/map'),
+                ),
+              ),
+              const Spacer(),
               Text(
-                l10n.appTitle,
+                'Mi Pueblo',
                 style: Theme.of(context).textTheme.headlineLarge,
                 textAlign: TextAlign.center,
               ),
@@ -112,6 +119,7 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
                 onPressed: () => context.go('/auth/login'),
                 child: Text(l10n.alreadyHaveAccount),
               ),
+              const Spacer(),
             ],
           ),
         ),
