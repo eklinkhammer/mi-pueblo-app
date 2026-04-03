@@ -125,8 +125,14 @@ class LocationService {
       enableHeadless: true,
       autoSync: false,
       foregroundService: true,
+      backgroundPermissionRationale: bg.PermissionRationale(
+        title: 'Allow Mi Pueblo to access your location in the background?',
+        message: 'This app collects location data so you can share your location and arrival data with family members',
+        positiveAction: 'Change to "Allow all the time"',
+        negativeAction: 'Cancel',
+      ),
       notification: bg.Notification(
-        title: 'Fence',
+        title: 'Mi Pueblo',
         text: 'Location sharing active',
       ),
     ));
