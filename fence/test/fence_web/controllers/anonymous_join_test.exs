@@ -11,7 +11,11 @@ defmodule FenceWeb.AnonymousJoinTest do
   end
 
   describe "POST /api/v1/auth/anonymous-join" do
-    test "happy path: joins group and returns user + tokens", %{conn: conn, group: group, invite: invite} do
+    test "happy path: joins group and returns user + tokens", %{
+      conn: conn,
+      group: group,
+      invite: invite
+    } do
       conn =
         post(conn, "/api/v1/auth/anonymous-join", %{
           "invite_code" => invite.code,
@@ -86,7 +90,12 @@ defmodule FenceWeb.AnonymousJoinTest do
       assert %{"errors" => _} = json_response(conn, 422)
     end
 
-    test "creates visibility pairs with existing members", %{conn: conn, invite: invite, group: group, owner: owner} do
+    test "creates visibility pairs with existing members", %{
+      conn: conn,
+      invite: invite,
+      group: group,
+      owner: owner
+    } do
       post(conn, "/api/v1/auth/anonymous-join", %{
         "invite_code" => invite.code,
         "display_name" => "New Member"

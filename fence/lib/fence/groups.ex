@@ -124,7 +124,11 @@ defmodule Fence.Groups do
             case Fence.Accounts.create_anonymous_user(user_attrs) do
               {:ok, user} ->
                 %Membership{}
-                |> Membership.changeset(%{user_id: user.id, group_id: invite.group_id, role: "member"})
+                |> Membership.changeset(%{
+                  user_id: user.id,
+                  group_id: invite.group_id,
+                  role: "member"
+                })
                 |> Repo.insert!()
 
                 create_pending_visibility_pairs(invite.group_id, user.id)

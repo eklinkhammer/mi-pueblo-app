@@ -37,6 +37,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         AuthErrorKey.invalidCredentials => l10n.invalidEmailOrPassword,
         AuthErrorKey.googleSignInFailed => l10n.googleSignInFailed,
         AuthErrorKey.googleSignInCancelled => null,
+        AuthErrorKey.anonymousJoinFailed => l10n.anonymousJoinFailed,
+        AuthErrorKey.invalidInviteCode => l10n.anonymousJoinFailed,
+        AuthErrorKey.inviteCodeExpired => l10n.anonymousJoinFailed,
       };
     }
 

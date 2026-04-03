@@ -119,7 +119,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       unawaited(_initNotifications());
     } on DioException catch (e) {
       final data = e.response?.data;
-      final code = data is Map ? data['error']?['code'] : null;
+      final code = (data is Map) ? data['error']?['code'] : null;
       if (code == 'invalid_invite_code') {
         state = state.copyWith(errorKey: AuthErrorKey.invalidInviteCode);
       } else if (code == 'invite_code_expired') {

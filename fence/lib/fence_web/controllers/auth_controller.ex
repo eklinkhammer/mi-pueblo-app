@@ -122,7 +122,12 @@ defmodule FenceWeb.AuthController do
   def anonymous_join(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: %{code: "missing_fields", message: "Missing required fields: invite_code, display_name"}})
+    |> json(%{
+      error: %{
+        code: "missing_fields",
+        message: "Missing required fields: invite_code, display_name"
+      }
+    })
   end
 
   def refresh(conn, %{"refresh_token" => refresh_token}) do
@@ -229,7 +234,9 @@ defmodule FenceWeb.AuthController do
   def reset_password(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: %{code: "missing_fields", message: "Missing required fields: email, code, password"}})
+    |> json(%{
+      error: %{code: "missing_fields", message: "Missing required fields: email, code, password"}
+    })
   end
 
   defp user_json(user) do
