@@ -162,5 +162,12 @@
   "pendingVisibility": "Solicitudes pendientes",
   "visibleMembers": "Miembros visibles",
   "grant": "Conceder",
-  "noVisibilityPairsYet": "Aún no hay miembros en el grupo. Invita a alguien para comenzar."
+  "noVisibilityPairsYet": "Aún no hay miembros en el grupo. Invita a alguien para comenzar.",
+
+  "sharingWithCount": "Compartiendo con {count} personas",
+  "@sharingWithCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

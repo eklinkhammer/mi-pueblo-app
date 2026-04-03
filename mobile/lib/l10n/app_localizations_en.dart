@@ -473,4 +473,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noVisibilityPairsYet =>
       'No group members yet. Invite someone to get started.';
+
+  @override
+  String sharingWithCount(int count) {
+    return 'Sharing with $count people';
+  }
 }

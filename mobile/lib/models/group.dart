@@ -2,11 +2,13 @@ class Group {
   final String id;
   final String name;
   final DateTime insertedAt;
+  final int sharingCount;
 
   const Group({
     required this.id,
     required this.name,
     required this.insertedAt,
+    this.sharingCount = 0,
   });
 
   factory Group.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class Group {
       id: json['id'] as String,
       name: json['name'] as String,
       insertedAt: DateTime.parse(json['inserted_at'] as String),
+      sharingCount: (json['sharing_count'] as int?) ?? 0,
     );
   }
 }

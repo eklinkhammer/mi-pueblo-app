@@ -207,5 +207,12 @@
   "pendingVisibility": "Pending Requests",
   "visibleMembers": "Visible Members",
   "grant": "Grant",
-  "noVisibilityPairsYet": "No group members yet. Invite someone to get started."
+  "noVisibilityPairsYet": "No group members yet. Invite someone to get started.",
+
+  "sharingWithCount": "Sharing with {count} people",
+  "@sharingWithCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

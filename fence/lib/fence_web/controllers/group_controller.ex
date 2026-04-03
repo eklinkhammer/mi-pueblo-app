@@ -4,8 +4,14 @@ defmodule FenceWeb.GroupController do
   alias Fence.{Groups, Notifications}
 
   def index(conn, _params) do
-    groups = Groups.list_user_groups(conn.assigns.current_user.id)
-    json(conn, %{groups: Enum.map(groups, &group_json/1)})
+    groups = Groups.list_user_groups_with_sharing_count(conn.assigns.current_user.id)
+
+    json(conn, %{
+      groups:
+        Enum.map(groups, fn {group, sharing_count} ->
+          group_json(group) |> Map.put(:sharing_count, sharing_count)
+        end)
+    })
   end
 
   def create(conn, params) do

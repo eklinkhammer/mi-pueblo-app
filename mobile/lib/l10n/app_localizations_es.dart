@@ -478,4 +478,9 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get noVisibilityPairsYet =>
       'Aún no hay miembros en el grupo. Invita a alguien para comenzar.';
+
+  @override
+  String sharingWithCount(int count) {
+    return 'Compartiendo con $count personas';
+  }
 }

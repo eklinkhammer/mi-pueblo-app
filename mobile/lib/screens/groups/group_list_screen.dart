@@ -55,6 +55,7 @@ class GroupListScreen extends ConsumerWidget {
                 return ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.group)),
                   title: Text(group.name),
+                  subtitle: Text(l10n.sharingWithCount(group.sharingCount)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.go('/groups/${group.id}'),
                 );

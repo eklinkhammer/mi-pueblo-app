@@ -42,6 +42,26 @@ defmodule Fence.Groups do
     |> Repo.all()
   end
 
+  def list_user_groups_with_sharing_count(user_id) do
+    sharing_count_query =
+      from(vp in VisibilityPair,
+        where:
+          vp.group_id == parent_as(:group).id and
+            vp.status == "active" and
+            (vp.user_a_id == ^user_id or vp.user_b_id == ^user_id),
+        select: count(vp.id)
+      )
+
+    from(g in Group,
+      as: :group,
+      join: m in Membership,
+      on: m.group_id == g.id,
+      where: m.user_id == ^user_id,
+      select: {g, subquery(sharing_count_query)}
+    )
+    |> Repo.all()
+  end
+
   def list_members(group_id) do
     from(m in Membership,
       where: m.group_id == ^group_id,

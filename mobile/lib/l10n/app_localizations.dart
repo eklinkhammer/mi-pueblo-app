@@ -967,6 +967,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No group members yet. Invite someone to get started.'**
   String get noVisibilityPairsYet;
+
+  /// No description provided for @sharingWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing with {count} people'**
+  String sharingWithCount(int count);
 }
 
 class _AppLocalizationsDelegate
