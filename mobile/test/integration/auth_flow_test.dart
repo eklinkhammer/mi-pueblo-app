@@ -107,7 +107,7 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate from map CTA → join sheet → register
+      // Navigate from map CTA → join sheet → create → login → register
       await tester.tap(find.text('Join Group'));
       await tester.pumpAndSettle();
 
@@ -115,6 +115,12 @@ void main() {
       await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Create a Group'));
+      await tester.pumpAndSettle();
+
+      // Navigate through login to register
+      await tester.tap(find.text('Already have an account? Sign in'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Create an account'));
       await tester.pumpAndSettle();
 
       // Should be on register screen

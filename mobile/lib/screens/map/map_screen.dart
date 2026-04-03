@@ -356,9 +356,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   MarkerLayer _buildMarkerLayer(AsyncValue<List<MemberLocation>> locationsAsync) {
+    final currentUserId = ref.watch(authProvider.select((s) => s.user?.id));
     final markers = locationsAsync.when(
       data: (locations) => locations
-          .where((l) => l.latitude != null && l.longitude != null)
+          .where((l) =>
+              l.latitude != null &&
+              l.longitude != null &&
+              l.userId != currentUserId)
           .map((l) => Marker(
                 point: LatLng(l.latitude!, l.longitude!),
                 width: 60,
