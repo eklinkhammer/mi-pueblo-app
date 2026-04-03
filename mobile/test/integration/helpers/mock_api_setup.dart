@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:fence/main.dart';
+import 'package:fence/providers/onboarding_provider.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/models/app_location.dart';
 import 'package:fence/services/location_service.dart';
@@ -143,6 +144,9 @@ Future<void> pumpAppWithMocks(
         apiClientProvider.overrideWithValue(apiClient),
         locationServiceProvider.overrideWithValue(locService),
         websocketServiceProvider.overrideWithValue(mockWs),
+        onboardingProvider.overrideWith(
+          (_) => OnboardingNotifier.withValue(true),
+        ),
         ...extraOverrides,
       ],
       child: const FenceApp(),

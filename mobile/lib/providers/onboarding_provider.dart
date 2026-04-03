@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,6 +8,11 @@ class OnboardingNotifier extends StateNotifier<bool> {
   OnboardingNotifier() : super(false) {
     _load();
   }
+
+  /// Test-only constructor that starts with the given [initialValue] and
+  /// skips the async SharedPreferences load.
+  @visibleForTesting
+  OnboardingNotifier.withValue(bool initialValue) : super(initialValue);
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
