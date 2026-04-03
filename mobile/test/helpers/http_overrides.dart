@@ -92,7 +92,7 @@ class _FakeHttpClient implements HttpClient {
   @override
   set findProxy(String Function(Uri url)? f) {}
   @override
-  set keyLog(Function(String line)? callback) {}
+  set keyLog(void Function(String line)? callback) {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
@@ -142,13 +142,13 @@ class _FakeHttpClientRequest implements HttpClientRequest {
   @override
   void addError(Object error, [StackTrace? stackTrace]) {}
   @override
-  Future addStream(Stream<List<int>> stream) async {}
+  Future<void> addStream(Stream<List<int>> stream) async {}
   @override
-  Future flush() async {}
+  Future<void> flush() async {}
   @override
   void write(Object? object) {}
   @override
-  void writeAll(Iterable objects, [String separator = '']) {}
+  void writeAll(Iterable<Object?> objects, [String separator = '']) {}
   @override
   void writeCharCode(int charCode) {}
   @override

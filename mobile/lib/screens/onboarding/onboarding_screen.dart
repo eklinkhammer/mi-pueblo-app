@@ -56,7 +56,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
     // Wait 1 more second, then start text animation
     await Future<void>.delayed(const Duration(seconds: 1));
-    if (mounted) _controller.forward();
+    if (mounted) await _controller.forward();
   }
 
   double _itemProgress(int index, double overall) {

@@ -33,10 +33,10 @@ void main() {
           return notifier;
         }),
       ],
-      child: MaterialApp(
+      child: const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const RegisterScreen(),
+        home: RegisterScreen(),
       ),
     );
   }

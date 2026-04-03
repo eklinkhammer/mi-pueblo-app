@@ -1,7 +1,7 @@
 defmodule Fence.Groups do
   import Ecto.Query
-  alias Fence.Groups.{Group, Invite, Membership, VisibilityPair}
   alias Fence.Accounts
+  alias Fence.Groups.{Group, Invite, Membership, VisibilityPair}
   alias Fence.Repo
   alias Fence.Workers.PushNotificationWorker
 
