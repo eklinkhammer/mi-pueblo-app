@@ -19,7 +19,7 @@ import 'package:fence/screens/settings/settings_screen.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final authStatus = ref.watch(authProvider.select((s) => s.status));
   final onboardingCompleted = ref.watch(onboardingProvider);
 
   return GoRouter(
@@ -30,11 +30,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!onboardingCompleted && !isOnboarding) return '/onboarding';
       if (onboardingCompleted && isOnboarding) return '/auth/login';
 
-      final isAuth = authState.status == AuthStatus.authenticated;
+      final isAuth = authStatus == AuthStatus.authenticated;
       final isAuthRoute =
           state.matchedLocation.startsWith('/auth') || isOnboarding;
 
-      if (authState.status == AuthStatus.unknown) return null;
+      if (authStatus == AuthStatus.unknown) return null;
       if (!isAuth && !isAuthRoute) return '/auth/join';
       if (isAuth && isAuthRoute) return '/map';
       return null;
