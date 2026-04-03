@@ -2,6 +2,7 @@ defmodule FenceWeb.AuthController do
   use FenceWeb, :controller
 
   alias Fence.Accounts
+  alias Fence.Groups
 
   def register(conn, %{"email" => _, "password" => _, "display_name" => _} = params) do
     case Accounts.register_user(params) do
@@ -85,6 +86,48 @@ defmodule FenceWeb.AuthController do
     conn
     |> put_status(:bad_request)
     |> json(%{error: %{code: "missing_fields", message: "Missing required field: id_token"}})
+  end
+
+  def anonymous_join(conn, %{"invite_code" => code, "display_name" => display_name}) do
+    case Groups.anonymous_join(code, %{"display_name" => display_name}) do
+      {:ok, {user, group}} ->
+        {:ok, tokens} = Accounts.generate_tokens(user)
+
+        conn
+        |> put_status(:created)
+        |> json(%{
+          user: user_json(user),
+          group: %{id: group.id, name: group.name},
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token
+        })
+
+      {:error, :invalid_code} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: %{code: "invalid_invite_code", message: "Invalid invite code"}})
+
+      {:error, :expired} ->
+        conn
+        |> put_status(:gone)
+        |> json(%{error: %{code: "invite_code_expired", message: "Invite code has expired"}})
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{errors: format_errors(changeset)})
+    end
+  end
+
+  def anonymous_join(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{
+      error: %{
+        code: "missing_fields",
+        message: "Missing required fields: invite_code, display_name"
+      }
+    })
   end
 
   def refresh(conn, %{"refresh_token" => refresh_token}) do
@@ -202,6 +245,7 @@ defmodule FenceWeb.AuthController do
       email: user.email,
       display_name: user.display_name,
       locale: user.locale,
+      is_anonymous: user.is_anonymous,
       inserted_at: user.inserted_at
     }
   end

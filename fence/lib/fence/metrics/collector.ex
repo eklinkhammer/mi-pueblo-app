@@ -141,21 +141,25 @@ defmodule Fence.Metrics.Collector do
 
   defp prune_old_entries do
     for metric <- [:request_latency, :db_query_time, :db_queue_time] do
-      entries =
-        :ets.match(@table, {{metric, :"$1"}, :"$2"})
-        |> Enum.reject(fn [key, _] -> key == :counter end)
-        |> Enum.sort_by(fn [key, _] -> key end)
-
-      overflow = length(entries) - @max_entries
-
-      if overflow > 0 do
-        entries
-        |> Enum.take(overflow)
-        |> Enum.each(fn [key, _] -> :ets.delete(@table, {metric, key}) end)
-      end
+      prune_metric(metric)
     end
   rescue
     _ -> :ok
+  end
+
+  defp prune_metric(metric) do
+    entries =
+      :ets.match(@table, {{metric, :"$1"}, :"$2"})
+      |> Enum.reject(fn [key, _] -> key == :counter end)
+      |> Enum.sort_by(fn [key, _] -> key end)
+
+    overflow = length(entries) - @max_entries
+
+    if overflow > 0 do
+      entries
+      |> Enum.take(overflow)
+      |> Enum.each(fn [key, _] -> :ets.delete(@table, {metric, key}) end)
+    end
   end
 
   defp schedule_prune do

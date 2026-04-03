@@ -158,6 +158,42 @@ abstract class AppLocalizations {
   /// **'Already have an account? Sign in'**
   String get alreadyHaveAccount;
 
+  /// No description provided for @groupCodePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Code'**
+  String get groupCodePrompt;
+
+  /// No description provided for @yourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Name'**
+  String get yourName;
+
+  /// No description provided for @joinButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get joinButton;
+
+  /// No description provided for @anonymousJoinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to join group'**
+  String get anonymousJoinFailed;
+
+  /// No description provided for @anonymousAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous account'**
+  String get anonymousAccount;
+
+  /// No description provided for @signOutAnonymousWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'You have an anonymous account. Signing out will permanently lose access to this account.'**
+  String get signOutAnonymousWarning;
+
   /// No description provided for @registrationFailed.
   ///
   /// In en, this message translates to:

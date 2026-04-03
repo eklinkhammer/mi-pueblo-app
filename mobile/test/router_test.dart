@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:fence/router.dart';
 import 'package:fence/providers/auth_provider.dart';
+import 'package:fence/providers/onboarding_provider.dart';
 import 'helpers/mocks.dart';
 
 Response<Map<String, dynamic>> _fakeResponse(Map<String, dynamic> data) {
@@ -30,13 +31,15 @@ void main() {
   });
 
   group('router redirect logic', () {
-    test('unknown auth status → no redirect', () {
+    test('unknown auth status → no redirect', () async {
       final container = ProviderContainer(
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          onboardingProvider.overrideWith(
+            (_) => OnboardingNotifier.completed(),
+          ),
         ],
       );
-      addTearDown(container.dispose);
 
       // Read synchronously before _checkAuth completes
       final state = container.read(authProvider);
@@ -44,16 +47,23 @@ void main() {
 
       final router = container.read(routerProvider);
       expect(router.configuration.routes, isNotEmpty);
+
+      // Drain async work (OnboardingNotifier._load, AuthNotifier._checkAuth)
+      // before disposing the container to avoid post-dispose state updates.
+      await _pumpAsync();
+      container.dispose();
     });
 
-    test('unauthenticated + protected route → redirect to /auth/login',
+    test('unauthenticated + protected route → redirect to /auth/join',
         () async {
       final container = ProviderContainer(
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          onboardingProvider.overrideWith(
+            (_) => OnboardingNotifier.completed(),
+          ),
         ],
       );
-      addTearDown(container.dispose);
 
       // Force provider creation, then drain async
       container.read(authProvider);
@@ -64,6 +74,9 @@ void main() {
 
       final router = container.read(routerProvider);
       expect(router.configuration.redirect, isNotNull);
+
+      await _pumpAsync();
+      container.dispose();
     });
 
     test('authenticated + auth route → redirect to /map', () async {
@@ -83,9 +96,11 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          onboardingProvider.overrideWith(
+            (_) => OnboardingNotifier.completed(),
+          ),
         ],
       );
-      addTearDown(container.dispose);
 
       container.read(authProvider);
       await _pumpAsync();
@@ -95,6 +110,9 @@ void main() {
 
       final router = container.read(routerProvider);
       expect(router.configuration.redirect, isNotNull);
+
+      await _pumpAsync();
+      container.dispose();
     });
 
     test('authenticated + protected route → no redirect', () async {
@@ -114,9 +132,11 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          onboardingProvider.overrideWith(
+            (_) => OnboardingNotifier.completed(),
+          ),
         ],
       );
-      addTearDown(container.dispose);
 
       container.read(authProvider);
       await _pumpAsync();
@@ -126,6 +146,9 @@ void main() {
 
       final router = container.read(routerProvider);
       expect(router.configuration.routes, isNotEmpty);
+
+      await _pumpAsync();
+      container.dispose();
     });
   });
 }

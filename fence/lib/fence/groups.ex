@@ -1,5 +1,6 @@
 defmodule Fence.Groups do
   import Ecto.Query
+  alias Fence.Accounts
   alias Fence.Groups.{Group, Invite, Membership, VisibilityPair}
   alias Fence.Repo
   alias Fence.Workers.PushNotificationWorker
@@ -107,6 +108,50 @@ defmodule Fence.Groups do
           %Invite{}
           |> Invite.changeset(%{group_id: group_id, created_by_id: user_id})
           |> Repo.insert!()
+      end
+    end)
+  end
+
+  def anonymous_join(code, user_attrs) do
+    case validate_invite(code) do
+      {:ok, invite} -> do_anonymous_join(invite, user_attrs)
+      {:error, _} = error -> error
+    end
+  end
+
+  defp validate_invite(code) do
+    case Repo.get_by(Invite, code: code) do
+      nil ->
+        {:error, :invalid_code}
+
+      %Invite{} = invite ->
+        if invite_expired?(invite), do: {:error, :expired}, else: {:ok, invite}
+    end
+  end
+
+  defp do_anonymous_join(invite, user_attrs) do
+    Repo.transaction(fn ->
+      case Accounts.create_anonymous_user(user_attrs) do
+        {:ok, user} ->
+          %Membership{}
+          |> Membership.changeset(%{
+            user_id: user.id,
+            group_id: invite.group_id,
+            role: "member"
+          })
+          |> Repo.insert!()
+
+          create_pending_visibility_pairs(invite.group_id, user.id)
+
+          %{type: "member_joined", group_id: invite.group_id, user_id: user.id}
+          |> PushNotificationWorker.new()
+          |> Oban.insert()
+
+          group = Repo.get!(Group, invite.group_id)
+          {user, group}
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
       end
     end)
   end

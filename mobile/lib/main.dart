@@ -15,7 +15,7 @@ import 'package:fence/services/headless_task.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  bg.BackgroundGeolocation.registerHeadlessTask(headlessTask);
+  await bg.BackgroundGeolocation.registerHeadlessTask(headlessTask);
   runApp(const ProviderScope(child: FenceApp()));
 }
 

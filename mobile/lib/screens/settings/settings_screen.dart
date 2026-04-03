@@ -39,7 +39,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ListTile(
             leading: const CircleAvatar(child: Icon(Icons.person)),
             title: Text(authState.user?.displayName ?? l10n.unknown),
-            subtitle: Text(authState.user?.email ?? ''),
+            subtitle: Text((authState.user?.isAnonymous ?? false)
+                ? l10n.anonymousAccount
+                : authState.user?.email ?? ''),
           ),
           const Divider(),
 
@@ -97,12 +99,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(l10n.signOut,
                 style: const TextStyle(color: Colors.red)),
             onTap: () async {
+              final isAnonymous = authState.user?.isAnonymous ?? false;
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (dialogContext) {
                   final dl10n = AppLocalizations.of(dialogContext);
                   return AlertDialog(
                     title: Text(dl10n.signOutConfirm),
+                    content: isAnonymous
+                        ? Text(dl10n.signOutAnonymousWarning)
+                        : null,
                     actions: [
                       TextButton(
                         onPressed: () =>

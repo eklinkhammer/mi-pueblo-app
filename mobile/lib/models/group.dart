@@ -21,14 +21,14 @@ class Group {
 class GroupMember {
   final String id;
   final String displayName;
-  final String email;
+  final String? email;
   final String role;
   final DateTime joinedAt;
 
   const GroupMember({
     required this.id,
     required this.displayName,
-    required this.email,
+    this.email,
     required this.role,
     required this.joinedAt,
   });
@@ -37,7 +37,7 @@ class GroupMember {
     return GroupMember(
       id: json['id'] as String,
       displayName: json['display_name'] as String,
-      email: json['email'] as String,
+      email: json['email'] as String?,
       role: json['role'] as String,
       joinedAt: DateTime.parse(json['joined_at'] as String),
     );

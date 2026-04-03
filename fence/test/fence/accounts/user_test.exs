@@ -125,6 +125,32 @@ defmodule Fence.Accounts.UserTest do
     end
   end
 
+  describe "anonymous_changeset/2" do
+    test "valid attrs produce valid changeset" do
+      changeset = User.anonymous_changeset(%User{}, %{display_name: "Anon User"})
+      assert changeset.valid?
+      assert changeset.changes[:is_anonymous] == true
+    end
+
+    test "requires display_name" do
+      changeset = User.anonymous_changeset(%User{}, %{})
+      assert %{display_name: ["can't be blank"]} = errors_on(changeset)
+    end
+
+    test "validates display_name max length" do
+      long_name = String.duplicate("a", 101)
+      changeset = User.anonymous_changeset(%User{}, %{display_name: long_name})
+      assert %{display_name: [_]} = errors_on(changeset)
+    end
+
+    test "does not require email or password" do
+      changeset = User.anonymous_changeset(%User{}, %{display_name: "Anon"})
+      assert changeset.valid?
+      refute changeset.changes[:email]
+      refute changeset.changes[:password]
+    end
+  end
+
   describe "link_google_changeset/2" do
     test "valid attrs produce valid changeset" do
       changeset = User.link_google_changeset(%User{}, %{google_id: "g_456"})

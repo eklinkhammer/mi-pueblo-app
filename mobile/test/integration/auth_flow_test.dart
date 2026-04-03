@@ -15,14 +15,16 @@ void main() {
   });
 
   group('Auth flow', () {
-    testWidgets('unauthenticated user sees login screen', (tester) async {
+    testWidgets('unauthenticated user sees join screen', (tester) async {
       setupUnauthenticatedStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
       expect(find.text('Fence'), findsOneWidget);
-      expect(find.text('Sign In'), findsOneWidget);
-      expect(find.text('Create an account'), findsOneWidget);
+      expect(find.text('Group Code'), findsOneWidget);
+      expect(find.text('Your Name'), findsOneWidget);
+      expect(find.text('Join'), findsOneWidget);
+      expect(find.text('Already have an account? Sign in'), findsOneWidget);
     });
 
     testWidgets('login with valid credentials navigates to map',
@@ -34,6 +36,10 @@ void main() {
       setupLocationStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
+
+      // We start on the join screen; navigate to login
+      await tester.tap(find.text('Already have an account? Sign in'));
+      await tester.pumpAndSettle();
 
       // We should be on the login screen
       expect(find.text('Sign In'), findsOneWidget);
@@ -57,6 +63,10 @@ void main() {
       setupLoginFailureStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
+
+      // Navigate from join screen to login
+      await tester.tap(find.text('Already have an account? Sign in'));
+      await tester.pumpAndSettle();
 
       await tester.enterText(
           find.widgetWithText(TextField, 'Email'), 'wrong@example.com');
@@ -82,7 +92,11 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Tap "Create an account"
+      // Navigate from join screen to login first
+      await tester.tap(find.text('Already have an account? Sign in'));
+      await tester.pumpAndSettle();
+
+      // Tap "Create an account" on the login screen
       await tester.tap(find.text('Create an account'));
       await tester.pumpAndSettle();
 
@@ -105,7 +119,7 @@ void main() {
       expect(find.text('Select a group to view the map'), findsOneWidget);
     });
 
-    testWidgets('logout from settings returns to login', (tester) async {
+    testWidgets('logout from settings returns to join screen', (tester) async {
       setupAuthenticatedStubs(mockApi);
       setupGroupStubs(mockApi);
       setupGeofenceStubs(mockApi);
@@ -134,8 +148,9 @@ void main() {
       when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
       await tester.pumpAndSettle();
 
-      // Should be back on login
-      expect(find.text('Sign In'), findsOneWidget);
+      // Should be back on join screen
+      expect(find.text('Join'), findsOneWidget);
+      expect(find.text('Already have an account? Sign in'), findsOneWidget);
     });
 
     testWidgets('login → logout → re-login cycle', (tester) async {
@@ -146,6 +161,10 @@ void main() {
       setupLocationStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
+
+      // === Navigate from join screen to login ===
+      await tester.tap(find.text('Already have an account? Sign in'));
+      await tester.pumpAndSettle();
 
       // === First login ===
       await tester.enterText(
@@ -168,7 +187,12 @@ void main() {
       when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
       await tester.pumpAndSettle();
 
-      expect(find.text('Sign In'), findsOneWidget);
+      // Should be on join screen after logout
+      expect(find.text('Join'), findsOneWidget);
+
+      // Navigate from join screen back to login
+      await tester.tap(find.text('Already have an account? Sign in'));
+      await tester.pumpAndSettle();
 
       // === Re-login ===
       await tester.enterText(

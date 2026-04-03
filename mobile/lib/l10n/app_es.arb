@@ -12,6 +12,12 @@
   "displayName": "Nombre",
   "passwordHelperText": "Al menos 8 caracteres",
   "alreadyHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
+  "groupCodePrompt": "Código de grupo",
+  "yourName": "Tu nombre",
+  "joinButton": "Unirse",
+  "anonymousJoinFailed": "Error al unirse al grupo",
+  "anonymousAccount": "Cuenta anónima",
+  "signOutAnonymousWarning": "Tienes una cuenta anónima. Cerrar sesión perderá permanentemente el acceso a esta cuenta.",
 
   "registrationFailed": "Error en el registro",
   "invalidEmailOrPassword": "Correo o contraseña inválidos",

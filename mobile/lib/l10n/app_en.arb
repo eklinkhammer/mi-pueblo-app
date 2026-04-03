@@ -12,6 +12,12 @@
   "displayName": "Display Name",
   "passwordHelperText": "At least 8 characters",
   "alreadyHaveAccount": "Already have an account? Sign in",
+  "groupCodePrompt": "Group Code",
+  "yourName": "Your Name",
+  "joinButton": "Join",
+  "anonymousJoinFailed": "Failed to join group",
+  "anonymousAccount": "Anonymous account",
+  "signOutAnonymousWarning": "You have an anonymous account. Signing out will permanently lose access to this account.",
 
   "registrationFailed": "Registration failed",
   "invalidEmailOrPassword": "Invalid email or password",

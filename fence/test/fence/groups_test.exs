@@ -183,6 +183,69 @@ defmodule Fence.GroupsTest do
     end
   end
 
+  describe "anonymous_join/2" do
+    test "creates anonymous user and membership" do
+      admin = create_user()
+      group = create_group(admin)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
+
+      assert {:ok, {user, returned_group}} =
+               Groups.anonymous_join(invite.code, %{"display_name" => "Anon"})
+
+      assert user.is_anonymous == true
+      assert user.display_name == "Anon"
+      assert returned_group.id == group.id
+      assert Groups.member?(user.id, group.id)
+    end
+
+    test "returns error for invalid code" do
+      assert {:error, :invalid_code} =
+               Groups.anonymous_join("BADCODE1", %{"display_name" => "Anon"})
+    end
+
+    test "returns error for expired invite" do
+      admin = create_user()
+      group = create_group(admin)
+
+      {:ok, invite} =
+        %Invite{}
+        |> Invite.changeset(%{group_id: group.id, created_by_id: admin.id})
+        |> Ecto.Changeset.put_change(
+          :expires_at,
+          DateTime.utc_now() |> DateTime.add(-3600) |> DateTime.truncate(:second)
+        )
+        |> Repo.insert()
+
+      assert {:error, :expired} =
+               Groups.anonymous_join(invite.code, %{"display_name" => "Anon"})
+    end
+
+    test "rolls back on invalid user attrs" do
+      admin = create_user()
+      group = create_group(admin)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
+
+      assert {:error, _changeset} = Groups.anonymous_join(invite.code, %{"display_name" => ""})
+
+      # No new members should have been added (only the admin)
+      assert length(Groups.list_members(group.id)) == 1
+    end
+
+    test "creates visibility pairs with existing members" do
+      admin = create_user()
+      group = create_group(admin)
+      {:ok, invite} = Groups.get_or_create_invite(group.id, admin.id)
+
+      {:ok, {anon_user, _group}} =
+        Groups.anonymous_join(invite.code, %{"display_name" => "Anon"})
+
+      pairs = Groups.list_visibility_pairs(admin.id, group.id)
+      assert length(pairs) == 1
+      assert hd(pairs).other_user_id == anon_user.id
+      assert hd(pairs).status == "pending"
+    end
+  end
+
   describe "join_by_invite_code/2" do
     test "creates membership on valid code" do
       admin = create_user()

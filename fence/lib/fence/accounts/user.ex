@@ -12,6 +12,7 @@ defmodule Fence.Accounts.User do
     field :password, :string, virtual: true
     field :google_id, :string
     field :locale, :string, default: "en"
+    field :is_anonymous, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
@@ -50,6 +51,14 @@ defmodule Fence.Accounts.User do
     |> validate_length(:display_name, min: 1, max: 100)
     |> unique_constraint(:email)
     |> unique_constraint(:google_id)
+  end
+
+  def anonymous_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:display_name])
+    |> validate_required([:display_name])
+    |> validate_length(:display_name, min: 1, max: 100)
+    |> put_change(:is_anonymous, true)
   end
 
   def link_google_changeset(user, attrs) do

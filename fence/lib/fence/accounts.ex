@@ -10,6 +10,12 @@ defmodule Fence.Accounts do
     |> Repo.insert()
   end
 
+  def create_anonymous_user(attrs) do
+    %User{}
+    |> User.anonymous_changeset(attrs)
+    |> Repo.insert()
+  end
+
   def authenticate(email, password) do
     user = Repo.get_by(User, email: email)
 

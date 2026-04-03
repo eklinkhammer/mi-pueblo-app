@@ -39,6 +39,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alreadyHaveAccount => 'Already have an account? Sign in';
 
   @override
+  String get groupCodePrompt => 'Group Code';
+
+  @override
+  String get yourName => 'Your Name';
+
+  @override
+  String get joinButton => 'Join';
+
+  @override
+  String get anonymousJoinFailed => 'Failed to join group';
+
+  @override
+  String get anonymousAccount => 'Anonymous account';
+
+  @override
+  String get signOutAnonymousWarning =>
+      'You have an anonymous account. Signing out will permanently lose access to this account.';
+
+  @override
   String get registrationFailed => 'Registration failed';
 
   @override

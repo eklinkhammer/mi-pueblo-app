@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:fence/config.dart';
@@ -14,6 +15,9 @@ enum AuthErrorKey {
   invalidCredentials,
   googleSignInFailed,
   googleSignInCancelled,
+  anonymousJoinFailed,
+  invalidInviteCode,
+  inviteCodeExpired,
 }
 
 class AuthState {
@@ -100,6 +104,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } on Exception catch (_) {
       state = state.copyWith(errorKey: AuthErrorKey.invalidCredentials);
     }
+  }
+
+  Future<void> joinAsAnonymous(String inviteCode, String displayName) async {
+    try {
+      final response = await _apiClient.anonymousJoin(inviteCode, displayName);
+      final data = response.data!;
+      await _apiClient.setTokens(
+        data['access_token'] as String,
+        data['refresh_token'] as String,
+      );
+      final user = User.fromJson(data['user'] as Map<String, dynamic>);
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      unawaited(_initNotifications());
+    } on DioException catch (e) {
+      final errorKey = _parseAnonymousJoinError(e);
+      state = state.copyWith(errorKey: errorKey);
+    } on Exception catch (_) {
+      state = state.copyWith(errorKey: AuthErrorKey.anonymousJoinFailed);
+    }
+  }
+
+  AuthErrorKey _parseAnonymousJoinError(DioException e) {
+    final data = e.response?.data;
+    if (data is! Map) return AuthErrorKey.anonymousJoinFailed;
+    final code = (data['error'] as Map?)?['code'];
+    if (code == 'invalid_invite_code') return AuthErrorKey.invalidInviteCode;
+    if (code == 'invite_code_expired') return AuthErrorKey.inviteCodeExpired;
+    return AuthErrorKey.anonymousJoinFailed;
   }
 
   Future<void> signInWithGoogle() async {
