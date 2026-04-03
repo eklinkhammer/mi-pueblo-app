@@ -191,6 +191,9 @@ class GroupDetailScreen extends ConsumerWidget {
     if (confirmed ?? false) {
       try {
         await ref.read(groupsProvider.notifier).deleteGroup(groupId);
+        if (ref.read(selectedGroupIdProvider) == groupId) {
+          ref.read(selectedGroupIdProvider.notifier).state = null;
+        }
         if (context.mounted) {
           context.go('/groups');
         }

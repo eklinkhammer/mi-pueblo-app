@@ -217,17 +217,26 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         title: Text(l10n.map),
         actions: [
           groupsAsync.when(
-            data: (groups) => DropdownButton<String>(
-              value: selectedGroupId,
-              hint: Text(l10n.selectGroup),
-              items: groups
-                  .map((g) => DropdownMenuItem(
-                        value: g.id,
-                        child: Text(g.name),
-                      ))
-                  .toList(),
-              onChanged: _selectGroup,
-            ),
+            data: (groups) {
+              final effectiveId = (selectedGroupId != null &&
+                      groups.any((g) => g.id == selectedGroupId))
+                  ? selectedGroupId
+                  : null;
+              if (effectiveId != selectedGroupId) {
+                _didAutoSelect = false;
+              }
+              return DropdownButton<String>(
+                value: effectiveId,
+                hint: Text(l10n.selectGroup),
+                items: groups
+                    .map((g) => DropdownMenuItem(
+                          value: g.id,
+                          child: Text(g.name),
+                        ))
+                    .toList(),
+                onChanged: _selectGroup,
+              );
+            },
             loading: () => const SizedBox.shrink(),
             error: (_, _) => const SizedBox.shrink(),
           ),
