@@ -4,9 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
+import 'package:fence/models/visibility_pair.dart';
+import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/providers/selected_group_provider.dart';
+import 'package:fence/providers/visibility_provider.dart';
 import 'package:fence/services/api_client.dart';
 
 class GroupDetailScreen extends ConsumerWidget {
@@ -18,18 +21,21 @@ class GroupDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final membersAsync = ref.watch(groupMembersProvider(groupId));
     final geofencesAsync = ref.watch(geofencesProvider(groupId));
+    final pairs = ref.watch(visibilityProvider(groupId)).valueOrNull;
+    final currentUserId = ref.watch(authProvider).user?.id;
     final l10n = AppLocalizations.of(context);
+
+    final isAdmin = membersAsync.whenOrNull(
+          data: (members) => members.any(
+            (m) => m.id == currentUserId && m.role == 'admin',
+          ),
+        ) ??
+        false;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.group),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.visibility_outlined),
-            onPressed: () =>
-                context.go('/groups/$groupId/visibility'),
-            tooltip: l10n.whoCanSeeMe,
-          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () =>
@@ -41,6 +47,11 @@ class GroupDetailScreen extends ConsumerWidget {
             onPressed: () => _createInvite(context, ref),
             tooltip: l10n.invite,
           ),
+          if (isAdmin)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _deleteGroup(context, ref),
+            ),
         ],
       ),
       body: ListView(
@@ -58,6 +69,8 @@ class GroupDetailScreen extends ConsumerWidget {
                         leading: const CircleAvatar(child: Icon(Icons.person)),
                         title: Text(m.displayName),
                         subtitle: Text(m.role),
+                        trailing: _buildVisibilityControl(
+                            ref, m.id, currentUserId, pairs, l10n),
                         onTap: () {
                           ref.read(mapFocusUserProvider.notifier).state = m.id;
                           ref.read(selectedGroupIdProvider.notifier).state = groupId;
@@ -116,6 +129,79 @@ class GroupDetailScreen extends ConsumerWidget {
         label: Text(l10n.addGeofence),
       ),
     );
+  }
+
+  Widget? _buildVisibilityControl(
+      WidgetRef ref, String memberId, String? currentUserId,
+      List<VisibilityPair>? pairs, AppLocalizations l10n) {
+    if (memberId == currentUserId || pairs == null) return null;
+    final matching = pairs.where((p) => p.otherUserId == memberId);
+    if (matching.isEmpty) return null;
+    final pair = matching.first;
+
+    if (pair.isPending) {
+      return FilledButton(
+        onPressed: () => _toggleVisibility(ref, pair.otherUserId, visible: true),
+        child: Text(l10n.grant),
+      );
+    }
+    if (pair.isActive) {
+      return Switch(
+        value: true,
+        onChanged: (v) {
+          if (!v) {
+            _toggleVisibility(ref, pair.otherUserId, visible: false);
+          }
+        },
+      );
+    }
+    return null;
+  }
+
+  Future<void> _toggleVisibility(
+      WidgetRef ref, String otherUserId, {required bool visible}) async {
+    await ref
+        .read(visibilityProvider(groupId).notifier)
+        .toggleVisibility(groupId, otherUserId, visible: visible);
+  }
+
+  Future<void> _deleteGroup(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final dl10n = AppLocalizations.of(dialogContext);
+        return AlertDialog(
+          title: Text(dl10n.deleteGroup),
+          content: Text(dl10n.deleteCannotBeUndone),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(dl10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(dl10n.delete),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed ?? false) {
+      try {
+        await ref.read(groupsProvider.notifier).deleteGroup(groupId);
+        if (context.mounted) {
+          context.go('/groups');
+        }
+      } on Exception catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.failedWithError(e.toString()))),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _createInvite(BuildContext context, WidgetRef ref) async {
