@@ -7,6 +7,7 @@ import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/onboarding_provider.dart';
 import 'helpers/mocks.dart';
 
+
 Response<Map<String, dynamic>> _fakeResponse(Map<String, dynamic> data) {
   return Response<Map<String, dynamic>>(
     data: data,
@@ -34,7 +35,7 @@ void main() {
     test('unknown auth status → no redirect', () async {
       final container = ProviderContainer(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
           onboardingProvider.overrideWith(
             (_) => OnboardingNotifier.completed(),
           ),
@@ -58,7 +59,7 @@ void main() {
         () async {
       final container = ProviderContainer(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
           onboardingProvider.overrideWith(
             (_) => OnboardingNotifier.completed(),
           ),
@@ -84,7 +85,7 @@ void main() {
         () async {
       final container = ProviderContainer(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
           onboardingProvider.overrideWith(
             (_) => OnboardingNotifier.completed(),
           ),
@@ -107,7 +108,7 @@ void main() {
     test('post-onboarding redirects to /map', () async {
       final container = ProviderContainer(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
           onboardingProvider.overrideWith(
             (_) => OnboardingNotifier.completed(),
           ),
@@ -141,7 +142,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
           onboardingProvider.overrideWith(
             (_) => OnboardingNotifier.completed(),
           ),
@@ -177,7 +178,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
           onboardingProvider.overrideWith(
             (_) => OnboardingNotifier.completed(),
           ),

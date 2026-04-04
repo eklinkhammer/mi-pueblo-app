@@ -5,6 +5,7 @@ import 'package:flutter_background_geolocation/flutter_background_geolocation.da
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/firebase_options.dart';
 import 'package:fence/l10n/app_localizations.dart';
+import 'package:fence/providers/geofence_notification_provider.dart';
 import 'package:fence/providers/geofence_sync_provider.dart';
 import 'package:fence/providers/locale_provider.dart';
 import 'package:fence/providers/location_manager_provider.dart';
@@ -26,6 +27,7 @@ class FenceApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(websocketManagerProvider);
     ref.watch(geofenceSyncManagerProvider);
+    ref.watch(geofenceNotificationProvider);
     ref.watch(locationManagerProvider);
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);

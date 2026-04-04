@@ -7,12 +7,15 @@ import '../helpers/test_data.dart';
 
 void main() {
   late MockApiClient mockApi;
+  late MockLocalNotificationService mockLocalNotifications;
 
   setUp(() {
     mockApi = MockApiClient();
+    mockLocalNotifications = MockLocalNotificationService();
   });
 
-  AuthNotifier createNotifier() => AuthNotifier(mockApi);
+  AuthNotifier createNotifier() =>
+      AuthNotifier(mockApi, mockLocalNotifications);
 
   group('initial _checkAuth', () {
     test('no token → unauthenticated', () async {

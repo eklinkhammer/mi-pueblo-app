@@ -9,6 +9,7 @@ import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
 import '../helpers/mocks.dart';
 
+
 void main() {
   GoRouter createRouter({String initialLocation = '/map'}) {
     return GoRouter(
@@ -62,7 +63,7 @@ void main() {
       final router = createRouter();
       await tester.pumpWidget(ProviderScope(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -82,7 +83,7 @@ void main() {
       final router = createRouter(initialLocation: '/map');
       await tester.pumpWidget(ProviderScope(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -101,7 +102,7 @@ void main() {
       final router = createRouter(initialLocation: '/groups');
       await tester.pumpWidget(ProviderScope(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -120,7 +121,7 @@ void main() {
       final router = createRouter(initialLocation: '/settings');
       await tester.pumpWidget(ProviderScope(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -143,7 +144,7 @@ void main() {
       final router = createRouter();
       await tester.pumpWidget(ProviderScope(
         overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(unauthApi)),
+          authProvider.overrideWith((ref) => AuthNotifier(unauthApi, MockLocalNotificationService())),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:fence/config.dart';
 import 'package:fence/models/user.dart';
 import 'package:fence/services/api_client.dart';
+import 'package:fence/services/local_notification_service.dart';
 import 'package:fence/services/notification_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
@@ -43,9 +44,11 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
+  final LocalNotificationService _localNotifications;
   NotificationService? _notificationService;
 
-  AuthNotifier(this._apiClient) : super(const AuthState()) {
+  AuthNotifier(this._apiClient, this._localNotifications)
+      : super(const AuthState()) {
     _checkAuth();
   }
 
@@ -69,7 +72,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _initNotifications() async {
     _notificationService?.dispose();
-    _notificationService = NotificationService(_apiClient);
+    _notificationService =
+        NotificationService(_apiClient, _localNotifications);
     await _notificationService!.initialize();
   }
 
@@ -198,5 +202,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  return AuthNotifier(apiClient);
+  final localNotifications = ref.read(localNotificationServiceProvider);
+  return AuthNotifier(apiClient, localNotifications);
 });

@@ -7,8 +7,9 @@ import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/screens/auth/login_screen.dart';
 import '../../helpers/mocks.dart';
 
+
 class _TestAuthNotifier extends AuthNotifier {
-  _TestAuthNotifier(super.apiClient);
+  _TestAuthNotifier(super.apiClient, super.localNotifications);
 
   void setTestState(AuthState newState) {
     // ignore: invalid_use_of_protected_member
@@ -29,7 +30,7 @@ void main() {
     return ProviderScope(
       overrides: [
         authProvider.overrideWith((ref) {
-          notifier = _TestAuthNotifier(mockApi);
+          notifier = _TestAuthNotifier(mockApi, MockLocalNotificationService());
           return notifier;
         }),
       ],

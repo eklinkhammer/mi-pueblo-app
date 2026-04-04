@@ -13,6 +13,7 @@ import 'package:fence/screens/geofences/geofence_detail_screen.dart';
 import '../../helpers/mocks.dart';
 import '../../helpers/http_overrides.dart';
 
+
 const _testGroupId = 'test-group-id';
 const _testGeofenceId = 'geo-1';
 
@@ -73,7 +74,7 @@ void main() {
         geofenceResidentsProvider(
           (groupId: _testGroupId, geofenceId: _testGeofenceId),
         ).overrideWith((ref) => Future.value(<Resident>[])),
-        authProvider.overrideWith((ref) => AuthNotifier(mockApi)),
+        authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
       ],
       child: const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,

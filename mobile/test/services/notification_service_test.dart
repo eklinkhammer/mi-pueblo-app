@@ -33,7 +33,8 @@ void main() {
   });
 
   NotificationService createService() =>
-      NotificationService(mockApi, messaging: mockMessaging);
+      NotificationService(mockApi, MockLocalNotificationService(),
+          messaging: mockMessaging);
 
   void stubPermissionGranted() {
     when(() => mockMessaging.requestPermission(
