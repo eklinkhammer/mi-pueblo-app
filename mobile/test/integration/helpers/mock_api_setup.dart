@@ -7,6 +7,7 @@ import 'package:fence/main.dart';
 import 'package:fence/providers/onboarding_provider.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/models/app_location.dart';
+import 'package:fence/services/local_notification_service.dart';
 import 'package:fence/services/location_service.dart';
 import 'package:fence/services/websocket_service.dart';
 
@@ -17,6 +18,7 @@ import '../../helpers/test_data.dart';
 /// Register fallback values for mocktail argument matchers.
 void registerFallbacks() {
   registerFallbackValue(<String, dynamic>{});
+  registerFallbackValue('');
 }
 
 /// Stub auth-related methods for an unauthenticated start.
@@ -120,6 +122,7 @@ Future<void> pumpAppWithMocks(
 }) async {
   final locService = locationService ?? MockLocationService();
   final mockWs = MockWebSocketService();
+  final mockLocalNotifications = MockLocalNotificationService();
 
   // Stub location service methods to avoid crashes
   when(locService.requestPermissions)
@@ -130,6 +133,11 @@ Future<void> pumpAppWithMocks(
   when(() => locService.onLocation)
       .thenAnswer((_) => const Stream<AppLocation>.empty());
   when(locService.dispose).thenReturn(null);
+
+  // Stub local notification service methods
+  when(mockLocalNotifications.initialize).thenAnswer((_) async {});
+  when(() => mockLocalNotifications.show(any(), any(), payload: any(named: 'payload')))
+      .thenAnswer((_) async {});
 
   // Stub WebSocket service methods
   when(mockWs.connect).thenAnswer((_) async {});
@@ -144,6 +152,8 @@ Future<void> pumpAppWithMocks(
         apiClientProvider.overrideWithValue(apiClient),
         locationServiceProvider.overrideWithValue(locService),
         websocketServiceProvider.overrideWithValue(mockWs),
+        localNotificationServiceProvider
+            .overrideWithValue(mockLocalNotifications),
         onboardingProvider.overrideWith(
           (_) => OnboardingNotifier.completed(),
         ),

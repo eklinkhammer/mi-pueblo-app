@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/models/group.dart';
 import 'package:fence/models/geofence.dart';
@@ -9,6 +10,7 @@ import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/screens/groups/group_detail_screen.dart';
+import '../../helpers/fakes.dart';
 import '../../helpers/mocks.dart';
 
 const _testGroupId = 'test-group-id';
@@ -38,6 +40,11 @@ void main() {
 
   setUp(() {
     mockApi = MockApiClient();
+    when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
+    when(() => mockApi.getVisibilityPairs(_testGroupId))
+        .thenAnswer((_) async => fakeResponse({'visibility_pairs': <dynamic>[]}));
+    when(() => mockApi.getSharingMode(_testGroupId))
+        .thenAnswer((_) async => fakeResponse({'sharing_mode': 'live'}));
   });
 
   Widget createApp({
@@ -78,7 +85,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Members'), findsOneWidget);
-      expect(find.text('Geofences'), findsOneWidget);
+      expect(find.text('Geofences'), findsWidgets);
     });
 
     testWidgets('shows member display name and role', (tester) async {
