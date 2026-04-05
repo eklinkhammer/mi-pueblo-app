@@ -16,12 +16,12 @@ class PermissionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final bodyStyle = theme.textTheme.bodyMedium!;
+    final bodyStyle = theme.textTheme.bodyMedium!.copyWith(color: Colors.black87);
     final linkStyle = bodyStyle.copyWith(
       color: theme.colorScheme.primary,
       decoration: TextDecoration.underline,
     );
-    final headingStyle = theme.textTheme.titleMedium!;
+    final headingStyle = theme.textTheme.titleMedium!.copyWith(color: Colors.black87);
     final boldStyle = bodyStyle.copyWith(fontWeight: FontWeight.bold);
 
     return Scaffold(
@@ -45,7 +45,7 @@ class PermissionsScreen extends ConsumerWidget {
             ],
           ),
           // Semi-transparent overlay for readability
-          Container(color: Colors.white.withValues(alpha: 0.85)),
+          Container(color: Colors.white.withValues(alpha: 0.93)),
           // Content
           SafeArea(
             child: Padding(
@@ -55,7 +55,7 @@ class PermissionsScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Mi Pueblo',
-                    style: theme.textTheme.headlineLarge,
+                    style: theme.textTheme.headlineLarge?.copyWith(color: Colors.black87),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),

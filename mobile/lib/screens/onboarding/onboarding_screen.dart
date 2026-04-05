@@ -136,14 +136,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 ),
                 Text(
                   '${index + 1}',
-                  style: theme.textTheme.titleMedium,
+                  style: theme.textTheme.titleMedium?.copyWith(color: Colors.black87),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(text, style: theme.textTheme.bodyLarge),
+            child: Text(text, style: theme.textTheme.bodyLarge?.copyWith(color: Colors.black87)),
           ),
         ],
       ),
@@ -303,7 +303,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ],
           ),
           // Semi-transparent overlay for readability
-          Container(color: Colors.white.withValues(alpha: 0.85)),
+          Container(color: Colors.white.withValues(alpha: 0.93)),
           // Content
           SafeArea(
             child: Padding(
@@ -319,7 +319,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       children: [
                         Text(
                           'Mi Pueblo',
-                          style: theme.textTheme.headlineLarge,
+                          style: theme.textTheme.headlineLarge?.copyWith(color: Colors.black87),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
@@ -336,7 +336,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               TextSpan(text: ' family'),
                             ],
                           ),
-                          style: theme.textTheme.bodyLarge,
+                          style: theme.textTheme.bodyLarge?.copyWith(color: Colors.black87),
                           textAlign: TextAlign.center,
                         ),
                       ],
