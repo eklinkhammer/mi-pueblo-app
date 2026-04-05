@@ -51,81 +51,90 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.go('/map'),
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () => context.go('/map'),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Mi Pueblo',
+                      style: Theme.of(context).textTheme.headlineLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.appSubtitle,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 48),
+                    TextField(
+                      controller: _codeController,
+                      decoration: InputDecoration(
+                        labelText: l10n.groupCodePrompt,
+                        border: const OutlineInputBorder(),
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                      inputFormatters: [UpperCaseTextFormatter()],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: l10n.yourName,
+                        border: const OutlineInputBorder(),
+                      ),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _join(),
+                    ),
+                    const SizedBox(height: 24),
+                    if (errorText != null) ...[
+                      Text(
+                        errorText,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    FilledButton(
+                      onPressed: _loading ? null : _join,
+                      child: _loading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(l10n.joinButton),
+                    ),
+                    const SizedBox(height: 32),
+                    TextButton(
+                      onPressed: () => context.go('/auth/create'),
+                      child: Text(l10n.createNewGroup),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go('/auth/login'),
+                      child: Text(l10n.alreadyHaveAccount),
+                    ),
+                    const Spacer(),
+                  ],
                 ),
               ),
-              const Spacer(),
-              Text(
-                'Mi Pueblo',
-                style: Theme.of(context).textTheme.headlineLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.appSubtitle,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              TextField(
-                controller: _codeController,
-                decoration: InputDecoration(
-                  labelText: l10n.groupCodePrompt,
-                  border: const OutlineInputBorder(),
-                ),
-                textCapitalization: TextCapitalization.characters,
-                inputFormatters: [UpperCaseTextFormatter()],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: l10n.yourName,
-                  border: const OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _join(),
-              ),
-              const SizedBox(height: 24),
-              if (errorText != null) ...[
-                Text(
-                  errorText,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-              ],
-              FilledButton(
-                onPressed: _loading ? null : _join,
-                child: _loading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(l10n.joinButton),
-              ),
-              const SizedBox(height: 32),
-              TextButton(
-                onPressed: () => context.go('/auth/create'),
-                child: Text(l10n.createNewGroup),
-              ),
-              TextButton(
-                onPressed: () => context.go('/auth/login'),
-                child: Text(l10n.alreadyHaveAccount),
-              ),
-              const Spacer(),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -135,7 +144,9 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     return TextEditingValue(
       text: newValue.text.toUpperCase(),
       selection: newValue.selection,
