@@ -458,12 +458,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Anular ajustes de silencio para miembros que comparten tu geocerca de hogar';
 
   @override
-  String get memberNotifications => 'Notificaciones por miembro';
-
-  @override
-  String get homeNotifications => 'Notificaciones de hogar';
-
-  @override
   String get whoCanSeeMe => '¿Quién puede verme?';
 
   @override
@@ -486,4 +480,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get deleteGroup => '¿Eliminar grupo?';
+
+  @override
+  String get locationSharingMode =>
+      '¿Cómo comparto mi ubicación con este grupo?';
+
+  @override
+  String get live => 'En vivo';
+
+  @override
+  String get geofencesOnly => 'Geocercas';
 }

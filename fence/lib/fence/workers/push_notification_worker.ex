@@ -49,22 +49,12 @@ defmodule Fence.Workers.PushNotificationWorker do
     :ok
   end
 
-  defp load_notification_prefs(subscriber_ids, triggering_user_id, geofence) do
+  defp load_notification_prefs(_subscriber_ids, triggering_user_id, geofence) do
     # 1. Memberships for all subscribers in this group → silence flags + home_geofence_id
     memberships = Groups.list_members(geofence.group_id)
     memberships_by_user = Map.new(memberships, fn m -> {m.user_id, m} end)
 
-    # 2. Per-member prefs where observer is a subscriber and subject is triggering user
-    member_prefs =
-      Notifications.get_member_notification_preferences_for_subject(
-        subscriber_ids,
-        triggering_user_id,
-        geofence.group_id
-      )
-
-    prefs_by_observer = Map.new(member_prefs, fn p -> {p.observer_id, p} end)
-
-    # 3. Is this a home notification? (triggering user's home_geofence_id == geofence.id)
+    # 2. Is this a home notification? (triggering user's home_geofence_id == geofence.id)
     triggering_membership = Map.get(memberships_by_user, triggering_user_id)
 
     is_home_geofence =
@@ -72,15 +62,14 @@ defmodule Fence.Workers.PushNotificationWorker do
         triggering_membership.home_geofence_id != nil and
         triggering_membership.home_geofence_id == geofence.id
 
-    # 4. Triggering user's home_geofence_id (for household detection)
+    # 3. Triggering user's home_geofence_id (for household detection)
     triggering_home_id = triggering_membership && triggering_membership.home_geofence_id
 
-    # 5. Visibility: which subscribers can see the triggering user
+    # 4. Visibility: which subscribers can see the triggering user
     visible_set = Groups.visible_user_ids(triggering_user_id, geofence.group_id)
 
     %{
       memberships_by_user: memberships_by_user,
-      prefs_by_observer: prefs_by_observer,
       is_home_geofence: is_home_geofence,
       triggering_home_id: triggering_home_id,
       visible_set: visible_set
@@ -109,13 +98,11 @@ defmodule Fence.Workers.PushNotificationWorker do
 
     %{
       memberships_by_user: memberships_by_user,
-      prefs_by_observer: prefs_by_observer,
       is_home_geofence: is_home_geofence,
       triggering_home_id: triggering_home_id
     } = prefs_context
 
     subscriber_membership = Map.get(memberships_by_user, subscriber_id)
-    member_pref = Map.get(prefs_by_observer, subscriber_id)
 
     is_household =
       triggering_home_id != nil and
@@ -129,9 +116,6 @@ defmodule Fence.Workers.PushNotificationWorker do
       group_or_home_silenced?(subscriber_membership, is_home_geofence) ->
         true
 
-      user_muted?(member_pref, is_home_geofence) ->
-        true
-
       true ->
         original_skip?(subscription, triggering_user, event)
     end
@@ -142,12 +126,6 @@ defmodule Fence.Workers.PushNotificationWorker do
   defp group_or_home_silenced?(membership, is_home) do
     membership.silence_all_notifications or
       (is_home and membership.silence_home_notifications)
-  end
-
-  defp user_muted?(nil, _is_home), do: false
-
-  defp user_muted?(pref, is_home) do
-    not pref.notify or (is_home and not pref.notify_home)
   end
 
   defp original_skip?(subscription, triggering_user, event) do

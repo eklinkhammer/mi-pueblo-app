@@ -64,7 +64,7 @@ defmodule Fence.Locations do
       on: m.user_id == l.user_id and m.group_id == ^group_id,
       join: u in Fence.Accounts.User,
       on: u.id == l.user_id,
-      where: l.user_id in ^allowed_ids,
+      where: l.user_id in ^allowed_ids and m.sharing_mode == "live",
       distinct: l.user_id,
       order_by: [asc: l.user_id, desc: l.inserted_at],
       select: %{
@@ -149,7 +149,7 @@ defmodule Fence.Locations do
     location = Repo.get(DeviceLocation, location_id)
 
     if location do
-      groups = Groups.list_user_groups(user_id)
+      groups = Groups.list_user_live_groups(user_id)
       user = Accounts.get_user(user_id)
 
       {lng, lat} =

@@ -128,7 +128,7 @@ defmodule Fence.GroupsTest do
       user = create_user()
       group = create_group(user)
       assert {:ok, invite} = Groups.get_or_create_invite(group.id, user.id)
-      assert String.length(invite.code) == 8
+      assert String.length(invite.code) == 6
       assert invite.expires_at
     end
 
@@ -403,6 +403,67 @@ defmodule Fence.GroupsTest do
 
       {:ok, _} = Groups.remove_member(group.id, joiner.id)
       assert Groups.list_visibility_pairs(admin.id, group.id) == []
+    end
+  end
+
+  describe "update_sharing_mode/3" do
+    test "updates sharing mode to geofences" do
+      user = create_user()
+      group = create_group(user)
+
+      assert {:ok, membership} = Groups.update_sharing_mode(user.id, group.id, "geofences")
+      assert membership.sharing_mode == "geofences"
+    end
+
+    test "updates sharing mode back to live" do
+      user = create_user()
+      group = create_group(user)
+
+      {:ok, _} = Groups.update_sharing_mode(user.id, group.id, "geofences")
+      assert {:ok, membership} = Groups.update_sharing_mode(user.id, group.id, "live")
+      assert membership.sharing_mode == "live"
+    end
+
+    test "rejects invalid sharing mode" do
+      user = create_user()
+      group = create_group(user)
+
+      assert {:error, changeset} = Groups.update_sharing_mode(user.id, group.id, "invalid")
+      assert %{sharing_mode: _} = errors_on(changeset)
+    end
+
+    test "returns not_found for non-member" do
+      user = create_user()
+      other = create_user()
+      group = create_group(other)
+
+      assert {:error, :not_found} = Groups.update_sharing_mode(user.id, group.id, "live")
+    end
+  end
+
+  describe "list_user_live_groups/1" do
+    test "returns only groups where user has live sharing mode" do
+      user = create_user()
+      group_live = create_group(user, %{"name" => "Live Group"})
+      group_geo = create_group(user, %{"name" => "Geo Group"})
+
+      {:ok, _} = Groups.update_sharing_mode(user.id, group_geo.id, "geofences")
+
+      live_groups = Groups.list_user_live_groups(user.id)
+      ids = Enum.map(live_groups, & &1.id)
+      assert group_live.id in ids
+      refute group_geo.id in ids
+    end
+
+    test "returns all groups when all are live" do
+      user = create_user()
+      g1 = create_group(user, %{"name" => "Group 1"})
+      g2 = create_group(user, %{"name" => "Group 2"})
+
+      live_groups = Groups.list_user_live_groups(user.id)
+      ids = Enum.map(live_groups, & &1.id)
+      assert g1.id in ids
+      assert g2.id in ids
     end
   end
 

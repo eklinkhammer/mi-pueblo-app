@@ -165,6 +165,15 @@ class ApiClient {
   Future<Response<Map<String, dynamic>>> createInvite(String groupId) =>
       _dio.post<Map<String, dynamic>>('/groups/$groupId/invites');
 
+  // Sharing mode
+  Future<Response<Map<String, dynamic>>> getSharingMode(String groupId) =>
+      _dio.get<Map<String, dynamic>>('/groups/$groupId/sharing-mode');
+
+  Future<Response<Map<String, dynamic>>> updateSharingMode(
+          String groupId, String mode) =>
+      _dio.put<Map<String, dynamic>>('/groups/$groupId/sharing-mode',
+          data: {'sharing_mode': mode});
+
   // Notification preferences
   Future<Response<Map<String, dynamic>>> getNotificationPreferences(
           String groupId) =>
@@ -175,16 +184,6 @@ class ApiClient {
           String groupId, Map<String, dynamic> data) =>
       _dio.put<Map<String, dynamic>>(
           '/groups/$groupId/notification-preferences',
-          data: data);
-
-  Future<Response<Map<String, dynamic>>> getMemberPreferences(
-          String groupId) =>
-      _dio.get<Map<String, dynamic>>('/groups/$groupId/member-preferences');
-
-  Future<Response<Map<String, dynamic>>> upsertMemberPreference(
-          String groupId, String subjectId, Map<String, dynamic> data) =>
-      _dio.put<Map<String, dynamic>>(
-          '/groups/$groupId/member-preferences/$subjectId',
           data: data);
 
   // Geofences

@@ -1,7 +1,7 @@
 defmodule FenceWeb.GroupController do
   use FenceWeb, :controller
 
-  alias Fence.{Groups, Notifications}
+  alias Fence.Groups
 
   def index(conn, _params) do
     groups = Groups.list_user_groups_with_sharing_count(conn.assigns.current_user.id)
@@ -154,6 +154,35 @@ defmodule FenceWeb.GroupController do
     end
   end
 
+  def show_sharing_mode(conn, %{"id" => group_id}) do
+    user = conn.assigns.current_user
+
+    case Groups.get_membership(user.id, group_id) do
+      nil ->
+        forbidden(conn)
+
+      membership ->
+        json(conn, %{sharing_mode: membership.sharing_mode})
+    end
+  end
+
+  def update_sharing_mode(conn, %{"id" => group_id, "sharing_mode" => mode}) do
+    user = conn.assigns.current_user
+
+    case Groups.update_sharing_mode(user.id, group_id, mode) do
+      {:ok, membership} ->
+        json(conn, %{sharing_mode: membership.sharing_mode})
+
+      {:error, :not_found} ->
+        forbidden(conn)
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{errors: format_errors(changeset)})
+    end
+  end
+
   def show_notification_preferences(conn, %{"id" => group_id}) do
     user = conn.assigns.current_user
 
@@ -188,55 +217,6 @@ defmodule FenceWeb.GroupController do
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{errors: format_errors(changeset)})
-    end
-  end
-
-  def list_member_preferences(conn, %{"id" => group_id}) do
-    user = conn.assigns.current_user
-
-    if Groups.member?(user.id, group_id) do
-      prefs = Notifications.list_member_notification_preferences(user.id, group_id)
-
-      json(conn, %{
-        preferences:
-          Enum.map(prefs, fn p ->
-            %{
-              subject_id: p.subject_id,
-              notify: p.notify,
-              notify_home: p.notify_home
-            }
-          end)
-      })
-    else
-      forbidden(conn)
-    end
-  end
-
-  def upsert_member_preference(conn, %{"id" => group_id, "subject_id" => subject_id} = params) do
-    user = conn.assigns.current_user
-
-    if Groups.member?(user.id, group_id) do
-      case Notifications.upsert_member_notification_preference(%{
-             observer_id: user.id,
-             subject_id: subject_id,
-             group_id: group_id,
-             notify: Map.get(params, "notify", true),
-             notify_home: Map.get(params, "notify_home", true)
-           }) do
-        {:ok, pref} ->
-          json(conn, %{
-            subject_id: pref.subject_id,
-            notify: pref.notify,
-            notify_home: pref.notify_home
-          })
-
-        {:error, changeset} ->
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{errors: format_errors(changeset)})
-      end
-    else
-      forbidden(conn)
     end
   end
 

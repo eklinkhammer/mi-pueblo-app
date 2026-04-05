@@ -10,6 +10,7 @@ defmodule Fence.Groups.Membership do
     field :silence_all_notifications, :boolean, default: false
     field :silence_home_notifications, :boolean, default: false
     field :notify_household, :boolean, default: true
+    field :sharing_mode, :string, default: "live"
 
     belongs_to :user, Fence.Accounts.User
     belongs_to :group, Fence.Groups.Group
@@ -37,5 +38,12 @@ defmodule Fence.Groups.Membership do
   def notification_prefs_changeset(membership, attrs) do
     membership
     |> cast(attrs, [:silence_all_notifications, :silence_home_notifications, :notify_household])
+  end
+
+  def sharing_mode_changeset(membership, attrs) do
+    membership
+    |> cast(attrs, [:sharing_mode])
+    |> validate_required([:sharing_mode])
+    |> validate_inclusion(:sharing_mode, ["live", "geofences"])
   end
 end

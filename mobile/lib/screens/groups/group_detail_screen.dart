@@ -9,6 +9,7 @@ import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/providers/selected_group_provider.dart';
+import 'package:fence/providers/sharing_mode_provider.dart';
 import 'package:fence/providers/visibility_provider.dart';
 import 'package:fence/services/api_client.dart';
 
@@ -56,6 +57,9 @@ class GroupDetailScreen extends ConsumerWidget {
       ),
       body: ListView(
         children: [
+          // Sharing mode card
+          _buildSharingModeCard(context, ref, l10n),
+
           // Members section
           Padding(
             padding: const EdgeInsets.all(16),
@@ -127,6 +131,48 @@ class GroupDetailScreen extends ConsumerWidget {
         onPressed: () => context.go('/groups/$groupId/geofences/create'),
         icon: const Icon(Icons.add_location_alt),
         label: Text(l10n.addGeofence),
+      ),
+    );
+  }
+
+  Widget _buildSharingModeCard(
+      BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+    final sharingModeAsync = ref.watch(sharingModeProvider(groupId));
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.locationSharingMode,
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: sharingModeAsync.when(
+                data: (mode) => SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(value: 'live', label: Text(l10n.live)),
+                    ButtonSegment(
+                        value: 'geofences', label: Text(l10n.geofencesOnly)),
+                  ],
+                  selected: {mode},
+                  onSelectionChanged: (selected) {
+                    ref
+                        .read(sharingModeProvider(groupId).notifier)
+                        .setMode(selected.first);
+                  },
+                ),
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (e, _) =>
+                    Text(l10n.errorWithMessage(e.toString())),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

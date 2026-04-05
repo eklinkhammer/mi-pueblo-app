@@ -236,6 +236,61 @@ defmodule FenceWeb.GroupControllerTest do
     end
   end
 
+  describe "GET /api/v1/groups/:id/sharing-mode" do
+    test "returns sharing mode for member", %{conn: conn, user: user} do
+      group = create_group(user)
+      conn = get(conn, "/api/v1/groups/#{group.id}/sharing-mode")
+      assert %{"sharing_mode" => "live"} = json_response(conn, 200)
+    end
+
+    test "returns 403 for non-member", %{conn: conn} do
+      other = create_user()
+      group = create_group(other)
+      conn = get(conn, "/api/v1/groups/#{group.id}/sharing-mode")
+      assert json_response(conn, 403)
+    end
+  end
+
+  describe "PUT /api/v1/groups/:id/sharing-mode" do
+    test "updates sharing mode to geofences", %{conn: conn, user: user} do
+      group = create_group(user)
+
+      conn =
+        put(conn, "/api/v1/groups/#{group.id}/sharing-mode", %{"sharing_mode" => "geofences"})
+
+      assert %{"sharing_mode" => "geofences"} = json_response(conn, 200)
+    end
+
+    test "updates sharing mode back to live", %{conn: conn, user: user} do
+      group = create_group(user)
+      Fence.Groups.update_sharing_mode(user.id, group.id, "geofences")
+
+      conn =
+        put(conn, "/api/v1/groups/#{group.id}/sharing-mode", %{"sharing_mode" => "live"})
+
+      assert %{"sharing_mode" => "live"} = json_response(conn, 200)
+    end
+
+    test "rejects invalid sharing mode", %{conn: conn, user: user} do
+      group = create_group(user)
+
+      conn =
+        put(conn, "/api/v1/groups/#{group.id}/sharing-mode", %{"sharing_mode" => "invalid"})
+
+      assert json_response(conn, 422)
+    end
+
+    test "returns 403 for non-member", %{conn: conn} do
+      other = create_user()
+      group = create_group(other)
+
+      conn =
+        put(conn, "/api/v1/groups/#{group.id}/sharing-mode", %{"sharing_mode" => "geofences"})
+
+      assert json_response(conn, 403)
+    end
+  end
+
   describe "GET /api/v1/groups/:id/notification-preferences" do
     test "returns notification preferences for member", %{conn: conn, user: user} do
       group = create_group(user)
@@ -276,92 +331,6 @@ defmodule FenceWeb.GroupControllerTest do
       conn =
         put(conn, "/api/v1/groups/#{group.id}/notification-preferences", %{
           "silence_all_notifications" => true
-        })
-
-      assert json_response(conn, 403)
-    end
-  end
-
-  describe "GET /api/v1/groups/:id/member-preferences" do
-    test "returns empty list when no prefs", %{conn: conn, user: user} do
-      group = create_group(user)
-      conn = get(conn, "/api/v1/groups/#{group.id}/member-preferences")
-      assert %{"preferences" => []} = json_response(conn, 200)
-    end
-
-    test "returns prefs after upsert", %{conn: conn, user: user} do
-      group = create_group(user)
-      subject = create_user()
-
-      Fence.Notifications.upsert_member_notification_preference(%{
-        observer_id: user.id,
-        subject_id: subject.id,
-        group_id: group.id,
-        notify: false,
-        notify_home: true
-      })
-
-      conn = get(conn, "/api/v1/groups/#{group.id}/member-preferences")
-      assert %{"preferences" => [pref]} = json_response(conn, 200)
-      assert pref["subject_id"] == subject.id
-      assert pref["notify"] == false
-    end
-
-    test "returns 403 for non-member", %{conn: conn} do
-      other = create_user()
-      group = create_group(other)
-      conn = get(conn, "/api/v1/groups/#{group.id}/member-preferences")
-      assert json_response(conn, 403)
-    end
-  end
-
-  describe "PUT /api/v1/groups/:id/member-preferences/:subject_id" do
-    test "creates member preference", %{conn: conn, user: user} do
-      group = create_group(user)
-      subject = create_user()
-
-      conn =
-        put(conn, "/api/v1/groups/#{group.id}/member-preferences/#{subject.id}", %{
-          "notify" => false,
-          "notify_home" => false
-        })
-
-      assert resp = json_response(conn, 200)
-      assert resp["subject_id"] == subject.id
-      assert resp["notify"] == false
-      assert resp["notify_home"] == false
-    end
-
-    test "upserts existing preference", %{conn: conn, user: user} do
-      group = create_group(user)
-      subject = create_user()
-
-      put(conn, "/api/v1/groups/#{group.id}/member-preferences/#{subject.id}", %{
-        "notify" => false
-      })
-
-      conn =
-        conn
-        |> recycle()
-        |> authed_conn(user)
-        |> put("/api/v1/groups/#{group.id}/member-preferences/#{subject.id}", %{
-          "notify" => true,
-          "notify_home" => false
-        })
-
-      assert resp = json_response(conn, 200)
-      assert resp["notify"] == true
-      assert resp["notify_home"] == false
-    end
-
-    test "returns 403 for non-member", %{conn: conn} do
-      other = create_user()
-      group = create_group(other)
-      subject = create_user()
-
-      conn =
-        put(conn, "/api/v1/groups/#{group.id}/member-preferences/#{subject.id}", %{
-          "notify" => false
         })
 
       assert json_response(conn, 403)

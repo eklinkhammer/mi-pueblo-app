@@ -453,12 +453,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Override silence settings for members who share your home geofence';
 
   @override
-  String get memberNotifications => 'Per-Member Notifications';
-
-  @override
-  String get homeNotifications => 'Home Notifications';
-
-  @override
   String get whoCanSeeMe => 'Who Can See Me?';
 
   @override
@@ -481,4 +475,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteGroup => 'Delete Group?';
+
+  @override
+  String get locationSharingMode =>
+      'How do I share my location with this group?';
+
+  @override
+  String get live => 'Live';
+
+  @override
+  String get geofencesOnly => 'Geofences';
 }

@@ -200,9 +200,6 @@
   "silenceHomeNotificationsSubtitle": "Stop notifications when members enter or leave their home",
   "notifyHousehold": "Always Notify Household",
   "notifyHouseholdSubtitle": "Override silence settings for members who share your home geofence",
-  "memberNotifications": "Per-Member Notifications",
-  "homeNotifications": "Home Notifications",
-
   "whoCanSeeMe": "Who Can See Me?",
   "pendingVisibility": "Pending Requests",
   "visibleMembers": "Visible Members",
@@ -216,5 +213,9 @@
     }
   },
 
-  "deleteGroup": "Delete Group?"
+  "deleteGroup": "Delete Group?",
+
+  "locationSharingMode": "How do I share my location with this group?",
+  "live": "Live",
+  "geofencesOnly": "Geofences"
 }

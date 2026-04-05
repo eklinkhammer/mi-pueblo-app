@@ -76,6 +76,37 @@ defmodule Fence.LocationsTest do
       assert MapSet.member?(user_ids, admin.id)
       assert MapSet.member?(user_ids, member.id)
     end
+
+    test "excludes members with sharing_mode set to geofences" do
+      admin = create_user(%{"display_name" => "Admin"})
+      member = create_user(%{"display_name" => "Member"})
+      group = create_group(admin)
+
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
+
+      # Grant mutual visibility
+      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+
+      # Both report locations
+      {:ok, _} =
+        Locations.report_location(admin.id, %{"latitude" => 37.0, "longitude" => -122.0})
+
+      {:ok, _} =
+        Locations.report_location(member.id, %{"latitude" => 40.0, "longitude" => -74.0})
+
+      # Both visible with default "live" sharing mode
+      locations = Locations.get_group_last_locations(group.id, admin.id)
+      assert length(locations) == 2
+
+      # Switch member to geofences-only mode
+      {:ok, _} = Fence.Groups.update_sharing_mode(member.id, group.id, "geofences")
+
+      # Admin should now only see their own location
+      locations = Locations.get_group_last_locations(group.id, admin.id)
+      assert length(locations) == 1
+      assert hd(locations).user_id == admin.id
+    end
   end
 
   describe "geofence state" do

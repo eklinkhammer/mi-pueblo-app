@@ -926,18 +926,6 @@ abstract class AppLocalizations {
   /// **'Override silence settings for members who share your home geofence'**
   String get notifyHouseholdSubtitle;
 
-  /// No description provided for @memberNotifications.
-  ///
-  /// In en, this message translates to:
-  /// **'Per-Member Notifications'**
-  String get memberNotifications;
-
-  /// No description provided for @homeNotifications.
-  ///
-  /// In en, this message translates to:
-  /// **'Home Notifications'**
-  String get homeNotifications;
-
   /// No description provided for @whoCanSeeMe.
   ///
   /// In en, this message translates to:
@@ -979,6 +967,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Group?'**
   String get deleteGroup;
+
+  /// No description provided for @locationSharingMode.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I share my location with this group?'**
+  String get locationSharingMode;
+
+  /// No description provided for @live.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get live;
+
+  /// No description provided for @geofencesOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Geofences'**
+  String get geofencesOnly;
 }
 
 class _AppLocalizationsDelegate

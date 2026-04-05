@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,8 +119,10 @@ class LocationService {
 
     await _backend.ready(bg.Config(
       desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-      distanceFilter: AppConfig.locationDistanceFilter.toDouble(),
-      locationUpdateInterval: AppConfig.locationIntervalMs,
+      distanceFilter: kDebugMode ? 10.0 : AppConfig.locationDistanceFilter.toDouble(),
+      locationUpdateInterval: kDebugMode ? 30000 : AppConfig.locationIntervalMs,
+      disableStopDetection: kDebugMode,
+      debug: kDebugMode,
       stopOnTerminate: false,
       startOnBoot: true,
       enableHeadless: true,

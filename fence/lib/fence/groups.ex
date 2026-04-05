@@ -42,6 +42,16 @@ defmodule Fence.Groups do
     |> Repo.all()
   end
 
+  def list_user_live_groups(user_id) do
+    from(g in Group,
+      join: m in Membership,
+      on: m.group_id == g.id,
+      where: m.user_id == ^user_id and m.sharing_mode == "live",
+      select: g
+    )
+    |> Repo.all()
+  end
+
   def list_user_groups_with_sharing_count(user_id) do
     sharing_count_query =
       from(vp in VisibilityPair,
@@ -225,6 +235,18 @@ defmodule Fence.Groups do
       membership ->
         membership
         |> Membership.notification_prefs_changeset(attrs)
+        |> Repo.update()
+    end
+  end
+
+  def update_sharing_mode(user_id, group_id, mode) do
+    case get_membership(user_id, group_id) do
+      nil ->
+        {:error, :not_found}
+
+      membership ->
+        membership
+        |> Membership.sharing_mode_changeset(%{"sharing_mode" => mode})
         |> Repo.update()
     end
   end

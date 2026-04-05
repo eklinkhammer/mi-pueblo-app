@@ -79,22 +79,6 @@ defmodule Fence.Integration.AccountDeletionTest do
       # Drain Oban — processes geofence checks, creates user_geofence_state entries
       drain_oban()
 
-      # Member notification preference — Bob observes Alice
-      conn_b
-      |> put("/api/v1/groups/#{group_id}/member-preferences/#{alice_id}", %{
-        "notify" => false,
-        "notify_home" => true
-      })
-      |> json_response(200)
-
-      # Also create a preference where Alice is observer (of Bob)
-      conn_a
-      |> put("/api/v1/groups/#{group_id}/member-preferences/#{bob_id}", %{
-        "notify" => true,
-        "notify_home" => false
-      })
-      |> json_response(200)
-
       # Push logs — direct insert (one where Alice is recipient, one where Alice is triggering_user)
       {:ok, _} =
         Notifications.log_push(%{
@@ -186,20 +170,6 @@ defmodule Fence.Integration.AccountDeletionTest do
       # push_logs (as recipient)
       refute Repo.exists?(
                from(pl in "push_logs", where: pl.recipient_id == type(^alice_id, :binary_id))
-             )
-
-      # member_notification_preferences (as observer)
-      refute Repo.exists?(
-               from(mnp in "member_notification_preferences",
-                 where: mnp.observer_id == type(^alice_id, :binary_id)
-               )
-             )
-
-      # member_notification_preferences (as subject)
-      refute Repo.exists?(
-               from(mnp in "member_notification_preferences",
-                 where: mnp.subject_id == type(^alice_id, :binary_id)
-               )
              )
 
       # visibility_pairs (as user_a or user_b)
