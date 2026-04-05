@@ -45,7 +45,7 @@ class PermissionsScreen extends ConsumerWidget {
             ],
           ),
           // Semi-transparent overlay for readability
-          Container(color: Colors.white.withValues(alpha: 0.55)),
+          Container(color: Colors.white.withValues(alpha: 0.85)),
           // Content
           SafeArea(
             child: Padding(

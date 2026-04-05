@@ -216,12 +216,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               Text(
                                 "Primo's House",
                                 style: TextStyle(
-                                    fontSize: 11, fontWeight: FontWeight.w600),
+                                    fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 'Primo, Tía',
-                                style: TextStyle(fontSize: 10),
+                                style: TextStyle(fontSize: 10, color: Colors.black87),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -247,12 +247,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               Text(
                                 "Abuela's House",
                                 style: TextStyle(
-                                    fontSize: 11, fontWeight: FontWeight.w600),
+                                    fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 'Abuela',
-                                style: TextStyle(fontSize: 10),
+                                style: TextStyle(fontSize: 10, color: Colors.black87),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -303,7 +303,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ],
           ),
           // Semi-transparent overlay for readability
-          Container(color: Colors.white.withValues(alpha: 0.55)),
+          Container(color: Colors.white.withValues(alpha: 0.85)),
           // Content
           SafeArea(
             child: Padding(
