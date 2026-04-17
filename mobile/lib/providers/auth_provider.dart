@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -64,7 +62,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final data = response.data!;
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-      unawaited(_initNotifications());
+      await _initNotifications();
     } on Exception catch (_) {
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
@@ -89,7 +87,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-      unawaited(_initNotifications());
+      await _initNotifications();
     } on Exception catch (_) {
       state = state.copyWith(errorKey: AuthErrorKey.registrationFailed);
     }
@@ -105,7 +103,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-      unawaited(_initNotifications());
+      await _initNotifications();
     } on Exception catch (_) {
       state = state.copyWith(errorKey: AuthErrorKey.invalidCredentials);
     }
@@ -121,7 +119,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-      unawaited(_initNotifications());
+      await _initNotifications();
     } on DioException catch (e) {
       final errorKey = _parseAnonymousJoinError(e);
       state = state.copyWith(errorKey: errorKey);
@@ -151,7 +149,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-      unawaited(_initNotifications());
+      await _initNotifications();
       final group = data['group'] as Map<String, dynamic>;
       return group['id'] as String;
     } on Exception catch (_) {
@@ -186,7 +184,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-      unawaited(_initNotifications());
+      await _initNotifications();
     } on Exception catch (_) {
       state = state.copyWith(errorKey: AuthErrorKey.googleSignInFailed);
     }
