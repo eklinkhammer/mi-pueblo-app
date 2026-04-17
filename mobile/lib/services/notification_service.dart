@@ -26,14 +26,18 @@ class NotificationService {
   Future<void> initialize() async {
     try {
       final settings = await _messaging.requestPermission();
+      debugPrint('[Notif] Permission status: ${settings.authorizationStatus}');
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
-        debugPrint('Notification permission denied');
+        debugPrint('[Notif] Permission DENIED — cannot receive notifications');
         return;
       }
 
       final token = await _messaging.getToken();
+      debugPrint('[Notif] FCM token: ${token ?? "NULL"}');
       if (token != null) {
         await _registerToken(token);
+      } else {
+        debugPrint('[Notif] WARNING: FCM token is null, cannot register');
       }
 
       _tokenRefreshSub = _messaging.onTokenRefresh.listen(_registerToken);
@@ -44,14 +48,21 @@ class NotificationService {
       // Handle tap on notification that opened the app
       _messageOpenedSub =
           FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
-    } on Exception catch (e) {
-      debugPrint('Failed to initialize notifications: $e');
+
+      debugPrint('[Notif] Initialization complete — listening for messages');
+    } on Exception catch (e, stack) {
+      debugPrint('[Notif] FAILED to initialize: $e\n$stack');
     }
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
+    debugPrint(
+        '[Notif] Foreground FCM received: notification=${message.notification?.title} data=${message.data}');
     final notification = message.notification;
-    if (notification == null) return;
+    if (notification == null) {
+      debugPrint('[Notif] Message has no notification payload, skipping display');
+      return;
+    }
 
     _localNotifications.show(
       notification.title ?? '',
@@ -67,10 +78,11 @@ class NotificationService {
   Future<void> _registerToken(String token) async {
     try {
       final platform = Platform.isIOS ? 'ios' : 'android';
+      debugPrint('[Notif] Registering token with backend: platform=$platform token=${token.substring(0, 10)}...');
       await _apiClient.registerDeviceToken(token, platform);
-      debugPrint('FCM token registered');
+      debugPrint('[Notif] Token registration SUCCESS');
     } on Exception catch (e) {
-      debugPrint('Failed to register FCM token: $e');
+      debugPrint('[Notif] Token registration FAILED: $e');
     }
   }
 

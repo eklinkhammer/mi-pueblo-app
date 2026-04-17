@@ -5,10 +5,13 @@ defmodule Fence.Application do
 
   use Application
 
+  require Logger
+
   @impl true
   def start(_type, _args) do
     fcm_children =
       if Application.get_env(:fence, :fcm_credentials) do
+        Logger.info("[FCM] FCM credentials found — starting Goth + FCM children")
         credentials = Application.fetch_env!(:fence, :fcm_credentials)
 
         [
@@ -16,6 +19,7 @@ defmodule Fence.Application do
           Fence.FCM
         ]
       else
+        Logger.warning("[FCM] FCM_SERVICE_ACCOUNT_JSON not set — push notifications disabled")
         []
       end
 

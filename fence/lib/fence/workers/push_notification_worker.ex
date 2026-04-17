@@ -28,12 +28,20 @@ defmodule Fence.Workers.PushNotificationWorker do
   def perform(%Oban.Job{
         args: %{"user_id" => triggering_user_id, "geofence_id" => geofence_id, "event" => event}
       }) do
+    Logger.info(
+      "[PushWorker] Processing user=#{triggering_user_id} geofence=#{geofence_id} event=#{event}"
+    )
+
     geofence = Geofences.get_geofence(geofence_id)
 
     if geofence do
       subscribers = Geofences.list_geofence_subscribers(geofence_id)
       triggering_user = Accounts.get_user(triggering_user_id)
       subscriber_ids = Enum.map(subscribers, & &1.user_id)
+
+      Logger.info(
+        "[PushWorker] geofence=#{geofence.name} subscriber_count=#{length(subscriber_ids)}"
+      )
 
       # Batch-load preference data (no N+1)
       prefs_context = load_notification_prefs(subscriber_ids, triggering_user_id, geofence)
@@ -77,23 +85,34 @@ defmodule Fence.Workers.PushNotificationWorker do
   end
 
   defp send_if_eligible(subscription, triggering_user, geofence, event, prefs_context) do
-    if should_skip?(subscription, triggering_user, event, prefs_context) do
-      :skip
-    else
-      send_or_throttle(subscription, triggering_user, geofence, event)
+    case skip_reason(subscription, triggering_user, event, prefs_context) do
+      nil ->
+        send_or_throttle(subscription, triggering_user, geofence, event)
+
+      reason ->
+        Logger.info(
+          "[PushFilter] Skipping subscriber=#{subscription.user_id} " <>
+            "geofence=#{geofence.id} event=#{event} reason=#{reason}"
+        )
+
+        :skip
     end
   end
 
-  defp should_skip?(subscription, triggering_user, event, prefs_context) do
+  defp skip_reason(subscription, triggering_user, event, prefs_context) do
     subscriber_id = subscription.user_id
-
     %{visible_set: visible_set} = prefs_context
 
-    not MapSet.member?(visible_set, subscriber_id) or
-      should_skip_visible?(subscription, triggering_user, event, prefs_context)
+    cond do
+      not MapSet.member?(visible_set, subscriber_id) ->
+        :not_visible
+
+      true ->
+        skip_reason_visible(subscription, triggering_user, event, prefs_context)
+    end
   end
 
-  defp should_skip_visible?(subscription, triggering_user, event, prefs_context) do
+  defp skip_reason_visible(subscription, triggering_user, event, prefs_context) do
     subscriber_id = subscription.user_id
 
     %{
@@ -111,13 +130,13 @@ defmodule Fence.Workers.PushNotificationWorker do
 
     cond do
       is_household and subscriber_membership != nil and subscriber_membership.notify_household ->
-        original_skip?(subscription, triggering_user, event)
+        original_skip_reason(subscription, triggering_user, event)
 
       group_or_home_silenced?(subscriber_membership, is_home_geofence) ->
-        true
+        :silence_prefs
 
       true ->
-        original_skip?(subscription, triggering_user, event)
+        original_skip_reason(subscription, triggering_user, event)
     end
   end
 
@@ -128,11 +147,14 @@ defmodule Fence.Workers.PushNotificationWorker do
       (is_home and membership.silence_home_notifications)
   end
 
-  defp original_skip?(subscription, triggering_user, event) do
-    subscription.user_id == triggering_user.id or
-      (event == "entered" and not subscription.notify_on_entry) or
-      (event == "exited" and not subscription.notify_on_exit) or
-      triggering_user.id in (subscription.blacklisted_user_ids || [])
+  defp original_skip_reason(subscription, triggering_user, event) do
+    cond do
+      subscription.user_id == triggering_user.id -> :self_skip
+      event == "entered" and not subscription.notify_on_entry -> :entry_pref_off
+      event == "exited" and not subscription.notify_on_exit -> :exit_pref_off
+      triggering_user.id in (subscription.blacklisted_user_ids || []) -> :blacklisted
+      true -> nil
+    end
   end
 
   defp send_or_throttle(subscription, triggering_user, geofence, event) do
@@ -141,6 +163,10 @@ defmodule Fence.Workers.PushNotificationWorker do
          geofence.id,
          subscription.throttle_seconds
        ) do
+      Logger.info(
+        "[PushFilter] Throttled subscriber=#{subscription.user_id} geofence=#{geofence.id}"
+      )
+
       Notifications.log_push(%{
         recipient_id: subscription.user_id,
         triggering_user_id: triggering_user.id,
@@ -158,6 +184,11 @@ defmodule Fence.Workers.PushNotificationWorker do
     recipient = Accounts.get_user(recipient_id)
     locale = (recipient && recipient.locale) || "en"
 
+    Logger.info(
+      "[Push] Sending to recipient=#{recipient_id} geofence=#{geofence.id} " <>
+        "event=#{event} token_count=#{length(tokens)}"
+    )
+
     {title, body} =
       Gettext.with_locale(FenceWeb.Gettext, locale, fn ->
         t = localized_title(triggering_user.display_name, geofence.name, event)
@@ -165,20 +196,23 @@ defmodule Fence.Workers.PushNotificationWorker do
         {t, b}
       end)
 
-    for token <- tokens do
-      send_fcm(token.token, title, body, %{
-        geofence_id: geofence.id,
-        user_id: triggering_user.id,
-        event: event
-      })
-    end
+    results =
+      for token <- tokens do
+        send_fcm(token.token, title, body, %{
+          geofence_id: geofence.id,
+          user_id: triggering_user.id,
+          event: event
+        })
+      end
+
+    status = if Enum.all?(results, &(&1 == :ok)), do: "sent", else: "fcm_error"
 
     Notifications.log_push(%{
       recipient_id: recipient_id,
       triggering_user_id: triggering_user.id,
       geofence_id: geofence.id,
       event: event,
-      status: "sent"
+      status: status
     })
   end
 
@@ -245,17 +279,27 @@ defmodule Fence.Workers.PushNotificationWorker do
           data
         )
 
-      case Fence.FCM.push(notification) do
+      result = Fence.FCM.push(notification)
+
+      case result do
         %{response: :success} ->
-          Logger.info("FCM push sent to #{String.slice(device_token, 0, 10)}...")
+          Logger.info("[FCM] Push sent to #{String.slice(device_token, 0, 10)}...")
+          :ok
 
         error ->
-          Logger.warning("FCM push failed: #{inspect(error)}")
+          Logger.error(
+            "[FCM] Push FAILED to #{String.slice(device_token, 0, 10)}... " <>
+              "error_type=#{error.__struct__} response=#{inspect(error)}"
+          )
+
+          :error
       end
     else
-      Logger.info(
-        "FCM not configured — would push to #{String.slice(device_token, 0, 10)}...: #{title} - #{body}"
+      Logger.warning(
+        "[FCM] Not configured — would push to #{String.slice(device_token, 0, 10)}...: #{title}"
       )
+
+      :error
     end
   end
 

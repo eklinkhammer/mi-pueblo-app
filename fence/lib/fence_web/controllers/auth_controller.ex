@@ -1,6 +1,8 @@
 defmodule FenceWeb.AuthController do
   use FenceWeb, :controller
 
+  require Logger
+
   alias Fence.Accounts
   alias Fence.Groups
 
@@ -208,11 +210,19 @@ defmodule FenceWeb.AuthController do
   def register_device_token(conn, %{"token" => token, "platform" => platform}) do
     user = conn.assigns.current_user
 
+    Logger.info(
+      "[DeviceToken] Registering token for user=#{user.id} platform=#{platform} " <>
+        "token=#{String.slice(token, 0, 10)}..."
+    )
+
     case Accounts.register_device_token(user.id, token, platform) do
       {:ok, _device_token} ->
+        Logger.info("[DeviceToken] Successfully registered for user=#{user.id}")
         json(conn, %{ok: true})
 
       {:error, changeset} ->
+        Logger.error("[DeviceToken] Failed for user=#{user.id}: #{inspect(changeset.errors)}")
+
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{errors: format_errors(changeset)})

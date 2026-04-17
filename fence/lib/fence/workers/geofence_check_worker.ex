@@ -1,6 +1,8 @@
 defmodule Fence.Workers.GeofenceCheckWorker do
   use Oban.Worker, queue: :geofence_checks, max_attempts: 3
 
+  require Logger
+
   alias Fence.Locations
   alias Fence.Workers.PushNotificationWorker
 
@@ -18,6 +20,20 @@ defmodule Fence.Workers.GeofenceCheckWorker do
     # Compute entries and exits
     entered_ids = MapSet.difference(current_ids, previous_ids)
     exited_ids = MapSet.difference(previous_ids, current_ids)
+
+    Logger.info(
+      "[GeofenceCheck] user=#{user_id} location=#{location_id} source=#{source} " <>
+        "previous=#{MapSet.size(previous_ids)} current=#{MapSet.size(current_ids)} " <>
+        "entered=#{MapSet.size(entered_ids)} exited=#{MapSet.size(exited_ids)}"
+    )
+
+    if MapSet.size(entered_ids) > 0 do
+      Logger.info("[GeofenceCheck] entered_ids=#{inspect(MapSet.to_list(entered_ids))}")
+    end
+
+    if MapSet.size(exited_ids) > 0 do
+      Logger.info("[GeofenceCheck] exited_ids=#{inspect(MapSet.to_list(exited_ids))}")
+    end
 
     # Update state
     Locations.update_geofence_state(user_id, entered_ids, exited_ids)
