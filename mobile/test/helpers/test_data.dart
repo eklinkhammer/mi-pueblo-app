@@ -64,6 +64,22 @@ const subscriptionWithBlacklistJson = {
   'throttle_seconds': 600,
 };
 
+const nonAdminMemberJson = {
+  'id': '550e8400-e29b-41d4-a716-446655440000', // same as userJson
+  'display_name': 'Alice',
+  'email': 'alice@example.com',
+  'role': 'member',
+  'joined_at': '2025-02-01T08:00:00Z',
+};
+
+const adminOtherMemberJson = {
+  'id': '550e8400-e29b-41d4-a716-446655440099',
+  'display_name': 'Bob',
+  'email': 'bob@example.com',
+  'role': 'admin',
+  'joined_at': '2025-01-15T08:00:00Z',
+};
+
 const memberLocationJson = {
   'user_id': '550e8400-e29b-41d4-a716-446655440000',
   'display_name': 'Alice',

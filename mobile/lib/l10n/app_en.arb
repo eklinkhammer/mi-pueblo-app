@@ -217,5 +217,9 @@
 
   "locationSharingMode": "How do I share my location with this group?",
   "live": "Live",
-  "geofencesOnly": "Geofences"
+  "geofencesOnly": "Geofences",
+
+  "leaveGroup": "Leave Group?",
+  "leaveGroupConfirmation": "You will no longer see this group's members or geofences.",
+  "leave": "Leave"
 }

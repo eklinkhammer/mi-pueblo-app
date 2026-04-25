@@ -82,6 +82,8 @@ void setupGroupStubs(MockApiClient mock, {List<Map<String, dynamic>>? groups}) {
       .thenAnswer((_) async => fakeResponse({
             'invite': {'code': 'ABC123'},
           }));
+  when(() => mock.removeMember(any(), any()))
+      .thenAnswer((_) async => fakeResponse(null, statusCode: 204));
 }
 
 /// Stub geofence-related methods.

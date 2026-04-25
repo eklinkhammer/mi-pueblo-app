@@ -985,6 +985,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Geofences'**
   String get geofencesOnly;
+
+  /// No description provided for @leaveGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Group?'**
+  String get leaveGroup;
+
+  /// No description provided for @leaveGroupConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'You will no longer see this group\'s members or geofences.'**
+  String get leaveGroupConfirmation;
+
+  /// No description provided for @leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leave;
 }
 
 class _AppLocalizationsDelegate

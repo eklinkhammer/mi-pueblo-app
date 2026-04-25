@@ -485,4 +485,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geofencesOnly => 'Geofences';
+
+  @override
+  String get leaveGroup => 'Leave Group?';
+
+  @override
+  String get leaveGroupConfirmation =>
+      'You will no longer see this group\'s members or geofences.';
+
+  @override
+  String get leave => 'Leave';
 }

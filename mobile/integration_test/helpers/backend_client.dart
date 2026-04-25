@@ -68,6 +68,18 @@ class BackendTestClient {
     return response.data!['group'] as Map<String, dynamic>;
   }
 
+  /// Remove a member from a group.
+  Future<void> removeMember({
+    required String token,
+    required String groupId,
+    required String userId,
+  }) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/groups/$groupId/members/$userId',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+  }
+
   /// Create a geofence. Returns the geofence data.
   Future<Map<String, dynamic>> createGeofence({
     required String token,

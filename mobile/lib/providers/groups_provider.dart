@@ -54,6 +54,14 @@ class GroupsNotifier extends AsyncNotifier<List<Group>> {
     await apiClient.deleteGroup(id);
     await refresh();
   }
+
+  Future<void> leaveGroup(String groupId) async {
+    final apiClient = ref.read(apiClientProvider);
+    final currentUserId = ref.read(authProvider).user?.id;
+    if (currentUserId == null) throw StateError('Not authenticated');
+    await apiClient.removeMember(groupId, currentUserId);
+    await refresh();
+  }
 }
 
 final groupMembersProvider =

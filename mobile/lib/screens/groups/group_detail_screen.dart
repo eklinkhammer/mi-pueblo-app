@@ -53,6 +53,12 @@ class GroupDetailScreen extends ConsumerWidget {
               icon: const Icon(Icons.delete),
               onPressed: () => _deleteGroup(context, ref),
             ),
+          if (!isAdmin)
+            IconButton(
+              icon: const Icon(Icons.exit_to_app),
+              onPressed: () => _leaveGroup(context, ref),
+              tooltip: l10n.leave,
+            ),
         ],
       ),
       body: ListView(
@@ -237,6 +243,48 @@ class GroupDetailScreen extends ConsumerWidget {
     if (confirmed ?? false) {
       try {
         await ref.read(groupsProvider.notifier).deleteGroup(groupId);
+        if (ref.read(selectedGroupIdProvider) == groupId) {
+          ref.read(selectedGroupIdProvider.notifier).state = null;
+        }
+        if (context.mounted) {
+          context.go('/groups');
+        }
+      } on Exception catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.failedWithError(e.toString()))),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _leaveGroup(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final dl10n = AppLocalizations.of(dialogContext);
+        return AlertDialog(
+          title: Text(dl10n.leaveGroup),
+          content: Text(dl10n.leaveGroupConfirmation),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(dl10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(dl10n.leave),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed ?? false) {
+      try {
+        await ref.read(groupsProvider.notifier).leaveGroup(groupId);
         if (ref.read(selectedGroupIdProvider) == groupId) {
           ref.read(selectedGroupIdProvider.notifier).state = null;
         }

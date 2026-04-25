@@ -125,8 +125,9 @@ defmodule FenceWeb.GroupController do
 
   def remove_member(conn, %{"id" => group_id, "user_id" => target_user_id}) do
     user = conn.assigns.current_user
+    is_self = user.id == target_user_id
 
-    with true <- Groups.admin?(user.id, group_id),
+    with true <- is_self or Groups.admin?(user.id, group_id),
          {:ok, _} <- Groups.remove_member(group_id, target_user_id) do
       send_resp(conn, :no_content, "")
     else

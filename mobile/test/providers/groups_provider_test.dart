@@ -117,6 +117,31 @@ void main() {
       await container.read(groupsProvider.notifier).deleteGroup('some-id');
       expect(callCount, greaterThan(1));
     });
+
+    test('leaveGroup calls removeMember with current user ID and triggers refresh', () async {
+      var callCount = 0;
+      when(() => mockApi.getGroups()).thenAnswer((_) async {
+        callCount++;
+        return fakeResponse({
+          'groups': [groupJson],
+        });
+      });
+      when(() => mockApi.removeMember(any(), any()))
+          .thenAnswer((_) async => fakeResponse(null, statusCode: 204));
+
+      await container.read(groupsProvider.future);
+      expect(callCount, 1);
+
+      await container.read(groupsProvider.notifier).leaveGroup('group-123');
+      expect(callCount, greaterThan(1));
+
+      final captured = verify(() => mockApi.removeMember(
+            captureAny(),
+            captureAny(),
+          )).captured;
+      expect(captured[0], 'group-123');
+      expect(captured[1], userJson['id']);
+    });
   });
 
   group('groupsProvider error paths', () {
@@ -158,6 +183,20 @@ void main() {
 
       await expectLater(
         container.read(groupsProvider.notifier).deleteGroup('bad-id'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('leaveGroup propagates API error', () async {
+      when(() => mockApi.getGroups()).thenAnswer(
+          (_) async => fakeResponse({'groups': [groupJson]}));
+      when(() => mockApi.removeMember(any(), any()))
+          .thenThrow(Exception('forbidden'));
+
+      await container.read(groupsProvider.future);
+
+      await expectLater(
+        container.read(groupsProvider.notifier).leaveGroup('group-id'),
         throwsA(isA<Exception>()),
       );
     });

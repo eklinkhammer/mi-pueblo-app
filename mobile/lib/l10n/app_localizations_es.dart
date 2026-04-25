@@ -490,4 +490,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get geofencesOnly => 'Geocercas';
+
+  @override
+  String get leaveGroup => '¿Salir del grupo?';
+
+  @override
+  String get leaveGroupConfirmation =>
+      'Ya no verás los miembros ni las geocercas de este grupo.';
+
+  @override
+  String get leave => 'Salir';
 }

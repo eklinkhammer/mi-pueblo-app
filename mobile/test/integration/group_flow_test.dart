@@ -146,5 +146,122 @@ void main() {
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('100m radius'), findsOneWidget);
     });
+    testWidgets('non-admin member sees leave button, not delete',
+        (tester) async {
+      setupAuthenticatedStubs(mockApi);
+      setupGroupStubs(mockApi, groups: [groupJson]);
+      setupGeofenceStubs(mockApi);
+      setupLocationStubs(mockApi);
+
+      // Override members to return current user as non-admin
+      when(() => mockApi.getMembers(any()))
+          .thenAnswer((_) async => fakeResponse({
+                'members': [adminOtherMemberJson, nonAdminMemberJson],
+              }));
+
+      await pumpAppWithMocks(tester, apiClient: mockApi);
+
+      // Navigate to Groups tab
+      await tester.tap(find.text('Groups'));
+      await tester.pumpAndSettle();
+
+      // Tap the group
+      await tester.tap(find.text('Family'));
+      await tester.pumpAndSettle();
+
+      // Should see leave button, not delete
+      expect(find.byIcon(Icons.exit_to_app), findsOneWidget);
+      expect(find.byIcon(Icons.delete), findsNothing);
+    });
+
+    testWidgets('leave group shows confirmation and navigates to list',
+        (tester) async {
+      setupAuthenticatedStubs(mockApi);
+      setupGroupStubs(mockApi, groups: [groupJson]);
+      setupGeofenceStubs(mockApi);
+      setupLocationStubs(mockApi);
+
+      // Current user is non-admin
+      when(() => mockApi.getMembers(any()))
+          .thenAnswer((_) async => fakeResponse({
+                'members': [adminOtherMemberJson, nonAdminMemberJson],
+              }));
+
+      // After leaving, groups list is empty
+      var leaveCount = 0;
+      when(() => mockApi.removeMember(any(), any())).thenAnswer((_) async {
+        leaveCount++;
+        return fakeResponse(null, statusCode: 204);
+      });
+
+      await pumpAppWithMocks(tester, apiClient: mockApi);
+
+      // Navigate to group detail
+      await tester.tap(find.text('Groups'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Family'));
+      await tester.pumpAndSettle();
+
+      // Tap leave button
+      await tester.tap(find.byIcon(Icons.exit_to_app));
+      await tester.pumpAndSettle();
+
+      // Confirmation dialog should appear
+      expect(find.text('Leave Group?'), findsOneWidget);
+      expect(
+        find.text(
+            "You will no longer see this group's members or geofences."),
+        findsOneWidget,
+      );
+
+      // After confirm, groups list returns empty
+      when(() => mockApi.getGroups())
+          .thenAnswer((_) async => fakeResponse({'groups': <Map<String, dynamic>>[]}));
+
+      // Confirm leave
+      await tester.tap(find.text('Leave'));
+      await tester.pumpAndSettle();
+
+      // Should have called removeMember
+      expect(leaveCount, 1);
+
+      // Should be back on groups list
+      expect(find.text('No groups yet'), findsOneWidget);
+    });
+
+    testWidgets('cancel leave group does not leave', (tester) async {
+      setupAuthenticatedStubs(mockApi);
+      setupGroupStubs(mockApi, groups: [groupJson]);
+      setupGeofenceStubs(mockApi);
+      setupLocationStubs(mockApi);
+
+      // Current user is non-admin
+      when(() => mockApi.getMembers(any()))
+          .thenAnswer((_) async => fakeResponse({
+                'members': [adminOtherMemberJson, nonAdminMemberJson],
+              }));
+
+      await pumpAppWithMocks(tester, apiClient: mockApi);
+
+      // Navigate to group detail
+      await tester.tap(find.text('Groups'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Family'));
+      await tester.pumpAndSettle();
+
+      // Tap leave button
+      await tester.tap(find.byIcon(Icons.exit_to_app));
+      await tester.pumpAndSettle();
+
+      // Cancel
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      // Should still be on detail screen
+      expect(find.text('Members'), findsOneWidget);
+
+      // removeMember should never have been called
+      verifyNever(() => mockApi.removeMember(any(), any()));
+    });
   });
 }

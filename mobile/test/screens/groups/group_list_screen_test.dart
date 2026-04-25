@@ -95,4 +95,7 @@ class _FakeGroupsNotifier extends AsyncNotifier<List<Group>>
 
   @override
   Future<void> deleteGroup(String id) async {}
+
+  @override
+  Future<void> leaveGroup(String groupId) async {}
 }

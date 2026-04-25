@@ -55,6 +55,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () => context.go('/auth/create'),
+                      ),
+                    ),
                     Text(
                       l10n.appTitle,
                       style: Theme.of(context).textTheme.headlineLarge,

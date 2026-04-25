@@ -64,7 +64,7 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
                       alignment: Alignment.centerLeft,
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back),
-                        onPressed: () => context.go('/map'),
+                        onPressed: () => context.go('/auth/create'),
                       ),
                     ),
                     const Spacer(),
