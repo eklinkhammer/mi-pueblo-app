@@ -221,5 +221,13 @@
 
   "leaveGroup": "Leave Group?",
   "leaveGroupConfirmation": "You will no longer see this group's members or geofences.",
-  "leave": "Leave"
+  "leave": "Leave",
+
+  "share": "Share",
+  "inviteShareMessage": "Join my family on Mi Pueblo! Tap this link: {url}",
+  "@inviteShareMessage": {
+    "placeholders": {
+      "url": { "type": "String" }
+    }
+  }
 }

@@ -141,9 +141,12 @@ defmodule FenceWeb.GroupController do
 
     with true <- Groups.admin?(user.id, group_id),
          {:ok, invite} <- Groups.get_or_create_invite(group_id, user.id) do
+      base_url = Application.get_env(:fence, :invite_base_url, "https://fence.app/join")
+      url = "#{base_url}/#{invite.code}"
+
       conn
       |> put_status(:created)
-      |> json(%{invite: %{code: invite.code, expires_at: invite.expires_at}})
+      |> json(%{invite: %{code: invite.code, expires_at: invite.expires_at, url: url}})
     else
       false ->
         forbidden(conn)

@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
+import 'package:fence/services/deep_link_service.dart';
 
 class AnonymousJoinScreen extends ConsumerStatefulWidget {
-  const AnonymousJoinScreen({super.key});
+  final String? initialCode;
+
+  const AnonymousJoinScreen({super.key, this.initialCode});
 
   @override
   ConsumerState<AnonymousJoinScreen> createState() =>
@@ -17,6 +20,15 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
   final _codeController = TextEditingController();
   final _nameController = TextEditingController();
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCode != null) {
+      _codeController.text = widget.initialCode!;
+      ref.read(pendingInviteCodeProvider.notifier).state = null;
+    }
+  }
 
   @override
   void dispose() {

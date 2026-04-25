@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/groups_provider.dart';
+import 'package:fence/services/deep_link_service.dart';
 
 class JoinGroupScreen extends ConsumerStatefulWidget {
-  const JoinGroupScreen({super.key});
+  final String? initialCode;
+
+  const JoinGroupScreen({super.key, this.initialCode});
 
   @override
   ConsumerState<JoinGroupScreen> createState() => _JoinGroupScreenState();
@@ -15,6 +18,15 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   final _codeController = TextEditingController();
   bool _loading = false;
   bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCode != null) {
+      _codeController.text = widget.initialCode!;
+      ref.read(pendingInviteCodeProvider.notifier).state = null;
+    }
+  }
 
   Future<void> _join() async {
     if (_codeController.text.trim().isEmpty) return;

@@ -36,6 +36,11 @@ if fcm_service_account do
     project_id: fcm_credentials["project_id"]
 end
 
+# Invite deep link base URL
+if invite_base_url = System.get_env("INVITE_BASE_URL") do
+  config :fence, :invite_base_url, invite_base_url
+end
+
 # Google OAuth client IDs (comma-separated Android + Web client IDs)
 google_client_ids = System.get_env("GOOGLE_OAUTH_CLIENT_IDS")
 

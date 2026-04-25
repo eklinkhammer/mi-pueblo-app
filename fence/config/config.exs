@@ -71,6 +71,9 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
+# Invite deep link base URL
+config :fence, :invite_base_url, "https://fence.app/join"
+
 # Google OAuth
 config :fence, :google_oauth_client_ids, []
 

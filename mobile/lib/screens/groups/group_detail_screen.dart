@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/models/visibility_pair.dart';
 import 'package:fence/providers/auth_provider.dart';
@@ -309,6 +310,7 @@ class GroupDetailScreen extends ConsumerWidget {
       final data = response.data!;
       final invite = data['invite'] as Map<String, dynamic>;
       final code = invite['code'] as String;
+      final url = invite['url'] as String? ?? 'https://fence.app/join/$code';
 
       if (!context.mounted) return;
       unawaited(showDialog<void>(
@@ -337,6 +339,12 @@ class GroupDetailScreen extends ConsumerWidget {
                   );
                 },
                 child: Text(dl10n.copy),
+              ),
+              TextButton(
+                onPressed: () {
+                  Share.share(dl10n.inviteShareMessage(url));
+                },
+                child: Text(dl10n.share),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext),

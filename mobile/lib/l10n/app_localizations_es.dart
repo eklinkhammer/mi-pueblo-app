@@ -500,4 +500,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get leave => 'Salir';
+
+  @override
+  String get share => 'Compartir';
+
+  @override
+  String inviteShareMessage(String url) {
+    return '¡Únete a mi familia en Mi Pueblo! Toca este enlace: $url';
+  }
 }

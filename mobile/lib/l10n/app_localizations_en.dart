@@ -495,4 +495,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get leave => 'Leave';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String inviteShareMessage(String url) {
+    return 'Join my family on Mi Pueblo! Tap this link: $url';
+  }
 }

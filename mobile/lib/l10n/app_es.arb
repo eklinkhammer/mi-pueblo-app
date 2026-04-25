@@ -176,5 +176,13 @@
 
   "leaveGroup": "¿Salir del grupo?",
   "leaveGroupConfirmation": "Ya no verás los miembros ni las geocercas de este grupo.",
-  "leave": "Salir"
+  "leave": "Salir",
+
+  "share": "Compartir",
+  "inviteShareMessage": "¡Únete a mi familia en Mi Pueblo! Toca este enlace: {url}",
+  "@inviteShareMessage": {
+    "placeholders": {
+      "url": { "type": "String" }
+    }
+  }
 }

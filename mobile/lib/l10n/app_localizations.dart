@@ -1003,6 +1003,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Leave'**
   String get leave;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @inviteShareMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Join my family on Mi Pueblo! Tap this link: {url}'**
+  String inviteShareMessage(String url);
 }
 
 class _AppLocalizationsDelegate
