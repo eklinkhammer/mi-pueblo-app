@@ -19,9 +19,9 @@ defmodule Fence.Integration.ProfileAndMiscTest do
 
   describe "GET /groups/:id/locations" do
     test "returns last location per member with correct fields", %{conn: conn} do
-      {_alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
-      {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
-      {_carol, token_c, _} = register_via_api(conn, %{"display_name" => "Carol"})
+      {alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
+      {bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
+      {carol, token_c, _} = register_via_api(conn, %{"display_name" => "Carol"})
       conn_a = authed_conn_from_token(conn, token_a)
       conn_b = authed_conn_from_token(conn, token_b)
       conn_c = authed_conn_from_token(conn, token_c)
@@ -43,6 +43,9 @@ defmodule Fence.Integration.ProfileAndMiscTest do
       conn_c
       |> post("/api/v1/groups/join", %{"invite_code" => invite2["invite"]["code"]})
       |> json_response(200)
+
+      grant_mutual_visibility(alice["id"], bob["id"], group_id)
+      grant_mutual_visibility(alice["id"], carol["id"], group_id)
 
       # Each reports a location at different coordinates
       conn_a

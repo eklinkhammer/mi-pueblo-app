@@ -19,13 +19,15 @@ defmodule Fence.Integration.NotificationFilteringTest do
     test "re-entry within throttle window logs 'throttled', channel broadcast still fires", %{
       conn: conn
     } do
-      {_alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
-      {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
+      {alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
+      {bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       conn_a = authed_conn_from_token(conn, token_a)
       conn_b = authed_conn_from_token(conn, token_b)
 
       group = setup_group_with_invite(conn_a, conn_b)
       group_id = group["id"]
+
+      grant_mutual_visibility(alice["id"], bob["id"], group_id)
 
       geofence_resp =
         conn_a
@@ -119,8 +121,8 @@ defmodule Fence.Integration.NotificationFilteringTest do
       conn: conn
     } do
       {alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
-      {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
-      {_carol, token_c, _} = register_via_api(conn, %{"display_name" => "Carol"})
+      {bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
+      {carol, token_c, _} = register_via_api(conn, %{"display_name" => "Carol"})
       conn_a = authed_conn_from_token(conn, token_a)
       conn_b = authed_conn_from_token(conn, token_b)
       conn_c = authed_conn_from_token(conn, token_c)
@@ -144,6 +146,9 @@ defmodule Fence.Integration.NotificationFilteringTest do
       conn_c
       |> post("/api/v1/groups/join", %{"invite_code" => invite_resp2["invite"]["code"]})
       |> json_response(200)
+
+      grant_mutual_visibility(alice["id"], bob["id"], group_id)
+      grant_mutual_visibility(alice["id"], carol["id"], group_id)
 
       geofence_resp =
         conn_a
@@ -223,13 +228,15 @@ defmodule Fence.Integration.NotificationFilteringTest do
 
   describe "selective notification flags" do
     test "notify_on_entry: false suppresses entry push, allows exit push", %{conn: conn} do
-      {_alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
-      {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
+      {alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
+      {bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       conn_a = authed_conn_from_token(conn, token_a)
       conn_b = authed_conn_from_token(conn, token_b)
 
       group = setup_group_with_invite(conn_a, conn_b)
       group_id = group["id"]
+
+      grant_mutual_visibility(alice["id"], bob["id"], group_id)
 
       geofence_resp =
         conn_a
@@ -305,13 +312,15 @@ defmodule Fence.Integration.NotificationFilteringTest do
     end
 
     test "notify_on_exit: false suppresses exit push, allows entry push", %{conn: conn} do
-      {_alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
-      {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
+      {alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
+      {bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       conn_a = authed_conn_from_token(conn, token_a)
       conn_b = authed_conn_from_token(conn, token_b)
 
       group = setup_group_with_invite(conn_a, conn_b)
       group_id = group["id"]
+
+      grant_mutual_visibility(alice["id"], bob["id"], group_id)
 
       geofence_resp =
         conn_a

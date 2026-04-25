@@ -1,13 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:fence/models/app_location.dart';
+import 'package:fence/services/location_service.dart';
 
 import 'helpers/backend_client.dart';
 import 'helpers/test_helpers.dart';
 
+class _MockLocationService extends Mock implements LocationService {}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   final backend = BackendTestClient();
+
+  late LocationService mockLocation;
+
+  setUp(() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    const storage = FlutterSecureStorage();
+    await storage.deleteAll();
+
+    mockLocation = _MockLocationService();
+    when(() => mockLocation.requestPermissions())
+        .thenAnswer((_) async => PermissionStatus.granted);
+    when(() => mockLocation.getCurrentPosition())
+        .thenAnswer((_) async => null);
+    when(() => mockLocation.startTracking()).thenAnswer((_) async {});
+    when(() => mockLocation.stopTracking()).thenAnswer((_) async {});
+    when(() => mockLocation.onLocation)
+        .thenAnswer((_) => const Stream<AppLocation>.empty());
+    when(mockLocation.dispose).thenReturn(null);
+  });
+
+  /// Complete onboarding and navigate to login screen.
+  Future<void> completeOnboardingAndGoToLogin(WidgetTester tester) async {
+    await pumpApp(tester, overrides: [
+      locationServiceProvider.overrideWithValue(mockLocation),
+    ]);
+
+    // Complete onboarding screens
+    await tester.pump(const Duration(seconds: 7));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Get Started'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // Now on /map (anonymous) — navigate to login
+    await tester.tap(find.text('Join Group'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create a Group'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Already have an account? Sign in'));
+    await tester.pumpAndSettle();
+  }
 
   group('Location and Geofence', () {
     testWidgets('Create geofence through UI', (tester) async {
@@ -25,7 +77,7 @@ void main() {
         name: 'Geofence Test Group',
       );
 
-      await pumpApp(tester);
+      await completeOnboardingAndGoToLogin(tester);
 
       // Login
       await tester.enterText(
@@ -40,61 +92,41 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 3));
 
       // Navigate to Groups tab
-      await tester.tap(find.byIcon(Icons.group));
+      await tester.tap(find.text('Groups'));
       await tester.pumpAndSettle();
 
       // Tap on the group
       await tester.tap(find.text('Geofence Test Group'));
       await tester.pumpAndSettle();
 
-      // Tap create geofence button
-      final createGeoButton = find.text('Create Geofence');
-      if (createGeoButton.evaluate().isNotEmpty) {
-        await tester.tap(createGeoButton);
-        await tester.pumpAndSettle();
-      } else {
-        // Try FAB
-        final fab = find.byIcon(Icons.add);
-        if (fab.evaluate().isNotEmpty) {
-          await tester.tap(fab.first);
-          await tester.pumpAndSettle();
-        }
+      // Tap "Add Geofence" or "Create Geofence" to navigate to create screen
+      final addGeo = find.text('Add Geofence');
+      final createGeo = find.text('Create Geofence');
+      if (addGeo.evaluate().isNotEmpty) {
+        await tester.tap(addGeo);
+      } else if (createGeo.evaluate().isNotEmpty) {
+        await tester.tap(createGeo);
       }
+      await tester.pumpAndSettle();
 
-      // Fill in geofence form
-      final nameField = find.widgetWithText(TextField, 'Name');
-      if (nameField.evaluate().isNotEmpty) {
-        await tester.enterText(nameField, 'Home Base');
-      }
+      // Fill in geofence name
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Name'),
+        'Home Base',
+      );
 
-      final latField = find.widgetWithText(TextField, 'Latitude');
-      if (latField.evaluate().isNotEmpty) {
-        await tester.enterText(latField, '37.7749');
-      }
+      // Radius already defaults to 200, leave it
 
-      final lngField = find.widgetWithText(TextField, 'Longitude');
-      if (lngField.evaluate().isNotEmpty) {
-        await tester.enterText(lngField, '-122.4194');
-      }
+      // Tap the map to select a location
+      final mapFinder = find.byType(FlutterMap);
+      await tester.tap(mapFinder);
+      await tester.pumpAndSettle();
 
-      final radiusField = find.widgetWithText(TextField, 'Radius');
-      if (radiusField.evaluate().isNotEmpty) {
-        await tester.enterText(radiusField, '500');
-      }
-
-      // Submit
-      final submitButton = find.text('Create');
-      if (submitButton.evaluate().isNotEmpty) {
-        await tester.tap(submitButton);
-      } else {
-        final saveButton = find.text('Save');
-        if (saveButton.evaluate().isNotEmpty) {
-          await tester.tap(saveButton);
-        }
-      }
+      // Tap the create FAB
+      await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle(const Duration(seconds: 3));
 
-      // Verify geofence appears in list
+      // Verify geofence appears in group detail
       expect(find.text('Home Base'), findsOneWidget);
     });
   });

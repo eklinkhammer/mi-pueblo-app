@@ -22,13 +22,15 @@ defmodule Fence.Integration.LocationGeofencePipelineTest do
   describe "location triggers geofence entry + notification broadcast" do
     test "full pipeline: report → check → enter → notify → broadcast", %{conn: conn} do
       # Setup: A & B in a group
-      {_user_a, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
-      {_user_b, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
+      {user_a, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
+      {user_b, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       conn_a = authed_conn_from_token(conn, token_a)
       conn_b = authed_conn_from_token(conn, token_b)
 
       group = setup_group_with_invite(conn_a, conn_b)
       group_id = group["id"]
+
+      grant_mutual_visibility(user_a["id"], user_b["id"], group_id)
 
       # A creates geofence at SF (5km radius)
       geofence_resp =
