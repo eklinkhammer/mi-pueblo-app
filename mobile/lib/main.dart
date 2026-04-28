@@ -11,6 +11,7 @@ import 'package:fence/providers/geofence_sync_provider.dart';
 import 'package:fence/providers/locale_provider.dart';
 import 'package:fence/providers/location_manager_provider.dart';
 import 'package:fence/providers/websocket_provider.dart';
+import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/router.dart';
 import 'package:fence/services/deep_link_service.dart';
 import 'package:fence/services/headless_task.dart';
@@ -58,8 +59,38 @@ class _FenceAppState extends ConsumerState<FenceApp> {
     super.dispose();
   }
 
+  void _consumePendingCode(String code) {
+    final authStatus = ref.read(authProvider).status;
+    if (authStatus == AuthStatus.unknown) return; // wait for auth
+    ref.read(pendingInviteCodeProvider.notifier).state = null;
+    final router = ref.read(routerProvider);
+    if (authStatus == AuthStatus.authenticated) {
+      router.go('/groups/join?code=$code');
+    } else {
+      router.go('/auth/join?code=$code');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Handle warm-resume deep links
+    ref.listen<String?>(pendingInviteCodeProvider, (prev, next) {
+      if (next != null) {
+        _consumePendingCode(next);
+      }
+    });
+
+    // Handle cold-start: auth resolves after pending code was set
+    ref.listen<AuthStatus>(
+      authProvider.select((s) => s.status),
+      (prev, next) {
+        if (prev == AuthStatus.unknown && next != AuthStatus.unknown) {
+          final code = ref.read(pendingInviteCodeProvider);
+          if (code != null) _consumePendingCode(code);
+        }
+      },
+    );
+
     ref.watch(websocketManagerProvider);
     ref.watch(geofenceSyncManagerProvider);
     ref.watch(geofenceNotificationProvider);

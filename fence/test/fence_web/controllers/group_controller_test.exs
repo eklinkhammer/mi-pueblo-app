@@ -218,6 +218,7 @@ defmodule FenceWeb.GroupControllerTest do
       assert %{"invite" => inv} = json_response(conn, 201)
       assert inv["code"]
       assert inv["expires_at"]
+      assert inv["url"] == "https://fence.app/join/#{inv["code"]}"
     end
 
     test "non-admin cannot create invite", %{conn: conn, user: admin} do

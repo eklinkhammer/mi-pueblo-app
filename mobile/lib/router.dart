@@ -17,13 +17,11 @@ import 'package:fence/screens/geofences/geofence_create_screen.dart';
 import 'package:fence/screens/geofences/geofence_detail_screen.dart';
 import 'package:fence/screens/groups/group_notification_settings_screen.dart';
 import 'package:fence/screens/settings/settings_screen.dart';
-import 'package:fence/services/deep_link_service.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authStatus = ref.watch(authProvider.select((s) => s.status));
   final onboardingCompleted = ref.watch(onboardingProvider);
-  final pendingCode = ref.watch(pendingInviteCodeProvider);
 
   return GoRouter(
     initialLocation: '/map',
@@ -38,15 +36,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation.startsWith('/auth') || isOnboarding;
 
       if (authStatus == AuthStatus.unknown) return null;
-
-      // Deep link: redirect to join screen with pending invite code
-      if (pendingCode != null) {
-        if (isAuth) {
-          return '/groups/join?code=$pendingCode';
-        } else {
-          return '/auth/join?code=$pendingCode';
-        }
-      }
 
       final isMapRoute = state.matchedLocation == '/map';
       if (!isAuth && !isAuthRoute && !isMapRoute) return '/auth/create';

@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:fence/router.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/onboarding_provider.dart';
+import 'package:fence/services/deep_link_service.dart';
 import 'helpers/mocks.dart';
 
 
@@ -193,6 +194,47 @@ void main() {
 
       final router = container.read(routerProvider);
       expect(router.configuration.routes, isNotEmpty);
+
+      await _pumpAsync();
+      container.dispose();
+    });
+
+    test('pendingInviteCode does not affect router (handled imperatively)',
+        () async {
+      when(() => mockApi.getAccessToken())
+          .thenAnswer((_) async => 'valid-token');
+      when(() => mockApi.getMe()).thenAnswer((_) async {
+        return _fakeResponse({
+          'user': {
+            'id': 'uid',
+            'email': 'a@b.com',
+            'display_name': 'A',
+            'inserted_at': '2025-01-01T00:00:00Z',
+          }
+        });
+      });
+
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(
+              (ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
+          onboardingProvider.overrideWith(
+            (_) => OnboardingNotifier.completed(),
+          ),
+          pendingInviteCodeProvider.overrideWith((ref) => 'DEEP123'),
+        ],
+      );
+
+      container.read(authProvider);
+      await _pumpAsync();
+
+      // Router should be the same instance regardless of pendingInviteCode
+      final router1 = container.read(routerProvider);
+
+      // Change pendingInviteCode — router should NOT be recreated
+      container.read(pendingInviteCodeProvider.notifier).state = 'CHANGED';
+      final router2 = container.read(routerProvider);
+      expect(identical(router1, router2), isTrue);
 
       await _pumpAsync();
       container.dispose();

@@ -161,5 +161,31 @@ void main() {
       expect(find.text('admin'), findsOneWidget);
       expect(find.text('member'), findsOneWidget);
     });
+
+    testWidgets('invite dialog shows Share and Copy buttons',
+        (tester) async {
+      when(() => mockApi.createInvite(_testGroupId)).thenAnswer(
+        (_) async => fakeResponse({
+          'invite': {
+            'code': 'TESTCODE',
+            'url': 'https://fence.app/join/TESTCODE',
+            'expires_at': '2026-12-31T00:00:00Z',
+          }
+        }),
+      );
+
+      await tester.pumpWidget(createApp(members: [_testMember]));
+      await tester.pump();
+
+      // Tap the invite button in the app bar
+      await tester.tap(find.byTooltip('Invite'));
+      await tester.pumpAndSettle();
+
+      // Verify dialog shows code, Share button, Copy button, and Done button
+      expect(find.text('TESTCODE'), findsOneWidget);
+      expect(find.text('Share'), findsOneWidget);
+      expect(find.text('Copy'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+    });
   });
 }

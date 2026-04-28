@@ -10,14 +10,14 @@ import 'package:fence/screens/groups/join_group_screen.dart';
 void main() {
   late _TrackingGroupsNotifier fakeNotifier;
 
-  Widget createApp({bool shouldFail = false}) {
+  Widget createApp({bool shouldFail = false, String? initialCode}) {
     fakeNotifier = _TrackingGroupsNotifier(shouldFail: shouldFail);
     final router = GoRouter(
       initialLocation: '/groups/join',
       routes: [
         GoRoute(
           path: '/groups/join',
-          builder: (_, __) => const JoinGroupScreen(),
+          builder: (_, __) => JoinGroupScreen(initialCode: initialCode),
         ),
         GoRoute(
           path: '/groups/:id',
@@ -82,6 +82,26 @@ void main() {
 
       expect(
           find.text('Invalid or expired invite code'), findsOneWidget);
+    });
+
+    testWidgets('initialCode pre-fills the text field', (tester) async {
+      await tester.pumpWidget(createApp(initialCode: 'PREFILLED'));
+      await tester.pumpAndSettle();
+
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      expect(textField.controller!.text, 'PREFILLED');
+    });
+
+    testWidgets('pre-filled initialCode is used when Join is tapped',
+        (tester) async {
+      await tester.pumpWidget(createApp(initialCode: 'DEEPCODE'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Join Group'));
+      await tester.pumpAndSettle();
+
+      expect(fakeNotifier.joinGroupCalled, isTrue);
+      expect(fakeNotifier.lastInviteCode, 'DEEPCODE');
     });
   });
 }

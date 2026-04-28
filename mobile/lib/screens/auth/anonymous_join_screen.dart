@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
-import 'package:fence/services/deep_link_service.dart';
 
 class AnonymousJoinScreen extends ConsumerStatefulWidget {
   final String? initialCode;
@@ -26,7 +25,6 @@ class _AnonymousJoinScreenState extends ConsumerState<AnonymousJoinScreen> {
     super.initState();
     if (widget.initialCode != null) {
       _codeController.text = widget.initialCode!;
-      ref.read(pendingInviteCodeProvider.notifier).state = null;
     }
   }
 
