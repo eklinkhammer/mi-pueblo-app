@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/models/visibility_pair.dart';
 import 'package:fence/services/api_client.dart';
+import 'package:fence/providers/groups_provider.dart';
 
 class VisibilityNotifier
     extends FamilyAsyncNotifier<List<VisibilityPair>, String> {
@@ -23,6 +24,7 @@ class VisibilityNotifier
     final apiClient = ref.read(apiClientProvider);
     await apiClient.updateVisibility(groupId, otherUserId, visible: visible);
     ref.invalidateSelf();
+    ref.invalidate(groupsProvider);
   }
 }
 

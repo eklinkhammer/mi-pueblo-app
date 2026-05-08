@@ -110,6 +110,15 @@ const loginResponseJson = {
 
 const registerResponseJson = loginResponseJson;
 
+const visibilityPairJson = {
+  'id': '990e8400-e29b-41d4-a716-446655440004',
+  'other_user_id': '550e8400-e29b-41d4-a716-446655440099',
+  'other_display_name': 'Bob',
+  'status': 'active',
+  'granted_by_id': null,
+  'granted_at': null,
+};
+
 const anonymousCreateResponseJson = {
   'access_token': 'test-access-token',
   'refresh_token': 'test-refresh-token',
