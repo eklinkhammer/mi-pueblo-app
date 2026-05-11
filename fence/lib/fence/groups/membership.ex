@@ -7,9 +7,8 @@ defmodule Fence.Groups.Membership do
 
   schema "memberships" do
     field :role, :string, default: "member"
-    field :silence_all_notifications, :boolean, default: false
-    field :silence_home_notifications, :boolean, default: false
     field :notify_household, :boolean, default: true
+    field :notify_home_activity, :boolean, default: false
     field :sharing_mode, :string, default: "live"
 
     belongs_to :user, Fence.Accounts.User
@@ -37,7 +36,7 @@ defmodule Fence.Groups.Membership do
 
   def notification_prefs_changeset(membership, attrs) do
     membership
-    |> cast(attrs, [:silence_all_notifications, :silence_home_notifications, :notify_household])
+    |> cast(attrs, [:notify_household, :notify_home_activity])
   end
 
   def sharing_mode_changeset(membership, attrs) do

@@ -196,9 +196,8 @@ defmodule FenceWeb.GroupController do
 
       membership ->
         json(conn, %{
-          silence_all_notifications: membership.silence_all_notifications,
-          silence_home_notifications: membership.silence_home_notifications,
-          notify_household: membership.notify_household
+          notify_household: membership.notify_household,
+          notify_home_activity: membership.notify_home_activity
         })
     end
   end
@@ -209,9 +208,8 @@ defmodule FenceWeb.GroupController do
     case Groups.update_notification_preferences(user.id, group_id, params) do
       {:ok, membership} ->
         json(conn, %{
-          silence_all_notifications: membership.silence_all_notifications,
-          silence_home_notifications: membership.silence_home_notifications,
-          notify_household: membership.notify_household
+          notify_household: membership.notify_household,
+          notify_home_activity: membership.notify_home_activity
         })
 
       {:error, :not_found} ->

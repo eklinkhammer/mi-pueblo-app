@@ -468,20 +468,18 @@ defmodule Fence.GroupsTest do
   end
 
   describe "update_notification_preferences/3" do
-    test "updates silence and household flags" do
+    test "updates household and home activity flags" do
       user = create_user()
       group = create_group(user)
 
       assert {:ok, membership} =
                Groups.update_notification_preferences(user.id, group.id, %{
-                 "silence_all_notifications" => true,
-                 "silence_home_notifications" => true,
-                 "notify_household" => false
+                 "notify_household" => false,
+                 "notify_home_activity" => true
                })
 
-      assert membership.silence_all_notifications == true
-      assert membership.silence_home_notifications == true
       assert membership.notify_household == false
+      assert membership.notify_home_activity == true
     end
 
     test "returns not_found for non-member" do
@@ -491,7 +489,7 @@ defmodule Fence.GroupsTest do
 
       assert {:error, :not_found} =
                Groups.update_notification_preferences(user.id, group.id, %{
-                 "silence_all_notifications" => true
+                 "notify_home_activity" => true
                })
     end
   end

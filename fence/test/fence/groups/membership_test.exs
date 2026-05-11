@@ -49,22 +49,20 @@ defmodule Fence.Groups.MembershipTest do
 
       changeset =
         Membership.notification_prefs_changeset(membership, %{
-          "silence_all_notifications" => true,
-          "silence_home_notifications" => true,
-          "notify_household" => false
+          "notify_household" => false,
+          "notify_home_activity" => true
         })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_change(changeset, :silence_all_notifications) == true
-      assert Ecto.Changeset.get_change(changeset, :silence_home_notifications) == true
       assert Ecto.Changeset.get_change(changeset, :notify_household) == false
+      assert Ecto.Changeset.get_change(changeset, :notify_home_activity) == true
     end
 
     test "ignores unrelated fields" do
       changeset =
         Membership.notification_prefs_changeset(%Membership{}, %{
           "role" => "admin",
-          "silence_all_notifications" => true
+          "notify_home_activity" => true
         })
 
       assert changeset.valid?

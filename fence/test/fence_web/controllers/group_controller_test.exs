@@ -297,9 +297,8 @@ defmodule FenceWeb.GroupControllerTest do
       group = create_group(user)
       conn = get(conn, "/api/v1/groups/#{group.id}/notification-preferences")
       assert resp = json_response(conn, 200)
-      assert resp["silence_all_notifications"] == false
-      assert resp["silence_home_notifications"] == false
       assert resp["notify_household"] == true
+      assert resp["notify_home_activity"] == false
     end
 
     test "returns 403 for non-member", %{conn: conn} do
@@ -316,13 +315,13 @@ defmodule FenceWeb.GroupControllerTest do
 
       conn =
         put(conn, "/api/v1/groups/#{group.id}/notification-preferences", %{
-          "silence_all_notifications" => true,
-          "notify_household" => false
+          "notify_household" => false,
+          "notify_home_activity" => true
         })
 
       assert resp = json_response(conn, 200)
-      assert resp["silence_all_notifications"] == true
       assert resp["notify_household"] == false
+      assert resp["notify_home_activity"] == true
     end
 
     test "returns 403 for non-member", %{conn: conn} do
@@ -331,7 +330,7 @@ defmodule FenceWeb.GroupControllerTest do
 
       conn =
         put(conn, "/api/v1/groups/#{group.id}/notification-preferences", %{
-          "silence_all_notifications" => true
+          "notify_home_activity" => true
         })
 
       assert json_response(conn, 403)

@@ -123,28 +123,25 @@ defmodule Fence.Workers.PushNotificationWorker do
 
     subscriber_membership = Map.get(memberships_by_user, subscriber_id)
 
-    is_household =
-      triggering_home_id != nil and
-        subscriber_membership != nil and
-        subscriber_membership.home_geofence_id == triggering_home_id
+    if is_home_geofence do
+      is_household =
+        triggering_home_id != nil and
+          subscriber_membership != nil and
+          subscriber_membership.home_geofence_id == triggering_home_id
 
-    cond do
-      is_household and subscriber_membership != nil and subscriber_membership.notify_household ->
-        original_skip_reason(subscription, triggering_user, event)
+      cond do
+        is_household and subscriber_membership != nil and subscriber_membership.notify_household ->
+          original_skip_reason(subscription, triggering_user, event)
 
-      group_or_home_silenced?(subscriber_membership, is_home_geofence) ->
-        :silence_prefs
+        subscriber_membership != nil and subscriber_membership.notify_home_activity ->
+          original_skip_reason(subscription, triggering_user, event)
 
-      true ->
-        original_skip_reason(subscription, triggering_user, event)
+        true ->
+          :home_geofence_filtered
+      end
+    else
+      original_skip_reason(subscription, triggering_user, event)
     end
-  end
-
-  defp group_or_home_silenced?(nil, _is_home), do: false
-
-  defp group_or_home_silenced?(membership, is_home) do
-    membership.silence_all_notifications or
-      (is_home and membership.silence_home_notifications)
   end
 
   defp original_skip_reason(subscription, triggering_user, event) do

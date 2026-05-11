@@ -890,41 +890,29 @@ abstract class AppLocalizations {
   /// **'Notification Settings'**
   String get notificationSettings;
 
-  /// No description provided for @silenceAllNotifications.
-  ///
-  /// In en, this message translates to:
-  /// **'Silence All Notifications'**
-  String get silenceAllNotifications;
-
-  /// No description provided for @silenceAllNotificationsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop all notifications from this group'**
-  String get silenceAllNotificationsSubtitle;
-
-  /// No description provided for @silenceHomeNotifications.
-  ///
-  /// In en, this message translates to:
-  /// **'Silence Home Notifications'**
-  String get silenceHomeNotifications;
-
-  /// No description provided for @silenceHomeNotificationsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop notifications when members enter or leave their home'**
-  String get silenceHomeNotificationsSubtitle;
-
   /// No description provided for @notifyHousehold.
   ///
   /// In en, this message translates to:
-  /// **'Always Notify Household'**
+  /// **'Always See My Household'**
   String get notifyHousehold;
 
   /// No description provided for @notifyHouseholdSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Override silence settings for members who share your home geofence'**
+  /// **'Get notifications when household members enter or leave your shared home'**
   String get notifyHouseholdSubtitle;
+
+  /// No description provided for @notifyHomeActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'See Home Activity'**
+  String get notifyHomeActivity;
+
+  /// No description provided for @notifyHomeActivitySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get notified when group members enter or leave their claimed home'**
+  String get notifyHomeActivitySubtitle;
 
   /// No description provided for @whoCanSeeMe.
   ///

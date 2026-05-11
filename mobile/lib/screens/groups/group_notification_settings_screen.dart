@@ -16,9 +16,8 @@ class GroupNotificationSettingsScreen extends ConsumerStatefulWidget {
 
 class _GroupNotificationSettingsScreenState
     extends ConsumerState<GroupNotificationSettingsScreen> {
-  bool _silenceAll = false;
-  bool _silenceHome = false;
   bool _notifyHousehold = true;
+  bool _notifyHomeActivity = false;
   bool _groupPrefsLoaded = false;
 
   @override
@@ -35,40 +34,28 @@ class _GroupNotificationSettingsScreenState
             Center(child: Text(l10n.errorWithMessage(e.toString()))),
         data: (groupPrefs) {
           if (!_groupPrefsLoaded) {
-            _silenceAll = groupPrefs.silenceAllNotifications;
-            _silenceHome = groupPrefs.silenceHomeNotifications;
             _notifyHousehold = groupPrefs.notifyHousehold;
+            _notifyHomeActivity = groupPrefs.notifyHomeActivity;
             _groupPrefsLoaded = true;
           }
 
           return ListView(
             children: [
               SwitchListTile(
-                title: Text(l10n.silenceAllNotifications),
-                subtitle: Text(l10n.silenceAllNotificationsSubtitle),
-                value: _silenceAll,
-                onChanged: (v) {
-                  setState(() => _silenceAll = v);
-                  _updateGroupPrefs();
-                },
-              ),
-              SwitchListTile(
-                title: Text(l10n.silenceHomeNotifications),
-                subtitle: Text(l10n.silenceHomeNotificationsSubtitle),
-                value: _silenceHome,
-                onChanged: _silenceAll
-                    ? null
-                    : (v) {
-                        setState(() => _silenceHome = v);
-                        _updateGroupPrefs();
-                      },
-              ),
-              SwitchListTile(
                 title: Text(l10n.notifyHousehold),
                 subtitle: Text(l10n.notifyHouseholdSubtitle),
                 value: _notifyHousehold,
                 onChanged: (v) {
                   setState(() => _notifyHousehold = v);
+                  _updateGroupPrefs();
+                },
+              ),
+              SwitchListTile(
+                title: Text(l10n.notifyHomeActivity),
+                subtitle: Text(l10n.notifyHomeActivitySubtitle),
+                value: _notifyHomeActivity,
+                onChanged: (v) {
+                  setState(() => _notifyHomeActivity = v);
                   _updateGroupPrefs();
                 },
               ),
@@ -84,9 +71,8 @@ class _GroupNotificationSettingsScreenState
       await ref.read(apiClientProvider).updateNotificationPreferences(
         widget.groupId,
         {
-          'silence_all_notifications': _silenceAll,
-          'silence_home_notifications': _silenceHome,
           'notify_household': _notifyHousehold,
+          'notify_home_activity': _notifyHomeActivity,
         },
       );
       ref.invalidate(groupNotificationPrefsProvider(widget.groupId));

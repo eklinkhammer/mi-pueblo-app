@@ -432,25 +432,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationSettings => 'Notification Settings';
 
   @override
-  String get silenceAllNotifications => 'Silence All Notifications';
-
-  @override
-  String get silenceAllNotificationsSubtitle =>
-      'Stop all notifications from this group';
-
-  @override
-  String get silenceHomeNotifications => 'Silence Home Notifications';
-
-  @override
-  String get silenceHomeNotificationsSubtitle =>
-      'Stop notifications when members enter or leave their home';
-
-  @override
-  String get notifyHousehold => 'Always Notify Household';
+  String get notifyHousehold => 'Always See My Household';
 
   @override
   String get notifyHouseholdSubtitle =>
-      'Override silence settings for members who share your home geofence';
+      'Get notifications when household members enter or leave your shared home';
+
+  @override
+  String get notifyHomeActivity => 'See Home Activity';
+
+  @override
+  String get notifyHomeActivitySubtitle =>
+      'Get notified when group members enter or leave their claimed home';
 
   @override
   String get whoCanSeeMe => 'Who Can See Me?';
