@@ -346,7 +346,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                         Text(
                                           '${l.displayName} - ${_timeAgo(l.updatedAt)}',
                                           style:
-                                              Theme.of(context).textTheme.bodySmall,
+                                              Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black87),
                                         ),
                                       ],
                                     ),
@@ -566,7 +566,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     ),
                     child: Text(
                       g.name,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

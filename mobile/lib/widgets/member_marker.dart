@@ -61,7 +61,7 @@ class MemberMarker extends StatelessWidget {
             ),
             child: Text(
               firstName,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87),
               overflow: TextOverflow.ellipsis,
             ),
           ),
