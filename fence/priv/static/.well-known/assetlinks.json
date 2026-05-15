@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.fence.fence",
+      "sha256_cert_fingerprints": ["F2:C4:53:29:9A:00:31:65:48:61:79:E4:BC:7C:D2:BA:C6:74:27:1E:16:15:C3:90:33:D3:22:D8:9B:83:74:2D"]
+    }
+  }
+]
