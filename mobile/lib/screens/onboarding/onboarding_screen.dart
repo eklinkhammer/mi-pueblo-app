@@ -303,7 +303,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ],
           ),
           // Semi-transparent overlay for readability
-          Container(color: Colors.white.withValues(alpha: 0.93)),
+          Container(color: Colors.white.withValues(alpha: 0.75)),
           // Content
           SafeArea(
             child: Padding(
