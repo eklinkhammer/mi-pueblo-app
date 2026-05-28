@@ -17,3 +17,13 @@ cd fence && mix deps.get && mix compile --warnings-as-errors && mix format --che
 ```bash
 cd mobile && /Users/eklinkhammer/development/flutter/bin/flutter pub get && /Users/eklinkhammer/development/flutter/bin/flutter gen-l10n && /Users/eklinkhammer/development/flutter/bin/flutter analyze --fatal-infos --fatal-warnings && /Users/eklinkhammer/development/flutter/bin/flutter test
 ```
+
+### Mobile Integration Tests (E2E)
+Requires an Android emulator and the backend server running on port 4000.
+
+1. Ensure the backend is serving: check if port 4000 is listening (`curl -s http://localhost:4000`). If not, start it with `cd fence && PHX_SERVER=true mix phx.server` in the background, run `mix ecto.migrate`, and wait for it to be ready.
+2. Ensure an Android emulator is running: use the `/start-android-emulator` skill if needed. Wait for `adb shell getprop sys.boot_completed` to return `1`.
+3. Run integration tests:
+```bash
+cd mobile && /Users/eklinkhammer/development/flutter/bin/flutter test integration_test/
+```
