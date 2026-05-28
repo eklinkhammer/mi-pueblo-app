@@ -149,7 +149,7 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
     end
 
     test "broadcasts geofence event via PubSub" do
-      {triggering_user, _subscriber, geofence, group} = setup_geofence_with_subscriber()
+      {triggering_user, subscriber, geofence, group} = setup_geofence_with_subscriber()
 
       Phoenix.PubSub.subscribe(Fence.PubSub, "group:#{group.id}")
 
@@ -161,10 +161,16 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
 
       assert_receive %Phoenix.Socket.Broadcast{
         topic: topic,
-        event: "geofence:entered"
+        event: "geofence:entered",
+        payload: payload
       }
 
       assert topic == "group:#{group.id}"
+      assert is_number(payload.geofence_latitude)
+      assert is_number(payload.geofence_longitude)
+      assert payload.sharing_mode == "live"
+      assert is_list(payload.visible_to)
+      assert subscriber.id in payload.visible_to
     end
 
     test "member_joined sends notification to existing members, skips joining user" do

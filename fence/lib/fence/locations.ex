@@ -58,7 +58,11 @@ defmodule Fence.Locations do
   def get_group_last_locations(group_id, viewer_user_id) do
     visible_ids = Groups.visible_user_ids(viewer_user_id, group_id)
     allowed_ids = MapSet.put(visible_ids, viewer_user_id) |> MapSet.to_list()
+    get_group_last_locations(group_id, viewer_user_id, allowed_ids)
+  end
 
+  def get_group_last_locations(group_id, _viewer_user_id, allowed_ids)
+      when is_list(allowed_ids) do
     from(l in DeviceLocation,
       join: m in Fence.Groups.Membership,
       on: m.user_id == l.user_id and m.group_id == ^group_id,
@@ -75,6 +79,35 @@ defmodule Fence.Locations do
         speed: l.speed,
         battery_level: l.battery_level,
         updated_at: l.inserted_at
+      }
+    )
+    |> Repo.all()
+  end
+
+  def get_group_geofence_presence(group_id, viewer_user_id) do
+    visible_ids = Groups.visible_user_ids(viewer_user_id, group_id)
+    allowed_ids = MapSet.put(visible_ids, viewer_user_id) |> MapSet.to_list()
+    get_group_geofence_presence(group_id, viewer_user_id, allowed_ids)
+  end
+
+  def get_group_geofence_presence(group_id, _viewer_user_id, allowed_ids)
+      when is_list(allowed_ids) do
+    from(s in UserGeofenceState,
+      join: g in Fence.Geofences.Geofence,
+      on: g.id == s.geofence_id,
+      join: m in Fence.Groups.Membership,
+      on: m.user_id == s.user_id and m.group_id == g.group_id,
+      join: u in Fence.Accounts.User,
+      on: u.id == s.user_id,
+      where: s.user_id in ^allowed_ids and g.group_id == ^group_id,
+      select: %{
+        user_id: s.user_id,
+        display_name: u.display_name,
+        sharing_mode: m.sharing_mode,
+        geofence_id: g.id,
+        geofence_name: g.name,
+        geofence_center: g.center,
+        entered_at: s.entered_at
       }
     )
     |> Repo.all()

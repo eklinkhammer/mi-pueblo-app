@@ -109,6 +109,88 @@ defmodule Fence.LocationsTest do
     end
   end
 
+  describe "get_group_geofence_presence/2" do
+    test "returns geofence presence for visible members" do
+      admin = create_user(%{"display_name" => "Admin"})
+      member = create_user(%{"display_name" => "Member"})
+      group = create_group(admin)
+
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
+
+      # Grant visibility
+      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+
+      # Create geofence and place member inside it
+      geofence = create_geofence(group, admin, %{"name" => "Office"})
+      Locations.update_geofence_state(member.id, MapSet.new([geofence.id]), MapSet.new())
+
+      presence = Locations.get_group_geofence_presence(group.id, admin.id)
+      assert length(presence) == 1
+      entry = hd(presence)
+      assert entry.user_id == member.id
+      assert entry.display_name == "Member"
+      assert entry.geofence_id == geofence.id
+      assert entry.geofence_name == "Office"
+      assert entry.geofence_center
+      assert entry.entered_at
+    end
+
+    test "excludes non-visible members" do
+      admin = create_user(%{"display_name" => "Admin"})
+      member = create_user(%{"display_name" => "Member"})
+      group = create_group(admin)
+
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
+
+      # No visibility granted
+      geofence = create_geofence(group, admin)
+      Locations.update_geofence_state(member.id, MapSet.new([geofence.id]), MapSet.new())
+
+      presence = Locations.get_group_geofence_presence(group.id, admin.id)
+      # Admin can only see themselves, and they are not in any geofence
+      assert Enum.empty?(presence)
+    end
+
+    test "includes both sharing modes" do
+      admin = create_user(%{"display_name" => "Admin"})
+      member = create_user(%{"display_name" => "Member"})
+      group = create_group(admin)
+
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
+      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+
+      geofence = create_geofence(group, admin)
+
+      # Place both admin (live) and member inside the geofence
+      Locations.update_geofence_state(admin.id, MapSet.new([geofence.id]), MapSet.new())
+      Locations.update_geofence_state(member.id, MapSet.new([geofence.id]), MapSet.new())
+
+      # Switch member to geofences mode
+      {:ok, _} = Fence.Groups.update_sharing_mode(member.id, group.id, "geofences")
+
+      presence = Locations.get_group_geofence_presence(group.id, admin.id)
+      assert length(presence) == 2
+      modes = Enum.map(presence, & &1.sharing_mode) |> MapSet.new()
+      assert MapSet.member?(modes, "live")
+      assert MapSet.member?(modes, "geofences")
+    end
+
+    test "viewer sees own geofence presence" do
+      admin = create_user(%{"display_name" => "Admin"})
+      group = create_group(admin)
+      geofence = create_geofence(group, admin)
+
+      Locations.update_geofence_state(admin.id, MapSet.new([geofence.id]), MapSet.new())
+
+      presence = Locations.get_group_geofence_presence(group.id, admin.id)
+      assert length(presence) == 1
+      assert hd(presence).user_id == admin.id
+    end
+  end
+
   describe "geofence state" do
     test "get_user_geofence_ids returns empty set initially" do
       user = create_user()

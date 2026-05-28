@@ -12,6 +12,7 @@ import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/providers/selected_group_provider.dart';
 import 'package:fence/models/member_location.dart';
 import 'package:fence/models/geofence.dart';
+import 'package:fence/models/geofence_presence.dart';
 import 'package:fence/models/app_location.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/services/api_client.dart';
@@ -88,6 +89,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void _focusOnMember(MemberLocation l) {
     if (l.latitude != null && l.longitude != null) {
       _mapController.move(LatLng(l.latitude!, l.longitude!), 15);
+    }
+  }
+
+  void _focusOnPresence(GeofencePresence p) {
+    if (p.geofenceLatitude != null && p.geofenceLongitude != null) {
+      _mapController.move(LatLng(p.geofenceLatitude!, p.geofenceLongitude!), 15);
     }
   }
 
@@ -275,19 +282,46 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final groupId = ref.watch(selectedGroupIdProvider)!;
     final locationsAsync = ref.watch(groupLocationsProvider(groupId));
     final geofencesAsync = ref.watch(geofencesProvider(groupId));
+    final presenceList = ref.watch(groupGeofencePresenceProvider(groupId));
+
+    // Build a lookup: userId → list of geofence names they're in
+    final userGeofenceNames = <String, List<String>>{};
+    for (final p in presenceList) {
+      userGeofenceNames.putIfAbsent(p.userId, () => []).add(p.geofenceName);
+    }
+
+    // Geofence-only users: those with sharing_mode == "geofences"
+    // Deduplicate by userId — show first geofence entry
+    final geofenceOnlyUsers = <String, GeofencePresence>{};
+    for (final p in presenceList) {
+      if (p.sharingMode == 'geofences' &&
+          p.geofenceLatitude != null &&
+          p.geofenceLongitude != null &&
+          !geofenceOnlyUsers.containsKey(p.userId)) {
+        geofenceOnlyUsers[p.userId] = p;
+      }
+    }
 
     final focusUserId = ref.watch(mapFocusUserProvider);
     if (focusUserId != null) {
       ref.read(mapFocusUserProvider.notifier).state = null;
       final locations = locationsAsync.valueOrNull;
+      MemberLocation? target;
       if (locations != null) {
-        final target = locations.cast<MemberLocation?>().firstWhere(
+        target = locations.cast<MemberLocation?>().firstWhere(
               (l) => l!.userId == focusUserId && l.latitude != null && l.longitude != null,
               orElse: () => null,
             );
-        if (target != null) {
+      }
+      if (target != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _mapController.move(LatLng(target!.latitude!, target.longitude!), 15);
+        });
+      } else if (geofenceOnlyUsers.containsKey(focusUserId)) {
+        final p = geofenceOnlyUsers[focusUserId]!;
+        if (p.geofenceLatitude != null && p.geofenceLongitude != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _mapController.move(LatLng(target.latitude!, target.longitude!), 15);
+            _mapController.move(LatLng(p.geofenceLatitude!, p.geofenceLongitude!), 15);
           });
         }
       }
@@ -310,58 +344,126 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             _buildCircleLayer(geofencesAsync),
             _buildGeofenceLabelLayer(geofencesAsync),
             _buildMarkerLayer(locationsAsync),
+            _buildGeofencePresenceMarkerLayer(geofenceOnlyUsers.values.toList()),
             _buildMyLocationMarker(),
           ],
         ),
-        locationsAsync.when(
-          data: (locations) => locations.isEmpty
-              ? const SizedBox.shrink()
-              : Positioned(
-                  bottom: 16,
-                  left: 16,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: locations
-                            .map((l) => InkWell(
-                                  onTap: () => _focusOnMember(l),
-                                  child: Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 2),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            color: colorForUser(l.userId),
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '${l.displayName} - ${_timeAgo(l.updatedAt)}',
-                                          style:
-                                              Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black87),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                  ),
-                ),
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
+        _buildSidebar(locationsAsync, geofenceOnlyUsers, userGeofenceNames),
       ],
     );
+  }
+
+  Widget _buildSidebar(
+    AsyncValue<List<MemberLocation>> locationsAsync,
+    Map<String, GeofencePresence> geofenceOnlyUsers,
+    Map<String, List<String>> userGeofenceNames,
+  ) {
+    return locationsAsync.when(
+      data: (locations) {
+        final hasEntries = locations.isNotEmpty || geofenceOnlyUsers.isNotEmpty;
+        if (!hasEntries) return const SizedBox.shrink();
+
+        final liveEntries = locations
+            .map((l) {
+          final geofences = userGeofenceNames[l.userId];
+          final suffix = geofences != null && geofences.isNotEmpty
+              ? ' @ ${geofences.first}'
+              : '';
+          return InkWell(
+            onTap: () => _focusOnMember(l),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: colorForUser(l.userId),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      '${l.displayName}$suffix - ${_timeAgo(l.updatedAt)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black87),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList();
+
+        final geofenceEntries = geofenceOnlyUsers.values
+            .map((p) {
+          return InkWell(
+            onTap: () => _focusOnPresence(p),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.fence, size: 8, color: colorForUser(p.userId)),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      '${p.displayName} @ ${p.geofenceName}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black87),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList();
+
+        if (liveEntries.isEmpty && geofenceEntries.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Positioned(
+          bottom: 16,
+          left: 16,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [...liveEntries, ...geofenceEntries],
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  MarkerLayer _buildGeofencePresenceMarkerLayer(List<GeofencePresence> presenceUsers) {
+    final markers = presenceUsers
+        .where((p) => p.geofenceLatitude != null && p.geofenceLongitude != null)
+        .map((p) => Marker(
+              point: LatLng(p.geofenceLatitude!, p.geofenceLongitude!),
+              width: 60,
+              height: 48,
+              child: Opacity(
+                opacity: 0.6,
+                child: MemberMarker(
+                  userId: p.userId,
+                  displayName: p.displayName,
+                  timeAgo: '@ ${p.geofenceName}',
+                ),
+              ),
+            ))
+        .toList();
+    return MarkerLayer(markers: markers);
   }
 
   MarkerLayer _buildMarkerLayer(AsyncValue<List<MemberLocation>> locationsAsync) {

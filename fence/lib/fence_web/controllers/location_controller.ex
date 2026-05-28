@@ -21,7 +21,11 @@ defmodule FenceWeb.LocationController do
     user = conn.assigns.current_user
 
     if Groups.member?(user.id, group_id) do
-      locations = Locations.get_group_last_locations(group_id, user.id)
+      visible_ids = Groups.visible_user_ids(user.id, group_id)
+      allowed_ids = MapSet.put(visible_ids, user.id) |> MapSet.to_list()
+
+      locations = Locations.get_group_last_locations(group_id, user.id, allowed_ids)
+      presence = Locations.get_group_geofence_presence(group_id, user.id, allowed_ids)
 
       json(conn, %{
         locations:
@@ -41,6 +45,25 @@ defmodule FenceWeb.LocationController do
               speed: loc.speed,
               battery_level: loc.battery_level,
               updated_at: loc.updated_at
+            }
+          end),
+        geofence_presence:
+          Enum.map(presence, fn p ->
+            {lng, lat} =
+              case p.geofence_center do
+                %Geo.Point{coordinates: coords} -> coords
+                _ -> {nil, nil}
+              end
+
+            %{
+              user_id: p.user_id,
+              display_name: p.display_name,
+              sharing_mode: p.sharing_mode,
+              geofence_id: p.geofence_id,
+              geofence_name: p.geofence_name,
+              geofence_latitude: lat,
+              geofence_longitude: lng,
+              entered_at: p.entered_at
             }
           end)
       })

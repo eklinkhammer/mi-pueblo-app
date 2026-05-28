@@ -50,8 +50,23 @@ defmodule Fence.Workers.PushNotificationWorker do
         send_if_eligible(sub, triggering_user, geofence, event, prefs_context)
       end
 
+      # Look up triggering user's sharing mode and visibility
+      membership =
+        Fence.Repo.get_by(Fence.Groups.Membership,
+          user_id: triggering_user_id,
+          group_id: geofence.group_id
+        )
+
+      sharing_mode = if membership, do: membership.sharing_mode, else: "live"
+
       # Broadcast geofence event to group channel
-      broadcast_geofence_event(triggering_user, geofence, event)
+      broadcast_geofence_event(
+        triggering_user,
+        geofence,
+        event,
+        sharing_mode,
+        prefs_context.visible_set
+      )
     end
 
     :ok
@@ -300,13 +315,23 @@ defmodule Fence.Workers.PushNotificationWorker do
     end
   end
 
-  defp broadcast_geofence_event(triggering_user, geofence, event) do
+  defp broadcast_geofence_event(triggering_user, geofence, event, sharing_mode, visible_set) do
+    {geofence_longitude, geofence_latitude} =
+      case geofence.center do
+        %Geo.Point{coordinates: coords} -> coords
+        _ -> {nil, nil}
+      end
+
     payload = %{
       user_id: triggering_user.id,
       display_name: triggering_user.display_name,
       geofence_id: geofence.id,
       geofence_name: geofence.name,
-      event: event
+      geofence_latitude: geofence_latitude,
+      geofence_longitude: geofence_longitude,
+      event: event,
+      sharing_mode: sharing_mode,
+      visible_to: MapSet.to_list(visible_set)
     }
 
     FenceWeb.Endpoint.broadcast(
