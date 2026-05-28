@@ -28,6 +28,20 @@ final geofenceResidentsProvider =
   },
 );
 
+final geofenceActivityProvider =
+    FutureProvider.family<List<GeofenceActivity>, ({String groupId, String geofenceId})>(
+  (ref, params) async {
+    final apiClient = ref.read(apiClientProvider);
+    final response =
+        await apiClient.getGeofenceActivity(params.groupId, params.geofenceId);
+    final data = response.data!;
+    final activity = data['activity'] as List<dynamic>;
+    return activity
+        .map((a) => GeofenceActivity.fromJson(a as Map<String, dynamic>))
+        .toList();
+  },
+);
+
 final geofenceSubscriptionProvider =
     FutureProvider.family<GeofenceSubscription?, String>(
   (ref, geofenceId) async {

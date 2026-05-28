@@ -37,6 +37,31 @@ void main() {
     });
   });
 
+  group('GeofenceActivity', () {
+    test('parses from JSON', () {
+      final json = {
+        'event': 'entered',
+        'user_name': 'Alice',
+        'inserted_at': '2026-01-15T10:30:00Z',
+      };
+      final activity = GeofenceActivity.fromJson(json);
+      expect(activity.event, 'entered');
+      expect(activity.userName, 'Alice');
+      expect(activity.timestamp, DateTime.utc(2026, 1, 15, 10, 30));
+    });
+
+    test('parses exited event', () {
+      final json = {
+        'event': 'exited',
+        'user_name': 'Bob',
+        'inserted_at': '2026-06-01T08:00:00Z',
+      };
+      final activity = GeofenceActivity.fromJson(json);
+      expect(activity.event, 'exited');
+      expect(activity.userName, 'Bob');
+    });
+  });
+
   group('GeofenceSubscription.fromJson', () {
     test('parses with empty blacklist', () {
       final sub = GeofenceSubscription.fromJson(

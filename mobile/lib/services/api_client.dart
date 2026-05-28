@@ -209,6 +209,11 @@ class ApiClient {
       _dio.delete<Map<String, dynamic>>(
           '/groups/$groupId/geofences/$geofenceId');
 
+  Future<Response<Map<String, dynamic>>> getGeofenceActivity(
+          String groupId, String geofenceId) =>
+      _dio.get<Map<String, dynamic>>(
+          '/groups/$groupId/geofences/$geofenceId/activity');
+
   // Home geofence (residents)
   Future<Response<Map<String, dynamic>>> claimHome(
           String groupId, String geofenceId) =>

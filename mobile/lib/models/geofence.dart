@@ -50,6 +50,26 @@ class Resident {
   }
 }
 
+class GeofenceActivity {
+  final String event;
+  final String userName;
+  final DateTime timestamp;
+
+  const GeofenceActivity({
+    required this.event,
+    required this.userName,
+    required this.timestamp,
+  });
+
+  factory GeofenceActivity.fromJson(Map<String, dynamic> json) {
+    return GeofenceActivity(
+      event: json['event'] as String,
+      userName: json['user_name'] as String,
+      timestamp: DateTime.parse(json['inserted_at'] as String),
+    );
+  }
+}
+
 class GeofenceSubscription {
   final String id;
   final String geofenceId;

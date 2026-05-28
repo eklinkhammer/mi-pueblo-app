@@ -70,6 +70,7 @@ defmodule FenceWeb.Router do
     get "/groups/:gid/geofences/:fid", GeofenceController, :show
     put "/groups/:gid/geofences/:fid", GeofenceController, :update
     delete "/groups/:gid/geofences/:fid", GeofenceController, :delete
+    get "/groups/:gid/geofences/:fid/activity", GeofenceController, :activity
     post "/groups/:gid/geofences/:fid/claim-home", GeofenceController, :claim_home
     delete "/groups/:gid/geofences/:fid/claim-home", GeofenceController, :unclaim_home
 

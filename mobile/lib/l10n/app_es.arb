@@ -121,6 +121,21 @@
   "english": "English",
   "spanish": "Español",
 
+  "recentActivity": "Actividad reciente",
+  "noRecentActivity": "Sin actividad reciente",
+  "enteredAt": "{userName} entró",
+  "@enteredAt": {
+    "placeholders": {
+      "userName": { "type": "String" }
+    }
+  },
+  "exitedAt": "{userName} salió",
+  "@exitedAt": {
+    "placeholders": {
+      "userName": { "type": "String" }
+    }
+  },
+
   "residents": "Residentes",
   "noResidents": "Nadie ha marcado esto como hogar",
   "claimAsHome": "Marcar como hogar",

@@ -166,6 +166,21 @@
   "english": "English",
   "spanish": "Spanish",
 
+  "recentActivity": "Recent Activity",
+  "noRecentActivity": "No recent activity",
+  "enteredAt": "{userName} entered",
+  "@enteredAt": {
+    "placeholders": {
+      "userName": { "type": "String" }
+    }
+  },
+  "exitedAt": "{userName} exited",
+  "@exitedAt": {
+    "placeholders": {
+      "userName": { "type": "String" }
+    }
+  },
+
   "residents": "Residents",
   "noResidents": "No one has claimed this as home",
   "claimAsHome": "Claim as Home",

@@ -74,6 +74,9 @@ void main() {
         geofenceResidentsProvider(
           (groupId: _testGroupId, geofenceId: _testGeofenceId),
         ).overrideWith((ref) => Future.value(<Resident>[])),
+        geofenceActivityProvider(
+          (groupId: _testGroupId, geofenceId: _testGeofenceId),
+        ).overrideWith((ref) => Future.value(<GeofenceActivity>[])),
         authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
       ],
       child: const MaterialApp(

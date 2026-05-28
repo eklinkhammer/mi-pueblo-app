@@ -27,6 +27,8 @@ class GeofenceDetailScreen extends ConsumerWidget {
         ref.watch(geofenceSubscriptionProvider(geofenceId));
     final residentsAsync = ref.watch(
         geofenceResidentsProvider((groupId: groupId, geofenceId: geofenceId)));
+    final activityAsync = ref.watch(
+        geofenceActivityProvider((groupId: groupId, geofenceId: geofenceId)));
     final currentUserId = ref.watch(authProvider).user?.id;
     final l10n = AppLocalizations.of(context);
 
@@ -148,6 +150,39 @@ class GeofenceDetailScreen extends ConsumerWidget {
               const Divider(),
               Padding(
                 padding: const EdgeInsets.all(16),
+                child: Text(l10n.recentActivity,
+                    style: Theme.of(context).textTheme.titleMedium),
+              ),
+              activityAsync.when(
+                data: (activities) {
+                  if (activities.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(l10n.noRecentActivity,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    );
+                  }
+                  return Column(
+                    children: activities.map((a) => ListTile(
+                      leading: Icon(
+                        a.event == 'entered' ? Icons.arrow_forward : Icons.arrow_back,
+                        color: a.event == 'entered' ? Colors.green : Colors.orange,
+                      ),
+                      title: Text(a.event == 'entered'
+                          ? l10n.enteredAt(a.userName)
+                          : l10n.exitedAt(a.userName)),
+                      trailing: Text(_timeAgo(context, a.timestamp),
+                          style: Theme.of(context).textTheme.bodySmall),
+                    )).toList(),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text(l10n.errorWithMessage(e.toString())),
+              ),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: Text(l10n.notifications,
                     style: Theme.of(context).textTheme.titleMedium),
               ),
@@ -193,6 +228,15 @@ class GeofenceDetailScreen extends ConsumerWidget {
         body: Center(child: Text(l10n.errorWithMessage(e.toString()))),
       ),
     );
+  }
+
+  String _timeAgo(BuildContext context, DateTime dateTime) {
+    final l10n = AppLocalizations.of(context);
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return l10n.timeAgoJustNow;
+    if (diff.inMinutes < 60) return l10n.timeAgoMinutes(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.timeAgoHours(diff.inHours);
+    return l10n.timeAgoDays(diff.inDays);
   }
 
   Future<void> _claimHome(BuildContext context, WidgetRef ref) async {

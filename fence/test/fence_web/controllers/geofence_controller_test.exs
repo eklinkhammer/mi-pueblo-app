@@ -157,6 +157,59 @@ defmodule FenceWeb.GeofenceControllerTest do
     end
   end
 
+  describe "GET /api/v1/groups/:gid/geofences/:fid/activity" do
+    test "returns activity for a group member", %{conn: conn, user: user} do
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+      other = create_user(%{"display_name" => "Alice"})
+
+      # Make other a member so they're visible
+      {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, user.id)
+      {:ok, _} = Fence.Groups.join_by_invite_code(other.id, invite.code)
+
+      # Grant visibility both ways
+      {:ok, _} = Fence.Groups.grant_visibility(user.id, group.id, other.id)
+
+      {:ok, _} =
+        Fence.Notifications.log_push(%{
+          recipient_id: user.id,
+          triggering_user_id: other.id,
+          geofence_id: geofence.id,
+          event: "entered",
+          status: "sent"
+        })
+
+      conn = get(conn, "/api/v1/groups/#{group.id}/geofences/#{geofence.id}/activity")
+      assert %{"activity" => activity} = json_response(conn, 200)
+      assert length(activity) == 1
+      assert hd(activity)["event"] == "entered"
+      assert hd(activity)["user_name"] == "Alice"
+    end
+
+    test "returns 403 for non-member", %{conn: conn} do
+      other = create_user()
+      group = create_group(other)
+      geofence = create_geofence(group, other)
+
+      conn = get(conn, "/api/v1/groups/#{group.id}/geofences/#{geofence.id}/activity")
+      assert json_response(conn, 403)
+    end
+
+    test "returns 404 for missing geofence", %{conn: conn, user: user} do
+      group = create_group(user)
+      conn = get(conn, "/api/v1/groups/#{group.id}/geofences/#{Ecto.UUID.generate()}/activity")
+      assert json_response(conn, 404)
+    end
+
+    test "returns empty activity list", %{conn: conn, user: user} do
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+
+      conn = get(conn, "/api/v1/groups/#{group.id}/geofences/#{geofence.id}/activity")
+      assert %{"activity" => []} = json_response(conn, 200)
+    end
+  end
+
   describe "subscriptions" do
     test "GET shows nil when no subscription", %{conn: conn, user: user} do
       admin = create_user()

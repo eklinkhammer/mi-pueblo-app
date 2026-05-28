@@ -734,6 +734,30 @@ abstract class AppLocalizations {
   /// **'Spanish'**
   String get spanish;
 
+  /// No description provided for @recentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Activity'**
+  String get recentActivity;
+
+  /// No description provided for @noRecentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent activity'**
+  String get noRecentActivity;
+
+  /// No description provided for @enteredAt.
+  ///
+  /// In en, this message translates to:
+  /// **'{userName} entered'**
+  String enteredAt(String userName);
+
+  /// No description provided for @exitedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'{userName} exited'**
+  String exitedAt(String userName);
+
   /// No description provided for @residents.
   ///
   /// In en, this message translates to:

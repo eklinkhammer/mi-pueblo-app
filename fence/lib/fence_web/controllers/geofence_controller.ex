@@ -1,7 +1,7 @@
 defmodule FenceWeb.GeofenceController do
   use FenceWeb, :controller
 
-  alias Fence.{Geofences, Groups}
+  alias Fence.{Geofences, Groups, Notifications}
 
   def my_geofences(conn, _params) do
     user = conn.assigns.current_user
@@ -136,6 +136,25 @@ defmodule FenceWeb.GeofenceController do
          {:ok, _} <- Geofences.delete_geofence(geofence) do
       broadcast_geofences_changed(group_id)
       send_resp(conn, :no_content, "")
+    else
+      nil -> not_found(conn)
+      false -> forbidden(conn)
+    end
+  end
+
+  def activity(conn, %{"gid" => group_id, "fid" => geofence_id}) do
+    user = conn.assigns.current_user
+
+    with true <- Groups.member?(user.id, group_id),
+         %{} = geofence <- Geofences.get_geofence(geofence_id),
+         true <- geofence.group_id == group_id do
+      visible_ids =
+        Groups.visible_user_ids(user.id, group_id)
+        |> MapSet.put(user.id)
+        |> MapSet.to_list()
+
+      activities = Notifications.list_geofence_activity(geofence_id, visible_ids)
+      json(conn, %{activity: activities})
     else
       nil -> not_found(conn)
       false -> forbidden(conn)

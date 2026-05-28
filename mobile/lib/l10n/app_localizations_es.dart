@@ -358,6 +358,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get spanish => 'Español';
 
   @override
+  String get recentActivity => 'Actividad reciente';
+
+  @override
+  String get noRecentActivity => 'Sin actividad reciente';
+
+  @override
+  String enteredAt(String userName) {
+    return '$userName entró';
+  }
+
+  @override
+  String exitedAt(String userName) {
+    return '$userName salió';
+  }
+
+  @override
   String get residents => 'Residentes';
 
   @override
