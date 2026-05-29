@@ -345,11 +345,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     // Build a lookup: userId → list of geofence names they're in
     final userGeofenceNames = <String, List<String>>{};
-    // Build a lookup: userId → first presence (for arrival time)
-    final userPresence = <String, GeofencePresence>{};
+    // Build a lookup: userId → all presences (for arrival info)
+    final userPresences = <String, List<GeofencePresence>>{};
     for (final p in presenceList) {
       userGeofenceNames.putIfAbsent(p.userId, () => []).add(p.geofenceName);
-      userPresence.putIfAbsent(p.userId, () => p);
+      userPresences.putIfAbsent(p.userId, () => []).add(p);
     }
 
     // Geofence-only users: those with sharing_mode == "geofences"
@@ -410,7 +410,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             _buildMyLocationMarker(),
           ],
         ),
-        _buildSidebar(locationsAsync, geofenceOnlyUsers, userGeofenceNames, userPresence),
+        _buildSidebar(locationsAsync, geofenceOnlyUsers, userGeofenceNames, userPresences),
         _buildHistoryDrawer(),
       ],
     );
@@ -493,114 +493,36 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  void _showMemberDetail(MemberLocation member, List<String>? geofenceNames, GeofencePresence? presence) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final locationText = geofenceNames != null && geofenceNames.isNotEmpty
-        ? geofenceNames.join(', ')
-        : member.latitude != null
-            ? '${member.latitude!.toStringAsFixed(4)}, ${member.longitude!.toStringAsFixed(4)}'
-            : l10n.unknown;
-
+  void _showMemberDetail(
+    MemberLocation member,
+    List<GeofencePresence>? presences,
+  ) {
+    final groupId = ref.read(selectedGroupIdProvider);
     showModalBottomSheet<void>(
       context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: colorForUser(member.userId),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(member.displayName,
-                        style: theme.textTheme.titleLarge),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _detailRow(Icons.place, l10n.currentLocation, locationText),
-                const SizedBox(height: 8),
-                _detailRow(Icons.update, l10n.lastUpdated,
-                    _timeAgo(member.updatedAt)),
-                if (presence != null) ...[
-                  const SizedBox(height: 8),
-                  _detailRow(Icons.login, l10n.arrivedAt,
-                      '${presence.geofenceName} - ${_timeAgo(presence.enteredAt)}'),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
+      isScrollControlled: true,
+      builder: (_) => _MemberDetailSheet(
+        userId: member.userId,
+        displayName: member.displayName,
+        updatedAt: member.updatedAt,
+        presences: presences ?? [],
+        groupId: groupId,
+      ),
     );
   }
 
   void _showGeofenceMemberDetail(GeofencePresence presence) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-
+    final groupId = ref.read(selectedGroupIdProvider);
     showModalBottomSheet<void>(
       context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: colorForUser(presence.userId),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(presence.displayName,
-                        style: theme.textTheme.titleLarge),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _detailRow(
-                    Icons.place, l10n.currentLocation, presence.geofenceName),
-                const SizedBox(height: 8),
-                _detailRow(Icons.login, l10n.arrivedAt,
-                    _timeAgo(presence.enteredAt)),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _detailRow(IconData icon, String label, String value) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 8),
-        Text('$label: ', style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600)),
-        Flexible(
-          child: Text(value, style: theme.textTheme.bodyMedium,
-              overflow: TextOverflow.ellipsis),
-        ),
-      ],
+      isScrollControlled: true,
+      builder: (_) => _MemberDetailSheet(
+        userId: presence.userId,
+        displayName: presence.displayName,
+        updatedAt: null,
+        presences: [presence],
+        groupId: groupId,
+      ),
     );
   }
 
@@ -608,7 +530,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     AsyncValue<List<MemberLocation>> locationsAsync,
     Map<String, GeofencePresence> geofenceOnlyUsers,
     Map<String, List<String>> userGeofenceNames,
-    Map<String, GeofencePresence> userPresence,
+    Map<String, List<GeofencePresence>> userPresences,
   ) {
     return locationsAsync.when(
       data: (locations) {
@@ -624,7 +546,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           return InkWell(
             onTap: () {
               _focusOnMember(l);
-              _showMemberDetail(l, userGeofenceNames[l.userId], userPresence[l.userId]);
+              _showMemberDetail(l, userPresences[l.userId]);
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
@@ -941,6 +863,225 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   String _timeAgo(DateTime dateTime) {
     final l10n = AppLocalizations.of(context);
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return l10n.timeAgoJustNow;
+    if (diff.inMinutes < 60) return l10n.timeAgoMinutes(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.timeAgoHours(diff.inHours);
+    return l10n.timeAgoDays(diff.inDays);
+  }
+}
+
+class _MemberDetailSheet extends ConsumerWidget {
+  final String userId;
+  final String displayName;
+  final DateTime? updatedAt;
+  final List<GeofencePresence> presences;
+  final String? groupId;
+
+  const _MemberDetailSheet({
+    required this.userId,
+    required this.displayName,
+    required this.updatedAt,
+    required this.presences,
+    required this.groupId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final bgColor = colorForUser(userId);
+    final textColor =
+        bgColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    final historyAsync = ref.watch(historyProvider(userId));
+
+    // Current location from presences
+    final currentGeofences = presences
+        .where((p) => p.geofenceLatitude != null)
+        .toList();
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: avatar + name + last updated
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    getInitials(displayName),
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(displayName, style: theme.textTheme.titleLarge),
+                      if (updatedAt != null)
+                        Text(
+                          '${l10n.lastUpdated} ${_timeAgo(updatedAt!, l10n)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Current location
+            if (currentGeofences.isNotEmpty)
+              ...currentGeofences.map((p) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: InkWell(
+                      onTap: groupId != null
+                          ? () {
+                              Navigator.pop(context);
+                              context.go('/groups/$groupId/geofences/${p.geofenceId}');
+                            }
+                          : null,
+                      child: Row(
+                        children: [
+                          Icon(Icons.place, size: 18,
+                              color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text('${l10n.currentLocation}: ',
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600)),
+                          Flexible(
+                            child: Text(
+                              p.geofenceName,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                decoration: TextDecoration.underline,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+
+            const SizedBox(height: 12),
+
+            // History: arrivals/departures
+            historyAsync.when(
+              data: (events) {
+                if (events.isEmpty) {
+                  return Text(l10n.noHistoryYet,
+                      style: theme.textTheme.bodySmall);
+                }
+                // Show most recent events (limit to 10)
+                final recent = events.take(10).toList();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: recent.map((e) {
+                    final isArrival = e.event == 'arrival';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: InkWell(
+                        onTap: groupId != null
+                            ? () {
+                                Navigator.pop(context);
+                                context.go(
+                                    '/groups/$groupId/geofences/${e.geofenceId}');
+                              }
+                            : null,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              isArrival ? Icons.login : Icons.logout,
+                              size: 16,
+                              color: isArrival
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: isArrival
+                                          ? '${l10n.arrivedAt} '
+                                          : '${l10n.exited} ',
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                    TextSpan(
+                                      text: e.geofenceName,
+                                      style:
+                                          theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.primary,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text:
+                                          ' ${_timeAgo(e.insertedAt, l10n)}',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                        color: theme
+                                            .colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              error: (_, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _timeAgo(DateTime dateTime, AppLocalizations l10n) {
     final diff = DateTime.now().difference(dateTime);
     if (diff.inMinutes < 1) return l10n.timeAgoJustNow;
     if (diff.inMinutes < 60) return l10n.timeAgoMinutes(diff.inMinutes);
