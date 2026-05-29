@@ -1,7 +1,10 @@
 defmodule Fence.GeofencesTest do
   use Fence.DataCase, async: false
 
-  alias Fence.Geofences
+  use Oban.Testing, repo: Fence.Repo
+
+  alias Fence.{Geofences, Groups}
+  alias Fence.Workers.PushNotificationWorker
   import Fence.Factory
 
   setup do
@@ -23,6 +26,67 @@ defmodule Fence.GeofencesTest do
       assert_raise Ecto.InvalidChangesetError, fn ->
         Geofences.create_geofence(%{"name" => ""})
       end
+    end
+
+    test "auto-subscribes followers with visibility" do
+      creator = create_user(%{"display_name" => "Creator"})
+      follower = create_user(%{"display_name" => "Follower"})
+      group = create_group(creator)
+
+      {:ok, invite} = Groups.get_or_create_invite(group.id, creator.id)
+      {:ok, _} = Groups.join_by_invite_code(follower.id, invite.code)
+
+      # Grant mutual visibility
+      {:ok, _} = Groups.grant_visibility(creator.id, group.id, follower.id)
+
+      geofence = create_geofence(group, creator)
+
+      sub = Geofences.get_subscription(follower.id, geofence.id)
+      assert sub
+      assert sub.notify_on_entry == true
+      assert sub.notify_on_exit == true
+    end
+
+    test "enqueues geofence_created notification for each follower" do
+      creator = create_user(%{"display_name" => "Creator"})
+      follower = create_user(%{"display_name" => "Follower"})
+      group = create_group(creator)
+
+      {:ok, invite} = Groups.get_or_create_invite(group.id, creator.id)
+      {:ok, _} = Groups.join_by_invite_code(follower.id, invite.code)
+
+      {:ok, _} = Groups.grant_visibility(creator.id, group.id, follower.id)
+
+      geofence = create_geofence(group, creator)
+
+      assert_enqueued(
+        worker: PushNotificationWorker,
+        args: %{
+          "type" => "geofence_created",
+          "recipient_id" => follower.id,
+          "geofence_id" => geofence.id,
+          "group_id" => group.id,
+          "creator_id" => creator.id
+        }
+      )
+    end
+
+    test "does not subscribe or notify the creator as a follower" do
+      creator = create_user(%{"display_name" => "SoloCreator"})
+      group = create_group(creator)
+
+      geofence = create_geofence(group, creator)
+
+      # Only the creator's own auto-subscription should exist
+      subs = Geofences.list_geofence_subscribers(geofence.id)
+      assert length(subs) == 1
+      assert hd(subs).user_id == creator.id
+
+      # No geofence_created job should be enqueued
+      refute_enqueued(
+        worker: PushNotificationWorker,
+        args: %{"type" => "geofence_created", "recipient_id" => creator.id}
+      )
     end
   end
 

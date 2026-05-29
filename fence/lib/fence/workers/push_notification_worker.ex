@@ -26,6 +26,52 @@ defmodule Fence.Workers.PushNotificationWorker do
   end
 
   def perform(%Oban.Job{
+        args: %{
+          "type" => "geofence_created",
+          "geofence_id" => geofence_id,
+          "group_id" => group_id,
+          "creator_id" => creator_id,
+          "recipient_id" => recipient_id
+        }
+      }) do
+    geofence = Geofences.get_geofence(geofence_id)
+    creator = Accounts.get_user(creator_id)
+    group = Groups.get_group(group_id)
+    recipient = Accounts.get_user(recipient_id)
+
+    if geofence && creator && group && recipient do
+      tokens = Accounts.get_device_tokens(recipient_id)
+      locale = (recipient && recipient.locale) || "en"
+
+      {title, body} =
+        Gettext.with_locale(FenceWeb.Gettext, locale, fn ->
+          t =
+            gettext("New geofence in %{group_name}",
+              group_name: group.name
+            )
+
+          b =
+            gettext("%{creator_name} created %{geofence_name}",
+              creator_name: creator.display_name,
+              geofence_name: geofence.name
+            )
+
+          {t, b}
+        end)
+
+      for token <- tokens do
+        send_fcm(token.token, title, body, %{
+          type: "geofence_created",
+          geofence_id: geofence.id,
+          group_id: group.id
+        })
+      end
+    end
+
+    :ok
+  end
+
+  def perform(%Oban.Job{
         args: %{"user_id" => triggering_user_id, "geofence_id" => geofence_id, "event" => event}
       }) do
     Logger.info(
@@ -212,6 +258,7 @@ defmodule Fence.Workers.PushNotificationWorker do
       for token <- tokens do
         send_fcm(token.token, title, body, %{
           geofence_id: geofence.id,
+          group_id: geofence.group_id,
           user_id: triggering_user.id,
           event: event
         })

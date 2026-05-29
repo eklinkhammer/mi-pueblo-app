@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:fence/router.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/services/local_notification_service.dart';
 
@@ -25,6 +27,10 @@ class NotificationService {
 
   Future<void> initialize() async {
     try {
+      await _localNotifications.initialize(
+        onSelectNotification: _handleLocalNotificationTap,
+      );
+
       final settings = await _messaging.requestPermission();
       debugPrint('[Notif] Permission status: ${settings.authorizationStatus}');
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
@@ -49,8 +55,18 @@ class NotificationService {
       _messageOpenedSub =
           FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
+      // Handle cold-start: app was terminated, user tapped notification to launch
+      try {
+        final initialMessage = await _messaging.getInitialMessage();
+        if (initialMessage != null) {
+          _handleMessageOpenedApp(initialMessage);
+        }
+      } on Object catch (e) {
+        debugPrint('[Notif] Could not check initial message: $e');
+      }
+
       debugPrint('[Notif] Initialization complete — listening for messages');
-    } on Exception catch (e, stack) {
+    } on Object catch (e, stack) {
       debugPrint('[Notif] FAILED to initialize: $e\n$stack');
     }
   }
@@ -64,15 +80,45 @@ class NotificationService {
       return;
     }
 
+    final payload = jsonEncode({
+      'geofence_id': message.data['geofence_id'],
+      'group_id': message.data['group_id'],
+    });
+
     _localNotifications.show(
       notification.title ?? '',
       notification.body ?? '',
-      payload: message.data['geofence_id'] as String?,
+      payload: payload,
     );
   }
 
   void _handleMessageOpenedApp(RemoteMessage message) {
-    debugPrint('Notification tapped: ${message.data}');
+    debugPrint('[Notif] Notification tapped: ${message.data}');
+    final groupId = message.data['group_id'] as String?;
+    final geofenceId = message.data['geofence_id'] as String?;
+    _navigateToGeofence(groupId, geofenceId);
+  }
+
+  void _handleLocalNotificationTap(String? payload) {
+    if (payload == null) return;
+    try {
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      final groupId = data['group_id'] as String?;
+      final geofenceId = data['geofence_id'] as String?;
+      _navigateToGeofence(groupId, geofenceId);
+    } on Exception catch (e) {
+      debugPrint('[Notif] Failed to parse local notification payload: $e');
+    }
+  }
+
+  void _navigateToGeofence(String? groupId, String? geofenceId) {
+    if (groupId == null || geofenceId == null) return;
+    final router = activeRouter;
+    if (router == null) {
+      debugPrint('[Notif] No router available for navigation');
+      return;
+    }
+    router.go('/groups/$groupId/geofences/$geofenceId');
   }
 
   Future<void> _registerToken(String token) async {

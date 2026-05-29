@@ -85,12 +85,17 @@ defmodule FenceWeb.WebCrossUserTest do
       refute Geofences.opted_out?(user_a.id, geofence.id)
     end
 
-    test "user B subscribes to entry/exit on user A's geofence", %{
+    test "user B is auto-subscribed and can toggle off entry/exit on user A's geofence", %{
       user_a: user_a,
       user_b: user_b,
       group: group
     } do
       geofence = create_geofence(group, user_a, %{"name" => "Gym"})
+
+      # User B is auto-subscribed when geofence is created (mutual visibility)
+      sub = Geofences.get_subscription(user_b.id, geofence.id)
+      assert sub.notify_on_entry == true
+      assert sub.notify_on_exit == true
 
       login_conn = login_via_web(build_conn(), "bob@example.com", "password123")
 
@@ -99,12 +104,13 @@ defmodule FenceWeb.WebCrossUserTest do
         |> recycle()
         |> Phoenix.LiveViewTest.live("/web/groups/#{group.id}/geofences/#{geofence.id}")
 
+      # Toggling turns off the already-enabled notifications
       render_click(view, "toggle_entry")
       render_click(view, "toggle_exit")
 
       sub = Geofences.get_subscription(user_b.id, geofence.id)
-      assert sub.notify_on_entry == true
-      assert sub.notify_on_exit == true
+      assert sub.notify_on_entry == false
+      assert sub.notify_on_exit == false
     end
 
     test "user A reports location → user B sees Alice in Members sidebar", %{

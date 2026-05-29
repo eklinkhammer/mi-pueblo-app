@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/providers/auth_provider.dart';
@@ -39,7 +40,16 @@ final geofenceNotificationProvider = Provider<void>((ref) {
             ? '$displayName has entered $geofenceName'
             : '$displayName has left $geofenceName';
 
-        localNotifications.show(title, body, payload: payload['geofence_id'] as String?);
+        // Extract group_id from the topic (format: "group:<group_id>")
+        final topic = msg['topic'] as String? ?? '';
+        final groupId = topic.startsWith('group:')
+            ? topic.substring('group:'.length)
+            : null;
+
+        localNotifications.show(title, body, payload: jsonEncode({
+          'geofence_id': payload['geofence_id'],
+          'group_id': groupId,
+        }));
       });
 
   ref.onDispose(subscription.cancel);

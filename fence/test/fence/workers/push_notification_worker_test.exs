@@ -231,6 +231,46 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
     end
   end
 
+  describe "geofence_created notification" do
+    test "sends FCM notification for geofence_created" do
+      creator = create_user(%{"display_name" => "Creator"})
+      recipient = create_user(%{"display_name" => "Recipient"})
+      group = create_group(creator)
+
+      {:ok, invite} = Groups.get_or_create_invite(group.id, creator.id)
+      {:ok, _} = Groups.join_by_invite_code(recipient.id, invite.code)
+
+      geofence = create_geofence(group, creator)
+
+      # Register a device token for the recipient
+      {:ok, _} =
+        Fence.Accounts.register_device_token(recipient.id, "fake-fcm-token-123", "ios")
+
+      # The worker should complete without error
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "type" => "geofence_created",
+                 "geofence_id" => geofence.id,
+                 "group_id" => group.id,
+                 "creator_id" => creator.id,
+                 "recipient_id" => recipient.id
+               })
+    end
+
+    test "handles missing entities gracefully" do
+      creator = create_user(%{"display_name" => "Creator"})
+
+      assert :ok =
+               perform_job(PushNotificationWorker, %{
+                 "type" => "geofence_created",
+                 "geofence_id" => Ecto.UUID.generate(),
+                 "group_id" => Ecto.UUID.generate(),
+                 "creator_id" => creator.id,
+                 "recipient_id" => Ecto.UUID.generate()
+               })
+    end
+  end
+
   describe "home geofence filtering" do
     test "suppresses entry notification at triggering user's home by default" do
       {triggering_user, subscriber, geofence, group} = setup_geofence_with_subscriber()

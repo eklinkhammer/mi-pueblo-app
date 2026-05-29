@@ -4,7 +4,7 @@ defmodule Fence.Geofences do
   alias Fence.Geofences.{Geofence, OptOut, Subscription}
   alias Fence.Groups.Membership, as: GroupMembership
   alias Fence.Repo
-  alias Fence.Workers.MergeGeofencesWorker
+  alias Fence.Workers.{MergeGeofencesWorker, PushNotificationWorker}
 
   def create_geofence(attrs) do
     result =
@@ -21,22 +21,8 @@ defmodule Fence.Geofences do
     case result do
       {:ok, geofence} ->
         enqueue_merge(geofence.group_id)
-
-        case upsert_subscription(%{
-               "user_id" => geofence.created_by_id,
-               "geofence_id" => geofence.id,
-               "notify_on_entry" => true,
-               "notify_on_exit" => true
-             }) do
-          {:ok, _} ->
-            :ok
-
-          {:error, changeset} ->
-            Logger.warning(
-              "Failed to auto-subscribe creator #{geofence.created_by_id} to geofence #{geofence.id}: #{inspect(changeset.errors)}"
-            )
-        end
-
+        subscribe_creator(geofence)
+        subscribe_and_notify_followers(geofence)
         {:ok, geofence}
 
       error ->
@@ -207,6 +193,68 @@ defmodule Fence.Geofences do
       """,
       [Ecto.UUID.dump!(geofence_id)]
     )
+  end
+
+  defp subscribe_creator(geofence) do
+    case upsert_subscription(%{
+           "user_id" => geofence.created_by_id,
+           "geofence_id" => geofence.id,
+           "notify_on_entry" => true,
+           "notify_on_exit" => true
+         }) do
+      {:ok, _} ->
+        :ok
+
+      {:error, changeset} ->
+        Logger.warning(
+          "Failed to auto-subscribe creator #{geofence.created_by_id} to geofence #{geofence.id}: #{inspect(changeset.errors)}"
+        )
+    end
+  end
+
+  defp subscribe_and_notify_followers(geofence) do
+    follower_ids =
+      geofence.created_by_id
+      |> Fence.Groups.visible_user_ids(geofence.group_id)
+      |> MapSet.delete(geofence.created_by_id)
+
+    for follower_id <- follower_ids do
+      case upsert_subscription(%{
+             "user_id" => follower_id,
+             "geofence_id" => geofence.id,
+             "notify_on_entry" => true,
+             "notify_on_exit" => true
+           }) do
+        {:ok, _} ->
+          :ok
+
+        {:error, changeset} ->
+          Logger.warning(
+            "Failed to auto-subscribe follower #{follower_id} to geofence #{geofence.id}: #{inspect(changeset.errors)}"
+          )
+      end
+    end
+
+    jobs =
+      Enum.map(follower_ids, fn follower_id ->
+        PushNotificationWorker.new(%{
+          type: "geofence_created",
+          geofence_id: geofence.id,
+          group_id: geofence.group_id,
+          creator_id: geofence.created_by_id,
+          recipient_id: follower_id
+        })
+      end)
+
+    case Oban.insert_all(jobs) do
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to enqueue geofence_created notifications for geofence #{geofence.id}: #{inspect(reason)}"
+        )
+
+      _inserted ->
+        :ok
+    end
   end
 
   defp enqueue_merge(group_id) do

@@ -48,6 +48,8 @@ void main() {
         )).thenAnswer((_) async => mockSettings);
     when(() => mockSettings.authorizationStatus)
         .thenReturn(AuthorizationStatus.authorized);
+    when(() => mockMessaging.getInitialMessage())
+        .thenAnswer((_) async => null);
   }
 
   void stubPermissionDenied() {

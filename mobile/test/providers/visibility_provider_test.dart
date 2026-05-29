@@ -5,6 +5,7 @@ import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/visibility_provider.dart';
 import 'package:fence/services/api_client.dart';
+import 'package:fence/services/local_notification_service.dart';
 import '../helpers/mocks.dart';
 import '../helpers/fakes.dart';
 import '../helpers/test_data.dart';
@@ -73,7 +74,11 @@ void main() {
           (_) async => fakeResponse({'user': userJson}));
 
       container = ProviderContainer(
-        overrides: [apiClientProvider.overrideWithValue(mockApi)],
+        overrides: [
+          apiClientProvider.overrideWithValue(mockApi),
+          localNotificationServiceProvider
+              .overrideWithValue(MockLocalNotificationService()),
+        ],
       );
 
       // Wait for auth to settle to authenticated

@@ -11,4 +11,7 @@ class MockWebSocketService extends Mock implements WebSocketService {}
 class MockLocationService extends Mock implements LocationService {}
 
 class MockLocalNotificationService extends Mock
-    implements LocalNotificationService {}
+    implements LocalNotificationService {
+  @override
+  Future<void> initialize({void Function(String?)? onSelectNotification}) async {}
+}

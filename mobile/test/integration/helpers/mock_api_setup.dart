@@ -137,7 +137,6 @@ Future<void> pumpAppWithMocks(
   when(locService.dispose).thenReturn(null);
 
   // Stub local notification service methods
-  when(mockLocalNotifications.initialize).thenAnswer((_) async {});
   when(() => mockLocalNotifications.show(any(), any(), payload: any(named: 'payload')))
       .thenAnswer((_) async {});
 

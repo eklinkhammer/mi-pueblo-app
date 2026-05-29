@@ -12,8 +12,14 @@ class LocalNotificationService {
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   int _nextId = 0;
+  void Function(String?)? _onSelectNotification;
 
-  Future<void> initialize() async {
+  Future<void> initialize({
+    void Function(String?)? onSelectNotification,
+  }) async {
+    if (onSelectNotification != null) {
+      _onSelectNotification = onSelectNotification;
+    }
     if (_initialized) return;
 
     const androidSettings =
@@ -24,7 +30,12 @@ class LocalNotificationService {
       iOS: iosSettings,
     );
 
-    await _plugin.initialize(settings);
+    await _plugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        _onSelectNotification?.call(response.payload);
+      },
+    );
     _initialized = true;
   }
 
