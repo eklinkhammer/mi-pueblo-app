@@ -256,6 +256,13 @@
   "noHistoryYet": "No history yet",
   "entered": "Entered",
   "exited": "Exited",
+  "arrivedAndSpent": "Arrived at {place} and spent {duration}",
+  "@arrivedAndSpent": {
+    "placeholders": {
+      "place": { "type": "String" },
+      "duration": { "type": "String" }
+    }
+  },
 
   "subscription": "Subscription",
   "villageMember": "Village Member",

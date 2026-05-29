@@ -1,7 +1,7 @@
 defmodule FenceWeb.GeofenceController do
   use FenceWeb, :controller
 
-  alias Fence.{Geofences, Groups, Notifications, Subscriptions}
+  alias Fence.{Geofences, Groups, Locations, Subscriptions}
 
   def my_geofences(conn, _params) do
     user = conn.assigns.current_user
@@ -159,12 +159,9 @@ defmodule FenceWeb.GeofenceController do
         |> MapSet.put(user.id)
         |> MapSet.to_list()
 
-      retention_days = Subscriptions.history_retention_days(user.id)
-      cutoff = DateTime.add(DateTime.utc_now(), -retention_days * 24 * 3600, :second)
+      since = DateTime.add(DateTime.utc_now(), -24 * 3600, :second)
 
-      activities =
-        Notifications.list_geofence_activity(geofence_id, visible_ids)
-        |> Enum.filter(fn a -> DateTime.compare(a.inserted_at, cutoff) != :lt end)
+      activities = Locations.list_geofence_events_since(geofence_id, visible_ids, since)
 
       json(conn, %{activity: activities})
     else

@@ -211,6 +211,13 @@
   "noHistoryYet": "Sin historial aún",
   "entered": "Entró",
   "exited": "Salió",
+  "arrivedAndSpent": "Llegó a {place} y estuvo {duration}",
+  "@arrivedAndSpent": {
+    "placeholders": {
+      "place": { "type": "String" },
+      "duration": { "type": "String" }
+    }
+  },
 
   "subscription": "Suscripción",
   "villageMember": "Miembro del Pueblo",

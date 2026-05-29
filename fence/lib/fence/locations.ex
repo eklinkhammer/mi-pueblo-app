@@ -287,6 +287,24 @@ defmodule Fence.Locations do
     |> Repo.all()
   end
 
+  def list_geofence_events_since(geofence_id, visible_user_ids, since) do
+    from(e in GeofenceEvent,
+      join: u in Fence.Accounts.User,
+      on: u.id == e.user_id,
+      where:
+        e.geofence_id == ^geofence_id and
+          e.user_id in ^visible_user_ids and
+          e.inserted_at >= ^since,
+      order_by: [desc: e.inserted_at],
+      select: %{
+        event: e.event,
+        user_name: fragment("COALESCE(?, 'Deleted user')", u.display_name),
+        inserted_at: e.inserted_at
+      }
+    )
+    |> Repo.all()
+  end
+
   def broadcast_location_update(user_id, location_id) do
     location = Repo.get(DeviceLocation, location_id)
 

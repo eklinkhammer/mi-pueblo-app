@@ -12,6 +12,7 @@ import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/providers/selected_group_provider.dart';
 import 'package:fence/models/member_location.dart';
 import 'package:fence/models/geofence.dart';
+import 'package:fence/models/geofence_event.dart';
 import 'package:fence/models/geofence_presence.dart';
 import 'package:fence/models/app_location.dart';
 import 'package:fence/providers/auth_provider.dart';
@@ -1067,12 +1068,11 @@ class _MemberDetailSheet extends ConsumerWidget {
                   return Text(l10n.noHistoryYet,
                       style: theme.textTheme.bodySmall);
                 }
-                // Show most recent events (limit to 10)
-                final recent = events.take(10).toList();
+                // Combine enter+exit pairs into "arrived and spent" entries
+                final displayItems = _combineEvents(events.take(20).toList());
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: recent.map((e) {
-                    final isArrival = e.event == 'arrival';
+                  children: displayItems.take(10).map((item) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: InkWell(
@@ -1080,47 +1080,51 @@ class _MemberDetailSheet extends ConsumerWidget {
                             ? () {
                                 Navigator.pop(context);
                                 context.go(
-                                    '/groups/$groupId/geofences/${e.geofenceId}');
+                                    '/groups/$groupId/geofences/${item.geofenceId}');
                               }
                             : null,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
-                              isArrival ? Icons.login : Icons.logout,
+                              item.icon,
                               size: 16,
-                              color: isArrival
-                                  ? Colors.green[700]
-                                  : Colors.red[700],
+                              color: item.iconColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _timeAgo(item.timestamp, l10n),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Flexible(
                               child: Text.rich(
                                 TextSpan(
                                   children: [
-                                    TextSpan(
-                                      text: isArrival
-                                          ? '${l10n.arrivedAt} '
-                                          : '${l10n.exited} ',
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                    TextSpan(
-                                      text: e.geofenceName,
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.primary,
-                                        decoration: TextDecoration.underline,
+                                    if (item.duration != null)
+                                      TextSpan(
+                                        text: l10n.arrivedAndSpent(
+                                            item.geofenceName,
+                                            _formatDuration(item.duration!)),
+                                        style: theme.textTheme.bodySmall,
+                                      )
+                                    else ...[
+                                      TextSpan(
+                                        text: item.isEntry
+                                            ? '${l10n.arrivedAt} '
+                                            : '${l10n.exited} ',
+                                        style: theme.textTheme.bodySmall,
                                       ),
-                                    ),
-                                    TextSpan(
-                                      text:
-                                          ' ${_timeAgo(e.insertedAt, l10n)}',
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                        color: theme
-                                            .colorScheme.onSurfaceVariant,
+                                      TextSpan(
+                                        text: item.geofenceName,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.primary,
+                                          decoration: TextDecoration.underline,
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -1150,6 +1154,74 @@ class _MemberDetailSheet extends ConsumerWidget {
     );
   }
 
+  /// Combine enter/exit pairs for the same geofence into single "arrived and spent" items.
+  /// Events are sorted desc (newest first). An "exited" followed by an "entered" for the
+  /// same geofence means the user entered then later exited.
+  static List<_HistoryDisplayItem> _combineEvents(List<GeofenceEvent> events) {
+    final items = <_HistoryDisplayItem>[];
+    final used = <int>{};
+
+    for (var i = 0; i < events.length; i++) {
+      if (used.contains(i)) continue;
+      final e = events[i];
+
+      if (e.event == 'exited') {
+        // Look for a matching "entered" event for the same geofence (later in list = earlier in time)
+        int? matchIdx;
+        for (var j = i + 1; j < events.length; j++) {
+          if (used.contains(j)) continue;
+          if (events[j].geofenceId == e.geofenceId && events[j].event == 'entered') {
+            matchIdx = j;
+            break;
+          }
+        }
+        if (matchIdx != null) {
+          used.add(matchIdx);
+          final entered = events[matchIdx];
+          final duration = e.insertedAt.difference(entered.insertedAt);
+          items.add(_HistoryDisplayItem(
+            geofenceId: e.geofenceId,
+            geofenceName: e.geofenceName,
+            timestamp: entered.insertedAt,
+            isEntry: true,
+            duration: duration,
+            icon: Icons.schedule,
+            iconColor: Colors.blue[700]!,
+          ));
+        } else {
+          items.add(_HistoryDisplayItem(
+            geofenceId: e.geofenceId,
+            geofenceName: e.geofenceName,
+            timestamp: e.insertedAt,
+            isEntry: false,
+            icon: Icons.logout,
+            iconColor: Colors.red[700]!,
+          ));
+        }
+      } else {
+        // "entered" without a prior exit — still there
+        items.add(_HistoryDisplayItem(
+          geofenceId: e.geofenceId,
+          geofenceName: e.geofenceName,
+          timestamp: e.insertedAt,
+          isEntry: true,
+          icon: Icons.login,
+          iconColor: Colors.green[700]!,
+        ));
+      }
+    }
+    return items;
+  }
+
+  static String _formatDuration(Duration d) {
+    if (d.inMinutes < 1) return '<1m';
+    if (d.inMinutes < 60) return '${d.inMinutes}m';
+    final hours = d.inHours;
+    final mins = d.inMinutes % 60;
+    if (mins == 0) return '${hours}h';
+    return '${hours}h ${mins}m';
+  }
+
   static String _timeAgo(DateTime dateTime, AppLocalizations l10n) {
     final diff = DateTime.now().difference(dateTime);
     if (diff.inMinutes < 1) return l10n.timeAgoJustNow;
@@ -1157,6 +1229,26 @@ class _MemberDetailSheet extends ConsumerWidget {
     if (diff.inHours < 24) return l10n.timeAgoHours(diff.inHours);
     return l10n.timeAgoDays(diff.inDays);
   }
+}
+
+class _HistoryDisplayItem {
+  final String geofenceId;
+  final String geofenceName;
+  final DateTime timestamp;
+  final bool isEntry;
+  final Duration? duration;
+  final IconData icon;
+  final Color iconColor;
+
+  const _HistoryDisplayItem({
+    required this.geofenceId,
+    required this.geofenceName,
+    required this.timestamp,
+    required this.isEntry,
+    this.duration,
+    required this.icon,
+    required this.iconColor,
+  });
 }
 
 class _JoinSheetBody extends ConsumerStatefulWidget {

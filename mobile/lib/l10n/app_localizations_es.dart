@@ -555,6 +555,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get exited => 'Salió';
 
   @override
+  String arrivedAndSpent(String place, String duration) {
+    return 'Llegó a $place y estuvo $duration';
+  }
+
+  @override
   String get subscription => 'Suscripción';
 
   @override

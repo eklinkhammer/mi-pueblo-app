@@ -1100,6 +1100,12 @@ abstract class AppLocalizations {
   /// **'Exited'**
   String get exited;
 
+  /// No description provided for @arrivedAndSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrived at {place} and spent {duration}'**
+  String arrivedAndSpent(String place, String duration);
+
   /// No description provided for @subscription.
   ///
   /// In en, this message translates to:
