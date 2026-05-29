@@ -10,7 +10,6 @@ import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/groups_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/providers/selected_group_provider.dart';
-import 'package:fence/providers/history_provider.dart';
 import 'package:fence/providers/sharing_mode_provider.dart';
 import 'package:fence/providers/visibility_provider.dart';
 import 'package:fence/services/api_client.dart';
@@ -86,7 +85,6 @@ class GroupDetailScreen extends ConsumerWidget {
                         onTap: () {
                           ref.read(mapFocusUserProvider.notifier).state = m.id;
                           ref.read(selectedGroupIdProvider.notifier).state = groupId;
-                          ref.read(historyDrawerUserIdProvider.notifier).state = m.id;
                           context.go('/map');
                         },
                       ))
