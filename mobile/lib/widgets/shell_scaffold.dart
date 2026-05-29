@@ -16,7 +16,7 @@ class ShellScaffold extends ConsumerWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/map')) return 0;
     // index 1 is Home drawer — never "selected" since it's not a route
-    if (location.startsWith('/history')) return 2;
+    if (location.startsWith('/groups')) return 2;
     if (location.startsWith('/subscription')) return 3;
     return 0;
   }
@@ -39,7 +39,7 @@ class ShellScaffold extends ConsumerWidget {
                   case 1:
                     _showStatsDrawer(context, ref);
                   case 2:
-                    context.go('/history');
+                    context.go('/groups');
                   case 3:
                     context.go('/subscription');
                 }
@@ -56,9 +56,9 @@ class ShellScaffold extends ConsumerWidget {
                   label: l10n.home,
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.history_outlined),
-                  selectedIcon: const Icon(Icons.history),
-                  label: l10n.history,
+                  icon: const Icon(Icons.group_outlined),
+                  selectedIcon: const Icon(Icons.group),
+                  label: l10n.groups,
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.star_outline),

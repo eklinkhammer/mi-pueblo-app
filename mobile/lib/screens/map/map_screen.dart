@@ -288,14 +288,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           Card(
                             color: cardColor,
                             child: IconButton(
-                              icon: Icon(Icons.group, color: iconColor),
-                              onPressed: () => context.go('/groups'),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Card(
-                            color: cardColor,
-                            child: IconButton(
                               icon: Icon(Icons.settings, color: iconColor),
                               onPressed: () => context.go('/settings'),
                             ),
