@@ -15,12 +15,13 @@ void main() {
   });
 
   group('Navigation', () {
-    testWidgets('tab switching: Map ↔ Groups ↔ Settings via bottom nav',
+    testWidgets('tab switching: Map ↔ Groups ↔ Stats ↔ Settings via bottom nav',
         (tester) async {
       setupAuthenticatedStubs(mockApi);
       setupGroupStubs(mockApi);
       setupGeofenceStubs(mockApi);
       setupLocationStubs(mockApi);
+      setupStatsStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
@@ -31,6 +32,11 @@ void main() {
       await tester.tap(find.text('Groups'));
       await tester.pumpAndSettle();
       expect(find.text('No groups yet'), findsOneWidget);
+
+      // Switch to Stats
+      await tester.tap(find.text('Stats'));
+      await tester.pumpAndSettle();
+      expect(find.text('Claim a home geofence to see stats'), findsOneWidget);
 
       // Switch to Settings
       await tester.tap(find.text('Settings'));
@@ -48,6 +54,7 @@ void main() {
       setupGroupStubs(mockApi);
       setupGeofenceStubs(mockApi);
       setupLocationStubs(mockApi);
+      setupStatsStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
@@ -66,6 +73,7 @@ void main() {
       setupGroupStubs(mockApi);
       setupGeofenceStubs(mockApi);
       setupLocationStubs(mockApi);
+      setupStatsStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
@@ -78,6 +86,7 @@ void main() {
       setupGroupStubs(mockApi, groups: [groupJson]);
       setupGeofenceStubs(mockApi);
       setupLocationStubs(mockApi);
+      setupStatsStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 

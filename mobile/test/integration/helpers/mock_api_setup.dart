@@ -106,6 +106,13 @@ void setupGeofenceStubs(MockApiClient mock,
       .thenAnswer((_) async => fakeResponse(null, statusCode: 201));
 }
 
+/// Stub stats-related methods.
+void setupStatsStubs(MockApiClient mock, {List<Map<String, dynamic>>? stats}) {
+  final statsList = stats ?? [];
+  when(() => mock.getStats())
+      .thenAnswer((_) async => fakeResponse({'stats': statsList}));
+}
+
 /// Stub location-related methods.
 void setupLocationStubs(MockApiClient mock) {
   when(() => mock.getGroupLocations(any()))
