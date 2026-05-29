@@ -535,6 +535,19 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     Map<String, List<String>> userGeofenceNames,
     Map<String, List<GeofencePresence>> userPresences,
   ) {
+    // Build userId -> homeGeofenceId map from group members
+    final groupId = ref.watch(selectedGroupIdProvider);
+    final homeGeofenceIds = <String, String>{};
+    if (groupId != null) {
+      ref.watch(groupMembersProvider(groupId)).whenData((members) {
+        for (final m in members) {
+          if (m.homeGeofenceId != null) {
+            homeGeofenceIds[m.id] = m.homeGeofenceId!;
+          }
+        }
+      });
+    }
+
     return locationsAsync.when(
       data: (locations) {
         final hasEntries = locations.isNotEmpty || geofenceOnlyUsers.isNotEmpty;
@@ -543,9 +556,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         final liveEntries = locations
             .map((l) {
           final geofences = userGeofenceNames[l.userId];
-          final suffix = geofences != null && geofences.isNotEmpty
-              ? ' @ ${geofences.first}'
-              : '';
+          String suffix;
+          if (geofences != null && geofences.isNotEmpty) {
+            // Check if the user's current geofence is their home
+            final userPresenceList = userPresences[l.userId];
+            final isAtHome = userPresenceList != null &&
+                userPresenceList.any((p) => p.geofenceId == homeGeofenceIds[l.userId]);
+            final l10n = AppLocalizations.of(context);
+            suffix = isAtHome ? ' @ ${l10n.home}' : ' @ ${geofences.first}';
+          } else {
+            suffix = '';
+          }
           return InkWell(
             onTap: () {
               _focusOnMember(l);
@@ -594,7 +615,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      '${p.displayName} @ ${p.geofenceName}',
+                      '${p.displayName} @ ${p.geofenceId == homeGeofenceIds[p.userId] ? AppLocalizations.of(context).home : p.geofenceName}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black87),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -630,9 +651,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   MarkerLayer _buildGeofencePresenceMarkerLayer(List<GeofencePresence> presenceUsers) {
+    // Build userId -> homeGeofenceId map
+    final groupId = ref.watch(selectedGroupIdProvider);
+    final homeGeofenceIds = <String, String>{};
+    if (groupId != null) {
+      ref.watch(groupMembersProvider(groupId)).whenData((members) {
+        for (final m in members) {
+          if (m.homeGeofenceId != null) {
+            homeGeofenceIds[m.id] = m.homeGeofenceId!;
+          }
+        }
+      });
+    }
+
     final markers = presenceUsers
         .where((p) => p.geofenceLatitude != null && p.geofenceLongitude != null)
-        .map((p) => Marker(
+        .map((p) {
+          final label = p.geofenceId == homeGeofenceIds[p.userId] ? AppLocalizations.of(context).home : p.geofenceName;
+          return Marker(
               point: LatLng(p.geofenceLatitude!, p.geofenceLongitude!),
               width: 60,
               height: 48,
@@ -641,10 +677,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 child: MemberMarker(
                   userId: p.userId,
                   displayName: p.displayName,
-                  timeAgo: '@ ${p.geofenceName}',
+                  timeAgo: '@ $label',
                 ),
               ),
-            ))
+            );
+        })
         .toList();
     return MarkerLayer(markers: markers);
   }
