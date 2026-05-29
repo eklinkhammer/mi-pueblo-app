@@ -103,45 +103,44 @@ else
   [{_alice_user, alice_gf, _, _}, {_bob_user, bob_gf, _, _}, {_carol_user, carol_gf, _, _}] =
     geofences
 
-  # {visitor, target_geofence, home_geofence, days_ago, duration_minutes}
+  # {visitor, target_geofence, home_geofence, hours_ago, duration_minutes}
   visits = [
     # Alice visits Bob's House (5 times)
-    {alice, bob_gf, alice_gf, 13, 35},
-    {alice, bob_gf, alice_gf, 11, 25},
-    {alice, bob_gf, alice_gf, 8, 45},
-    {alice, bob_gf, alice_gf, 5, 30},
-    {alice, bob_gf, alice_gf, 2, 40},
+    {alice, bob_gf, alice_gf, 13 * 24, 35},
+    {alice, bob_gf, alice_gf, 11 * 24, 25},
+    {alice, bob_gf, alice_gf, 8 * 24, 45},
+    {alice, bob_gf, alice_gf, 5 * 24, 30},
+    {alice, bob_gf, alice_gf, 6, 40},         # 6 hours ago
     # Alice visits Carol's House (3 times)
-    {alice, carol_gf, alice_gf, 12, 50},
-    {alice, carol_gf, alice_gf, 7, 20},
-    {alice, carol_gf, alice_gf, 3, 55},
+    {alice, carol_gf, alice_gf, 12 * 24, 50},
+    {alice, carol_gf, alice_gf, 7 * 24, 20},
+    {alice, carol_gf, alice_gf, 3, 55},        # 3 hours ago
     # Bob visits Alice's House (4 times)
-    {bob, alice_gf, bob_gf, 13, 40},
-    {bob, alice_gf, bob_gf, 10, 30},
-    {bob, alice_gf, bob_gf, 6, 25},
-    {bob, alice_gf, bob_gf, 3, 50},
+    {bob, alice_gf, bob_gf, 13 * 24, 40},
+    {bob, alice_gf, bob_gf, 10 * 24, 30},
+    {bob, alice_gf, bob_gf, 6 * 24, 25},
+    {bob, alice_gf, bob_gf, 8, 50},            # 8 hours ago
     # Bob visits Carol's House (2 times)
-    {bob, carol_gf, bob_gf, 9, 35},
-    {bob, carol_gf, bob_gf, 2, 45},
+    {bob, carol_gf, bob_gf, 9 * 24, 35},
+    {bob, carol_gf, bob_gf, 14, 45},           # 14 hours ago
     # Carol visits Alice's House (6 times)
-    {carol, alice_gf, carol_gf, 13, 30},
-    {carol, alice_gf, carol_gf, 11, 45},
-    {carol, alice_gf, carol_gf, 9, 20},
-    {carol, alice_gf, carol_gf, 7, 55},
-    {carol, alice_gf, carol_gf, 4, 35},
-    {carol, alice_gf, carol_gf, 1, 40},
+    {carol, alice_gf, carol_gf, 13 * 24, 30},
+    {carol, alice_gf, carol_gf, 11 * 24, 45},
+    {carol, alice_gf, carol_gf, 9 * 24, 20},
+    {carol, alice_gf, carol_gf, 7 * 24, 55},
+    {carol, alice_gf, carol_gf, 4 * 24, 35},
+    {carol, alice_gf, carol_gf, 10, 40},       # 10 hours ago
     # Carol visits Bob's House (3 times)
-    {carol, bob_gf, carol_gf, 12, 25},
-    {carol, bob_gf, carol_gf, 8, 50},
-    {carol, bob_gf, carol_gf, 4, 30}
+    {carol, bob_gf, carol_gf, 12 * 24, 25},
+    {carol, bob_gf, carol_gf, 8 * 24, 50},
+    {carol, bob_gf, carol_gf, 4, 30}           # 4 hours ago
   ]
 
   visit_events =
-    Enum.flat_map(visits, fn {visitor, target_gf, home_gf, days_ago, duration_min} ->
+    Enum.flat_map(visits, fn {visitor, target_gf, home_gf, hours_ago, duration_min} ->
       entered_at =
         now
-        |> DateTime.add(-days_ago * 86_400, :second)
-        |> DateTime.add(10 * 3600, :second)  # 10 AM
+        |> DateTime.add(-hours_ago * 3600, :second)
 
       exited_at = DateTime.add(entered_at, duration_min * 60, :second)
       home_at = DateTime.add(exited_at, 600, :second)
