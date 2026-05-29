@@ -6,7 +6,7 @@
 
 alias Fence.{Repo, Accounts, Groups, Geofences, Locations}
 alias Fence.Groups.Invite
-alias Fence.Locations.UserGeofenceState
+alias Fence.Locations.{UserGeofenceState, GeofenceEvent}
 
 # ── Idempotency check ──────────────────────────────────────────────
 if Accounts.get_user_by_email("alice@test.com") do
@@ -98,6 +98,84 @@ else
     end)
 
   Repo.insert_all(UserGeofenceState, state_rows, on_conflict: :nothing)
+
+  # ── Geofence visit history (past 14 days) ────────────────────────
+  [{_alice_user, alice_gf, _, _}, {_bob_user, bob_gf, _, _}, {_carol_user, carol_gf, _, _}] =
+    geofences
+
+  # {visitor, target_geofence, home_geofence, days_ago, duration_minutes}
+  visits = [
+    # Alice visits Bob's House (5 times)
+    {alice, bob_gf, alice_gf, 13, 35},
+    {alice, bob_gf, alice_gf, 11, 25},
+    {alice, bob_gf, alice_gf, 8, 45},
+    {alice, bob_gf, alice_gf, 5, 30},
+    {alice, bob_gf, alice_gf, 2, 40},
+    # Alice visits Carol's House (3 times)
+    {alice, carol_gf, alice_gf, 12, 50},
+    {alice, carol_gf, alice_gf, 7, 20},
+    {alice, carol_gf, alice_gf, 3, 55},
+    # Bob visits Alice's House (4 times)
+    {bob, alice_gf, bob_gf, 13, 40},
+    {bob, alice_gf, bob_gf, 10, 30},
+    {bob, alice_gf, bob_gf, 6, 25},
+    {bob, alice_gf, bob_gf, 3, 50},
+    # Bob visits Carol's House (2 times)
+    {bob, carol_gf, bob_gf, 9, 35},
+    {bob, carol_gf, bob_gf, 2, 45},
+    # Carol visits Alice's House (6 times)
+    {carol, alice_gf, carol_gf, 13, 30},
+    {carol, alice_gf, carol_gf, 11, 45},
+    {carol, alice_gf, carol_gf, 9, 20},
+    {carol, alice_gf, carol_gf, 7, 55},
+    {carol, alice_gf, carol_gf, 4, 35},
+    {carol, alice_gf, carol_gf, 1, 40},
+    # Carol visits Bob's House (3 times)
+    {carol, bob_gf, carol_gf, 12, 25},
+    {carol, bob_gf, carol_gf, 8, 50},
+    {carol, bob_gf, carol_gf, 4, 30}
+  ]
+
+  visit_events =
+    Enum.flat_map(visits, fn {visitor, target_gf, home_gf, days_ago, duration_min} ->
+      entered_at =
+        now
+        |> DateTime.add(-days_ago * 86_400, :second)
+        |> DateTime.add(10 * 3600, :second)  # 10 AM
+
+      exited_at = DateTime.add(entered_at, duration_min * 60, :second)
+      home_at = DateTime.add(exited_at, 600, :second)
+
+      [
+        %{
+          id: Ecto.UUID.generate(),
+          user_id: visitor.id,
+          geofence_id: target_gf.id,
+          event: "entered",
+          inserted_at: entered_at,
+          updated_at: entered_at
+        },
+        %{
+          id: Ecto.UUID.generate(),
+          user_id: visitor.id,
+          geofence_id: target_gf.id,
+          event: "exited",
+          inserted_at: exited_at,
+          updated_at: exited_at
+        },
+        %{
+          id: Ecto.UUID.generate(),
+          user_id: visitor.id,
+          geofence_id: home_gf.id,
+          event: "entered",
+          inserted_at: home_at,
+          updated_at: home_at
+        }
+      ]
+    end)
+
+  Repo.insert_all(GeofenceEvent, visit_events)
+  IO.puts("  Seeded #{length(visit_events)} geofence events (#{length(visits)} visits)")
 
   # ── Summary ────────────────────────────────────────────────────────
   IO.puts("""
