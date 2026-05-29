@@ -188,20 +188,8 @@ class _StatsSheet extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 4),
-          ...stats.yourTopGeofences.map((g) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(g.geofenceName)),
-                    Text(
-                      l10n.visitsCount(g.visitCount),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+          ...stats.yourTopGeofences.map((g) => _buildGeofenceLink(
+                context, ref, stats.groupId, g, theme, l10n)),
         ],
         if (stats.housemates.isNotEmpty) ...[
           const SizedBox(height: 12),
@@ -268,20 +256,8 @@ class _StatsSheet extends ConsumerWidget {
                     else
                       ...hm.topGeofences.map((g) => Padding(
                             padding: const EdgeInsets.only(left: 16),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                children: [
-                                  Expanded(child: Text(g.geofenceName)),
-                                  Text(
-                                    l10n.visitsCount(g.visitCount),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            child: _buildGeofenceLink(
+                                context, ref, stats.groupId, g, theme, l10n),
                           )),
                   ],
                 ),
@@ -289,6 +265,44 @@ class _StatsSheet extends ConsumerWidget {
         ],
         const SizedBox(height: 8),
       ],
+    );
+  }
+
+  Widget _buildGeofenceLink(
+    BuildContext context,
+    WidgetRef ref,
+    String groupId,
+    GeofenceVisitStat g,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: InkWell(
+        onTap: () {
+          Navigator.pop(context);
+          context.go('/groups/$groupId/geofences/${g.geofenceId}');
+        },
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                g.geofenceName,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            Text(
+              l10n.visitsCount(g.visitCount),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

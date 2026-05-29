@@ -111,7 +111,7 @@ defmodule Fence.Stats do
       group_by: [g.id, g.name],
       order_by: [desc: count(e.id)],
       limit: ^limit,
-      select: %{geofence_name: g.name, visit_count: count(e.id)}
+      select: %{geofence_id: g.id, geofence_name: g.name, visit_count: count(e.id)}
     )
     |> Repo.all()
   end

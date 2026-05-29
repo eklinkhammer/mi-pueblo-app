@@ -1,11 +1,17 @@
 class GeofenceVisitStat {
+  final String geofenceId;
   final String geofenceName;
   final int visitCount;
 
-  const GeofenceVisitStat({required this.geofenceName, required this.visitCount});
+  const GeofenceVisitStat({
+    required this.geofenceId,
+    required this.geofenceName,
+    required this.visitCount,
+  });
 
   factory GeofenceVisitStat.fromJson(Map<String, dynamic> json) {
     return GeofenceVisitStat(
+      geofenceId: json['geofence_id'] as String,
       geofenceName: json['geofence_name'] as String,
       visitCount: json['visit_count'] as int,
     );
