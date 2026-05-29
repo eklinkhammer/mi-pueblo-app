@@ -247,5 +247,13 @@
     "placeholders": {
       "url": { "type": "String" }
     }
-  }
+  },
+  "home": "Hogar",
+  "replaceHomeWarning": "Ya tienes un hogar ({currentHome}). Reclamar esta geocerca lo reemplazará.",
+  "@replaceHomeWarning": {
+    "placeholders": {
+      "currentHome": { "type": "String" }
+    }
+  },
+  "replaceHome": "Reemplazar hogar"
 }

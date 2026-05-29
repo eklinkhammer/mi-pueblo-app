@@ -292,5 +292,13 @@
     "placeholders": {
       "url": { "type": "String" }
     }
-  }
+  },
+  "home": "Home",
+  "replaceHomeWarning": "You already have a home ({currentHome}). Claiming this geofence will replace it.",
+  "@replaceHomeWarning": {
+    "placeholders": {
+      "currentHome": { "type": "String" }
+    }
+  },
+  "replaceHome": "Replace Home"
 }

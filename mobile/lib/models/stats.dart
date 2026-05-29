@@ -14,13 +14,22 @@ class GeofenceVisitStat {
 
 class HousemateStat {
   final String displayName;
+  final List<String> currentGeofenceNames;
   final List<GeofenceVisitStat> topGeofences;
 
-  const HousemateStat({required this.displayName, required this.topGeofences});
+  const HousemateStat({
+    required this.displayName,
+    required this.currentGeofenceNames,
+    required this.topGeofences,
+  });
 
   factory HousemateStat.fromJson(Map<String, dynamic> json) {
     return HousemateStat(
       displayName: json['display_name'] as String,
+      currentGeofenceNames: (json['current_geofence_names'] as List?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       topGeofences: (json['top_geofences'] as List)
           .map((e) => GeofenceVisitStat.fromJson(e as Map<String, dynamic>))
           .toList(),

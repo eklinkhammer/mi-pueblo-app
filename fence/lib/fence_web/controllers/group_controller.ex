@@ -121,13 +121,19 @@ defmodule FenceWeb.GroupController do
       json(conn, %{
         members:
           Enum.map(memberships, fn m ->
-            %{
+            base = %{
               id: m.user.id,
               display_name: m.user.display_name,
               email: m.user.email,
               role: m.role,
-              joined_at: m.inserted_at
+              joined_at: m.inserted_at,
+              home_geofence_id: m.home_geofence_id
             }
+
+            case m.home_geofence do
+              %{name: name} -> Map.put(base, :home_geofence_name, name)
+              _ -> base
+            end
           end)
       })
     else

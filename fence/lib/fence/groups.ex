@@ -77,7 +77,8 @@ defmodule Fence.Groups do
     from(m in Membership,
       where: m.group_id == ^group_id,
       join: u in assoc(m, :user),
-      preload: [user: u]
+      left_join: hg in assoc(m, :home_geofence),
+      preload: [user: u, home_geofence: hg]
     )
     |> Repo.all()
   end

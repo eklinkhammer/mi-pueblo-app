@@ -20,6 +20,7 @@ defmodule FenceWeb.StatsController do
               Enum.map(s.housemates, fn hm ->
                 %{
                   display_name: hm.display_name,
+                  current_geofence_names: hm.current_geofence_names,
                   top_geofences:
                     Enum.map(hm.top_geofences, fn tg ->
                       %{geofence_name: tg.geofence_name, visit_count: tg.visit_count}

@@ -27,6 +27,8 @@ class GroupMember {
   final String? email;
   final String role;
   final DateTime joinedAt;
+  final String? homeGeofenceId;
+  final String? homeGeofenceName;
 
   const GroupMember({
     required this.id,
@@ -34,6 +36,8 @@ class GroupMember {
     this.email,
     required this.role,
     required this.joinedAt,
+    this.homeGeofenceId,
+    this.homeGeofenceName,
   });
 
   factory GroupMember.fromJson(Map<String, dynamic> json) {
@@ -43,6 +47,8 @@ class GroupMember {
       email: json['email'] as String?,
       role: json['role'] as String,
       joinedAt: DateTime.parse(json['joined_at'] as String),
+      homeGeofenceId: json['home_geofence_id'] as String?,
+      homeGeofenceName: json['home_geofence_name'] as String?,
     );
   }
 }

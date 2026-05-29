@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
+import 'package:fence/providers/stats_provider.dart';
+import 'package:fence/models/stats.dart';
 
 class ShellScaffold extends ConsumerWidget {
   final Widget child;
@@ -13,8 +15,8 @@ class ShellScaffold extends ConsumerWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/map')) return 0;
     if (location.startsWith('/groups')) return 1;
-    if (location.startsWith('/history')) return 2;
-    if (location.startsWith('/stats')) return 3;
+    // index 2 is Home drawer — never "selected" since it's not a route
+    if (location.startsWith('/history')) return 3;
     if (location.startsWith('/subscription')) return 4;
     return 0;
   }
@@ -37,9 +39,9 @@ class ShellScaffold extends ConsumerWidget {
                   case 1:
                     context.go('/groups');
                   case 2:
-                    context.go('/history');
+                    _showStatsDrawer(context);
                   case 3:
-                    context.go('/stats');
+                    context.go('/history');
                   case 4:
                     context.go('/subscription');
                 }
@@ -56,14 +58,14 @@ class ShellScaffold extends ConsumerWidget {
                   label: l10n.groups,
                 ),
                 NavigationDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home),
+                  label: l10n.home,
+                ),
+                NavigationDestination(
                   icon: const Icon(Icons.history_outlined),
                   selectedIcon: const Icon(Icons.history),
                   label: l10n.history,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.bar_chart_outlined),
-                  selectedIcon: const Icon(Icons.bar_chart),
-                  label: l10n.stats,
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.star_outline),
@@ -73,6 +75,179 @@ class ShellScaffold extends ConsumerWidget {
               ],
             )
           : null,
+    );
+  }
+
+  void _showStatsDrawer(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const _StatsSheet(),
+    );
+  }
+}
+
+class _StatsSheet extends ConsumerWidget {
+  const _StatsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final asyncStats = ref.watch(statsProvider);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.home, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(l10n.home, style: theme.textTheme.titleLarge),
+              ],
+            ),
+            const SizedBox(height: 16),
+            asyncStats.when(
+              data: (stats) {
+                if (stats.isEmpty) {
+                  return Text(
+                    l10n.noStatsYet,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: stats
+                      .map((s) => _buildGroupStats(context, s, l10n, theme))
+                      .toList(),
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (e, _) => Text(l10n.errorWithMessage(e.toString())),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupStats(
+    BuildContext context,
+    GroupStats stats,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(stats.groupName, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.home, color: theme.colorScheme.primary, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${stats.homeGeofenceName} — ${l10n.visitsCount(stats.homeVisitCount)}',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+        if (stats.yourTopGeofences.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(l10n.yourTopPlaces, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 4),
+          ...stats.yourTopGeofences.map((g) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(g.geofenceName)),
+                    Text(
+                      l10n.visitsCount(g.visitCount),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+        if (stats.housemates.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(l10n.housemateTopPlaces, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 4),
+          ...stats.housemates.map((hm) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(hm.displayName,
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600)),
+                        ),
+                        if (hm.currentGeofenceNames.isNotEmpty)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.place, size: 14,
+                                  color: theme.colorScheme.primary),
+                              const SizedBox(width: 2),
+                              Text(
+                                hm.currentGeofenceNames.join(', '),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                    if (hm.topGeofences.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16, top: 4),
+                        child: Text(l10n.noVisitsYet,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant)),
+                      )
+                    else
+                      ...hm.topGeofences.map((g) => Padding(
+                            padding: const EdgeInsets.only(left: 16),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: Row(
+                                children: [
+                                  Expanded(child: Text(g.geofenceName)),
+                                  Text(
+                                    l10n.visitsCount(g.visitCount),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )),
+                  ],
+                ),
+              )),
+        ],
+        const SizedBox(height: 8),
+      ],
     );
   }
 }

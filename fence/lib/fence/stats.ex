@@ -4,6 +4,7 @@ defmodule Fence.Stats do
   alias Fence.Groups.Membership
   alias Fence.Locations.GeofenceEvent
   alias Fence.Geofences.Geofence
+  alias Fence.Locations.UserGeofenceState
   alias Fence.Repo
 
   def get_user_stats(user_id) do
@@ -34,7 +35,8 @@ defmodule Fence.Stats do
       housemates =
         Enum.map(housemate_ids, fn {hm_id, display_name} ->
           top = top_non_home_geofences(hm_id, m.group_id, m.home_geofence_id, 3)
-          %{display_name: display_name, top_geofences: top}
+          current = current_geofence_names(hm_id, m.group_id)
+          %{display_name: display_name, top_geofences: top, current_geofence_names: current}
         end)
 
       your_top = top_non_home_geofences(user_id, m.group_id, m.home_geofence_id, 3)
@@ -69,6 +71,16 @@ defmodule Fence.Stats do
           m.user_id in ^visible_list,
       join: u in assoc(m, :user),
       select: {m.user_id, u.display_name}
+    )
+    |> Repo.all()
+  end
+
+  defp current_geofence_names(user_id, group_id) do
+    from(s in UserGeofenceState,
+      join: g in Geofence,
+      on: g.id == s.geofence_id,
+      where: s.user_id == ^user_id and g.group_id == ^group_id,
+      select: g.name
     )
     |> Repo.all()
   end

@@ -13,7 +13,7 @@ class StatsScreen extends ConsumerWidget {
     final asyncStats = ref.watch(statsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.stats)),
+      appBar: AppBar(title: Text(l10n.home)),
       body: asyncStats.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
@@ -139,8 +139,29 @@ class _HousemateSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(housemate.displayName,
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(housemate.displayName,
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+              ),
+              if (housemate.currentGeofenceNames.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.place, size: 14,
+                        color: theme.colorScheme.primary),
+                    const SizedBox(width: 2),
+                    Text(
+                      housemate.currentGeofenceNames.join(', '),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
           if (housemate.topGeofences.isEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 16, top: 4),

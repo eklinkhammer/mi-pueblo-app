@@ -8,6 +8,7 @@ import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
+import 'package:fence/providers/groups_provider.dart' show groupMembersProvider;
 import 'package:fence/services/geofence_sync_service.dart';
 
 class GeofenceDetailScreen extends ConsumerWidget {
@@ -241,11 +242,46 @@ class GeofenceDetailScreen extends ConsumerWidget {
 
   Future<void> _claimHome(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
+    final currentUserId = ref.read(authProvider).user?.id;
+
+    // Check if user already has a home geofence
+    if (currentUserId != null) {
+      final members = ref.read(groupMembersProvider(groupId)).valueOrNull;
+      final currentMember =
+          members?.where((m) => m.id == currentUserId).firstOrNull;
+      if (currentMember?.homeGeofenceId != null &&
+          currentMember!.homeGeofenceId != geofenceId) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            final dl10n = AppLocalizations.of(dialogContext);
+            return AlertDialog(
+              title: Text(dl10n.replaceHome),
+              content: Text(dl10n.replaceHomeWarning(
+                  currentMember.homeGeofenceName ?? '')),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: Text(dl10n.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text(dl10n.replaceHome),
+                ),
+              ],
+            );
+          },
+        );
+        if (confirmed != true) return;
+      }
+    }
+
     try {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.claimHome(groupId, geofenceId);
       ref.invalidate(
           geofenceResidentsProvider((groupId: groupId, geofenceId: geofenceId)));
+      ref.invalidate(groupMembersProvider(groupId));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.claimedAsHome)),
@@ -267,6 +303,7 @@ class GeofenceDetailScreen extends ConsumerWidget {
       await apiClient.unclaimHome(groupId, geofenceId);
       ref.invalidate(
           geofenceResidentsProvider((groupId: groupId, geofenceId: geofenceId)));
+      ref.invalidate(groupMembersProvider(groupId));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.homeUnclaimed)),

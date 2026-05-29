@@ -268,6 +268,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               ),
                             ),
                           ),
+                          if (selectedGroupId != null) ...[
+                            const SizedBox(width: 4),
+                            Card(
+                              child: IconButton(
+                                icon: const Icon(Icons.add_location_alt),
+                                onPressed: () => context.go(
+                                    '/groups/$selectedGroupId/geofences/create'),
+                              ),
+                            ),
+                          ],
                           const SizedBox(width: 4),
                           Card(
                             child: IconButton(
@@ -286,35 +296,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
         ],
       ),
-      floatingActionButton: selectedGroupId != null
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_myPosition != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: FloatingActionButton(
-                      heroTag: 'myLocation',
-                      onPressed: _centerOnMe,
-                      child: const Icon(Icons.my_location),
-                    ),
-                  ),
-                FloatingActionButton.extended(
-                  heroTag: 'addGeofence',
-                  onPressed: () =>
-                      context.go('/groups/$selectedGroupId/geofences/create'),
-                  icon: const Icon(Icons.add_location_alt),
-                  label: Text(l10n.addGeofence),
-                ),
-              ],
+      floatingActionButton: _myPosition != null
+          ? FloatingActionButton(
+              heroTag: 'myLocation',
+              onPressed: _centerOnMe,
+              child: const Icon(Icons.my_location),
             )
-          : (_myPosition != null
-              ? FloatingActionButton(
-                  heroTag: 'myLocation',
-                  onPressed: _centerOnMe,
-                  child: const Icon(Icons.my_location),
-                )
-              : null),
+          : null,
     );
   }
 
@@ -900,6 +888,24 @@ class _MemberDetailSheet extends ConsumerWidget {
         .where((p) => p.geofenceLatitude != null)
         .toList();
 
+    // Look up home geofence from group members
+    String? homeGeofenceId;
+    String? homeGeofenceName;
+    if (groupId != null) {
+      final membersAsync = ref.watch(groupMembersProvider(groupId!));
+      membersAsync.whenData((members) {
+        final member = members.where((m) => m.id == userId).firstOrNull;
+        if (member != null) {
+          homeGeofenceId = member.homeGeofenceId;
+          homeGeofenceName = member.homeGeofenceName;
+        }
+      });
+    }
+
+    // Check if user is currently at home
+    final isAtHome = homeGeofenceId != null &&
+        currentGeofences.any((p) => p.geofenceId == homeGeofenceId);
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -988,6 +994,40 @@ class _MemberDetailSheet extends ConsumerWidget {
                       ),
                     ),
                   )),
+
+            // Home geofence (shown when not currently at home)
+            if (!isAtHome && homeGeofenceId != null && homeGeofenceName != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: InkWell(
+                  onTap: groupId != null
+                      ? () {
+                          Navigator.pop(context);
+                          context.go('/groups/$groupId/geofences/$homeGeofenceId');
+                        }
+                      : null,
+                  child: Row(
+                    children: [
+                      Icon(Icons.home, size: 18,
+                          color: theme.colorScheme.secondary),
+                      const SizedBox(width: 8),
+                      Text('${l10n.home}: ',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      Flexible(
+                        child: Text(
+                          homeGeofenceName!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             const SizedBox(height: 12),
 

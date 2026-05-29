@@ -647,4 +647,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String inviteShareMessage(String url) {
     return '¡Únete a mi familia en Mi Pueblo! Toca este enlace: $url';
   }
+
+  @override
+  String get home => 'Hogar';
+
+  @override
+  String replaceHomeWarning(String currentHome) {
+    return 'Ya tienes un hogar ($currentHome). Reclamar esta geocerca lo reemplazará.';
+  }
+
+  @override
+  String get replaceHome => 'Reemplazar hogar';
 }

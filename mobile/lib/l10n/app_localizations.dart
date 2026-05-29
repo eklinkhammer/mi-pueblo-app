@@ -1273,6 +1273,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Join my family on Mi Pueblo! Tap this link: {url}'**
   String inviteShareMessage(String url);
+
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @replaceHomeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a home ({currentHome}). Claiming this geofence will replace it.'**
+  String replaceHomeWarning(String currentHome);
+
+  /// No description provided for @replaceHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace Home'**
+  String get replaceHome;
 }
 
 class _AppLocalizationsDelegate
