@@ -255,5 +255,6 @@
       "currentHome": { "type": "String" }
     }
   },
-  "replaceHome": "Reemplazar hogar"
+  "replaceHome": "Reemplazar hogar",
+  "currentlyAtHome": "Actualmente en casa"
 }

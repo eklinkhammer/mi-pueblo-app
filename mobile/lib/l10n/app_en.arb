@@ -300,5 +300,6 @@
       "currentHome": { "type": "String" }
     }
   },
-  "replaceHome": "Replace Home"
+  "replaceHome": "Replace Home",
+  "currentlyAtHome": "Currently at home"
 }

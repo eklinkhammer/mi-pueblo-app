@@ -1291,6 +1291,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replace Home'**
   String get replaceHome;
+
+  /// No description provided for @currentlyAtHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently at home'**
+  String get currentlyAtHome;
 }
 
 class _AppLocalizationsDelegate

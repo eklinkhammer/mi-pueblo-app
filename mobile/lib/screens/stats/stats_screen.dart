@@ -145,7 +145,7 @@ class _HousemateSection extends StatelessWidget {
                 child: Text(housemate.displayName,
                     style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
               ),
-              if (housemate.currentGeofenceNames.isNotEmpty)
+              if (housemate.currentGeofences.isNotEmpty)
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -153,7 +153,7 @@ class _HousemateSection extends StatelessWidget {
                         color: theme.colorScheme.primary),
                     const SizedBox(width: 2),
                     Text(
-                      housemate.currentGeofenceNames.join(', '),
+                      housemate.currentGeofences.map((g) => g.name).join(', '),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.primary,
                       ),

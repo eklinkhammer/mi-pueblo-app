@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/stats_provider.dart';
+import 'package:fence/providers/selected_group_provider.dart';
 import 'package:fence/models/stats.dart';
 
 class ShellScaffold extends ConsumerWidget {
@@ -14,10 +15,9 @@ class ShellScaffold extends ConsumerWidget {
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/map')) return 0;
-    if (location.startsWith('/groups')) return 1;
-    // index 2 is Home drawer — never "selected" since it's not a route
-    if (location.startsWith('/history')) return 3;
-    if (location.startsWith('/subscription')) return 4;
+    // index 1 is Home drawer — never "selected" since it's not a route
+    if (location.startsWith('/history')) return 2;
+    if (location.startsWith('/subscription')) return 3;
     return 0;
   }
 
@@ -37,12 +37,10 @@ class ShellScaffold extends ConsumerWidget {
                   case 0:
                     context.go('/map');
                   case 1:
-                    context.go('/groups');
+                    _showStatsDrawer(context, ref);
                   case 2:
-                    _showStatsDrawer(context);
-                  case 3:
                     context.go('/history');
-                  case 4:
+                  case 3:
                     context.go('/subscription');
                 }
               },
@@ -51,11 +49,6 @@ class ShellScaffold extends ConsumerWidget {
                   icon: const Icon(Icons.map_outlined),
                   selectedIcon: const Icon(Icons.map),
                   label: l10n.map,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.group_outlined),
-                  selectedIcon: const Icon(Icons.group),
-                  label: l10n.groups,
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.home_outlined),
@@ -78,7 +71,19 @@ class ShellScaffold extends ConsumerWidget {
     );
   }
 
-  void _showStatsDrawer(BuildContext context) {
+  void _showStatsDrawer(BuildContext context, WidgetRef ref) {
+    // Pre-fetch stats to center map on home when data is available
+    final stats = ref.read(statsProvider).valueOrNull;
+    if (stats != null && stats.isNotEmpty) {
+      final first = stats.first;
+      if (first.homeLatitude != null && first.homeLongitude != null) {
+        // Navigate to map first, then center
+        context.go('/map');
+        ref.read(mapFocusLatLngProvider.notifier).state =
+            (lat: first.homeLatitude!, lng: first.homeLongitude!);
+      }
+    }
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -124,7 +129,7 @@ class _StatsSheet extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: stats
-                      .map((s) => _buildGroupStats(context, s, l10n, theme))
+                      .map((s) => _buildGroupStats(context, ref, s, l10n, theme))
                       .toList(),
                 );
               },
@@ -144,6 +149,7 @@ class _StatsSheet extends ConsumerWidget {
 
   Widget _buildGroupStats(
     BuildContext context,
+    WidgetRef ref,
     GroupStats stats,
     AppLocalizations l10n,
     ThemeData theme,
@@ -200,21 +206,35 @@ class _StatsSheet extends ConsumerWidget {
                               style: theme.textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w600)),
                         ),
-                        if (hm.currentGeofenceNames.isNotEmpty)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.place, size: 14,
-                                  color: theme.colorScheme.primary),
-                              const SizedBox(width: 2),
-                              Text(
-                                hm.currentGeofenceNames.join(', '),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
+                        if (hm.currentGeofences.isNotEmpty)
+                          ...hm.currentGeofences.map((cg) => Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: InkWell(
+                                  onTap: cg.latitude != null && cg.longitude != null
+                                      ? () {
+                                          Navigator.pop(context);
+                                          context.go('/map');
+                                          ref.read(mapFocusLatLngProvider.notifier).state =
+                                              (lat: cg.latitude!, lng: cg.longitude!);
+                                        }
+                                      : null,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.place, size: 14,
+                                          color: theme.colorScheme.primary),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        cg.name,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.primary,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              )),
                       ],
                     ),
                     if (hm.topGeofences.isEmpty)

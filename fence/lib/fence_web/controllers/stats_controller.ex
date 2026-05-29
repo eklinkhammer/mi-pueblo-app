@@ -15,12 +15,17 @@ defmodule FenceWeb.StatsController do
             group_id: s.group_id,
             group_name: s.group_name,
             home_geofence_name: s.home_geofence_name,
+            home_latitude: s.home_latitude,
+            home_longitude: s.home_longitude,
             home_visit_count: s.home_visit_count,
             housemates:
               Enum.map(s.housemates, fn hm ->
                 %{
                   display_name: hm.display_name,
-                  current_geofence_names: hm.current_geofence_names,
+                  current_geofences:
+                    Enum.map(hm.current_geofences, fn cg ->
+                      %{name: cg.name, latitude: cg.latitude, longitude: cg.longitude}
+                    end),
                   top_geofences:
                     Enum.map(hm.top_geofences, fn tg ->
                       %{geofence_name: tg.geofence_name, visit_count: tg.visit_count}

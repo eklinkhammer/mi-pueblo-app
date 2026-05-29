@@ -658,4 +658,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get replaceHome => 'Reemplazar hogar';
+
+  @override
+  String get currentlyAtHome => 'Actualmente en casa';
 }

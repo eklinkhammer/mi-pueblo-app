@@ -12,22 +12,38 @@ class GeofenceVisitStat {
   }
 }
 
+class CurrentGeofence {
+  final String name;
+  final double? latitude;
+  final double? longitude;
+
+  const CurrentGeofence({required this.name, this.latitude, this.longitude});
+
+  factory CurrentGeofence.fromJson(Map<String, dynamic> json) {
+    return CurrentGeofence(
+      name: json['name'] as String,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+    );
+  }
+}
+
 class HousemateStat {
   final String displayName;
-  final List<String> currentGeofenceNames;
+  final List<CurrentGeofence> currentGeofences;
   final List<GeofenceVisitStat> topGeofences;
 
   const HousemateStat({
     required this.displayName,
-    required this.currentGeofenceNames,
+    required this.currentGeofences,
     required this.topGeofences,
   });
 
   factory HousemateStat.fromJson(Map<String, dynamic> json) {
     return HousemateStat(
       displayName: json['display_name'] as String,
-      currentGeofenceNames: (json['current_geofence_names'] as List?)
-              ?.map((e) => e as String)
+      currentGeofences: (json['current_geofences'] as List?)
+              ?.map((e) => CurrentGeofence.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       topGeofences: (json['top_geofences'] as List)
@@ -41,6 +57,8 @@ class GroupStats {
   final String groupId;
   final String groupName;
   final String homeGeofenceName;
+  final double? homeLatitude;
+  final double? homeLongitude;
   final int homeVisitCount;
   final List<HousemateStat> housemates;
   final List<GeofenceVisitStat> yourTopGeofences;
@@ -49,6 +67,8 @@ class GroupStats {
     required this.groupId,
     required this.groupName,
     required this.homeGeofenceName,
+    this.homeLatitude,
+    this.homeLongitude,
     required this.homeVisitCount,
     required this.housemates,
     required this.yourTopGeofences,
@@ -59,6 +79,8 @@ class GroupStats {
       groupId: json['group_id'] as String,
       groupName: json['group_name'] as String,
       homeGeofenceName: json['home_geofence_name'] as String,
+      homeLatitude: (json['home_latitude'] as num?)?.toDouble(),
+      homeLongitude: (json['home_longitude'] as num?)?.toDouble(),
       homeVisitCount: json['home_visit_count'] as int,
       housemates: (json['housemates'] as List)
           .map((e) => HousemateStat.fromJson(e as Map<String, dynamic>))

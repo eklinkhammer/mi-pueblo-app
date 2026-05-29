@@ -19,7 +19,8 @@ defmodule Fence.Stats do
           group_id: g.id,
           group_name: g.name,
           home_geofence_id: m.home_geofence_id,
-          home_geofence_name: hg.name
+          home_geofence_name: hg.name,
+          home_geofence_center: hg.center
         }
       )
       |> Repo.all()
@@ -35,16 +36,24 @@ defmodule Fence.Stats do
       housemates =
         Enum.map(housemate_ids, fn {hm_id, display_name} ->
           top = top_non_home_geofences(hm_id, m.group_id, m.home_geofence_id, 3)
-          current = current_geofence_names(hm_id, m.group_id)
-          %{display_name: display_name, top_geofences: top, current_geofence_names: current}
+          current = current_geofences(hm_id, m.group_id)
+          %{display_name: display_name, top_geofences: top, current_geofences: current}
         end)
 
       your_top = top_non_home_geofences(user_id, m.group_id, m.home_geofence_id, 3)
+
+      {home_lat, home_lng} =
+        case m.home_geofence_center do
+          %Geo.Point{coordinates: {lng, lat}} -> {lat, lng}
+          _ -> {nil, nil}
+        end
 
       %{
         group_id: m.group_id,
         group_name: m.group_name,
         home_geofence_name: m.home_geofence_name,
+        home_latitude: home_lat,
+        home_longitude: home_lng,
         home_visit_count: home_visit_count,
         housemates: housemates,
         your_top_geofences: your_top
@@ -75,14 +84,22 @@ defmodule Fence.Stats do
     |> Repo.all()
   end
 
-  defp current_geofence_names(user_id, group_id) do
+  defp current_geofences(user_id, group_id) do
     from(s in UserGeofenceState,
       join: g in Geofence,
       on: g.id == s.geofence_id,
       where: s.user_id == ^user_id and g.group_id == ^group_id,
-      select: g.name
+      select: %{name: g.name, center: g.center}
     )
     |> Repo.all()
+    |> Enum.map(fn gf ->
+      {lat, lng} =
+        case gf.center do
+          %Geo.Point{coordinates: {lng, lat}} -> {lat, lng}
+          _ -> {nil, nil}
+        end
+      %{name: gf.name, latitude: lat, longitude: lng}
+    end)
   end
 
   defp top_non_home_geofences(target_user_id, group_id, home_geofence_id, limit) do

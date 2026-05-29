@@ -246,10 +246,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       if (effectiveId != selectedGroupId) {
                         _didAutoSelect = false;
                       }
+                      final topBarTheme = Theme.of(context);
+                      final cardColor = topBarTheme.colorScheme.primaryContainer;
+                      final iconColor = topBarTheme.colorScheme.onPrimaryContainer;
                       return Row(
                         children: [
                           Expanded(
                             child: Card(
+                              color: cardColor,
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: DropdownButton<String>(
@@ -271,8 +275,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           if (selectedGroupId != null) ...[
                             const SizedBox(width: 4),
                             Card(
+                              color: cardColor,
                               child: IconButton(
-                                icon: const Icon(Icons.add_location_alt),
+                                icon: Icon(Icons.add_location_alt, color: iconColor),
                                 onPressed: () => context.go(
                                     '/groups/$selectedGroupId/geofences/create'),
                               ),
@@ -280,8 +285,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           ],
                           const SizedBox(width: 4),
                           Card(
+                            color: cardColor,
                             child: IconButton(
-                              icon: const Icon(Icons.settings),
+                              icon: Icon(Icons.group, color: iconColor),
+                              onPressed: () => context.go('/groups'),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Card(
+                            color: cardColor,
+                            child: IconButton(
+                              icon: Icon(Icons.settings, color: iconColor),
                               onPressed: () => context.go('/settings'),
                             ),
                           ),
@@ -375,6 +389,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           });
         }
       }
+    }
+
+    final focusLatLng = ref.watch(mapFocusLatLngProvider);
+    if (focusLatLng != null) {
+      ref.read(mapFocusLatLngProvider.notifier).state = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(LatLng(focusLatLng.lat, focusLatLng.lng), 15);
+      });
     }
 
     return Stack(
@@ -963,7 +985,13 @@ class _MemberDetailSheet extends ConsumerWidget {
 
             // Current location
             if (currentGeofences.isNotEmpty)
-              ...currentGeofences.map((p) => Padding(
+              ...currentGeofences.map((p) {
+                final isHomeGeofence = p.geofenceId == homeGeofenceId;
+                final label = isHomeGeofence
+                    ? '${l10n.currentlyAtHome}: '
+                    : '${l10n.currentLocation}: ';
+                final icon = isHomeGeofence ? Icons.home : Icons.place;
+                return Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: InkWell(
                       onTap: groupId != null
@@ -974,10 +1002,10 @@ class _MemberDetailSheet extends ConsumerWidget {
                           : null,
                       child: Row(
                         children: [
-                          Icon(Icons.place, size: 18,
+                          Icon(icon, size: 18,
                               color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
-                          Text('${l10n.currentLocation}: ',
+                          Text(label,
                               style: theme.textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w600)),
                           Flexible(
@@ -993,7 +1021,8 @@ class _MemberDetailSheet extends ConsumerWidget {
                         ],
                       ),
                     ),
-                  )),
+                  );
+              }),
 
             // Home geofence (shown when not currently at home)
             if (!isAtHome && homeGeofenceId != null && homeGeofenceName != null)
