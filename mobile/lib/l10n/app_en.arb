@@ -272,6 +272,7 @@
   "geofenceLimitReached": "This group has reached its geofence limit. The group creator can upgrade to add more.",
   "memberLimitReached": "This group has reached its member limit.",
   "groupsYouCanCreate": "Groups you can create",
+  "groupsYouCanJoin": "Groups you can join",
   "membersPerGroup": "Members per group",
   "geofencesPerGroup": "Geofences per group",
   "historyRetention": "History",

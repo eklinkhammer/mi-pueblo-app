@@ -227,6 +227,7 @@
   "geofenceLimitReached": "Este grupo ha alcanzado su límite de geocercas. El creador del grupo puede mejorar su plan.",
   "memberLimitReached": "Este grupo ha alcanzado su límite de miembros.",
   "groupsYouCanCreate": "Grupos que puedes crear",
+  "groupsYouCanJoin": "Grupos a los que puedes unirte",
   "membersPerGroup": "Miembros por grupo",
   "geofencesPerGroup": "Geocercas por grupo",
   "historyRetention": "Historial",

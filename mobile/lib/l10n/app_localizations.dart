@@ -1190,6 +1190,12 @@ abstract class AppLocalizations {
   /// **'Groups you can create'**
   String get groupsYouCanCreate;
 
+  /// No description provided for @groupsYouCanJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups you can join'**
+  String get groupsYouCanJoin;
+
   /// No description provided for @membersPerGroup.
   ///
   /// In en, this message translates to:

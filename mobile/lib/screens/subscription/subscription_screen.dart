@@ -157,6 +157,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                               : -1,
                       l10n,
                     )}',
+                    '${l10n.groupsYouCanJoin}: ${l10n.unlimited}',
                     '${l10n.membersPerGroup}: ${tier == SubscriptionTier.villageMember ? 10 : tier == SubscriptionTier.villageElder ? 50 : 100}',
                     '${l10n.geofencesPerGroup}: ${_limitDisplay(
                       tier == SubscriptionTier.villageMember ? 3 : -1,

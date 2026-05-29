@@ -102,9 +102,20 @@ class GroupDetailScreen extends ConsumerWidget {
 
           // Geofences section
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(l10n.geofences,
-                style: Theme.of(context).textTheme.titleMedium),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(l10n.geofences,
+                      style: Theme.of(context).textTheme.titleMedium),
+                ),
+                TextButton.icon(
+                  icon: const Icon(Icons.add_location_alt, size: 18),
+                  label: Text(l10n.addGeofence),
+                  onPressed: () => context.go('/groups/$groupId/geofences/create'),
+                ),
+              ],
+            ),
           ),
           geofencesAsync.when(
             data: (geofences) {
@@ -135,11 +146,6 @@ class GroupDetailScreen extends ConsumerWidget {
                 Center(child: Text(l10n.errorWithMessage(e.toString()))),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/groups/$groupId/geofences/create'),
-        icon: const Icon(Icons.add_location_alt),
-        label: Text(l10n.addGeofence),
       ),
     );
   }

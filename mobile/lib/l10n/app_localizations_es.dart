@@ -603,6 +603,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get groupsYouCanCreate => 'Grupos que puedes crear';
 
   @override
+  String get groupsYouCanJoin => 'Grupos a los que puedes unirte';
+
+  @override
   String get membersPerGroup => 'Miembros por grupo';
 
   @override

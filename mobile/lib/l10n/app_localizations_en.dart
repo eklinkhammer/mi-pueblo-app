@@ -597,6 +597,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupsYouCanCreate => 'Groups you can create';
 
   @override
+  String get groupsYouCanJoin => 'Groups you can join';
+
+  @override
   String get membersPerGroup => 'Members per group';
 
   @override
