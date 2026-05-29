@@ -1,7 +1,7 @@
 defmodule FenceWeb.GeofenceController do
   use FenceWeb, :controller
 
-  alias Fence.{Geofences, Groups, Notifications}
+  alias Fence.{Geofences, Groups, Notifications, Subscriptions}
 
   def my_geofences(conn, _params) do
     user = conn.assigns.current_user
@@ -24,24 +24,30 @@ defmodule FenceWeb.GeofenceController do
     user = conn.assigns.current_user
 
     if Groups.member?(user.id, group_id) do
-      attrs =
-        params
-        |> Map.put("group_id", group_id)
-        |> Map.put("created_by_id", user.id)
-        |> put_default_expiry()
+      if not Subscriptions.can_create_geofence?(group_id) do
+        conn
+        |> put_status(:payment_required)
+        |> json(%{error: %{code: "geofence_limit_reached", message: "Upgrade to create more geofences"}})
+      else
+        attrs =
+          params
+          |> Map.put("group_id", group_id)
+          |> Map.put("created_by_id", user.id)
+          |> put_default_expiry()
 
-      case Geofences.create_geofence(attrs) do
-        {:ok, geofence} ->
-          broadcast_geofences_changed(group_id)
+        case Geofences.create_geofence(attrs) do
+          {:ok, geofence} ->
+            broadcast_geofences_changed(group_id)
 
-          conn
-          |> put_status(:created)
-          |> json(%{geofence: geofence_json(geofence)})
+            conn
+            |> put_status(:created)
+            |> json(%{geofence: geofence_json(geofence)})
 
-        {:error, reason} ->
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{error: %{code: "validation_failed", message: inspect(reason)}})
+          {:error, reason} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: %{code: "validation_failed", message: inspect(reason)}})
+        end
       end
     else
       forbidden(conn)
@@ -153,7 +159,13 @@ defmodule FenceWeb.GeofenceController do
         |> MapSet.put(user.id)
         |> MapSet.to_list()
 
-      activities = Notifications.list_geofence_activity(geofence_id, visible_ids)
+      retention_days = Subscriptions.history_retention_days(user.id)
+      cutoff = DateTime.add(DateTime.utc_now(), -retention_days * 24 * 3600, :second)
+
+      activities =
+        Notifications.list_geofence_activity(geofence_id, visible_ids)
+        |> Enum.filter(fn a -> DateTime.compare(a.inserted_at, cutoff) != :lt end)
+
       json(conn, %{activity: activities})
     else
       nil -> not_found(conn)

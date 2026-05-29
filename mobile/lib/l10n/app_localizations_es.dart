@@ -549,6 +549,83 @@ class AppLocalizationsEs extends AppLocalizations {
   String get exited => 'Salió';
 
   @override
+  String get subscription => 'Suscripción';
+
+  @override
+  String get villageMember => 'Miembro del Pueblo';
+
+  @override
+  String get villageElder => 'Anciano del Pueblo';
+
+  @override
+  String get villageLeader => 'Líder del Pueblo';
+
+  @override
+  String get currentPlan => 'Plan Actual';
+
+  @override
+  String get freeTier => 'Gratis';
+
+  @override
+  String get perMonth => '/mes';
+
+  @override
+  String get upgrade => 'Mejorar';
+
+  @override
+  String get subscribe => 'Suscribirse';
+
+  @override
+  String get restorePurchases => 'Restaurar Compras';
+
+  @override
+  String get restorePurchasesSuccess => 'Compras restauradas';
+
+  @override
+  String get groupLimitReached =>
+      'Has alcanzado el límite de grupos. Mejora tu plan para crear más.';
+
+  @override
+  String get geofenceLimitReached =>
+      'Este grupo ha alcanzado su límite de geocercas. El creador del grupo puede mejorar su plan.';
+
+  @override
+  String get memberLimitReached =>
+      'Este grupo ha alcanzado su límite de miembros.';
+
+  @override
+  String get groupsYouCanCreate => 'Grupos que puedes crear';
+
+  @override
+  String get membersPerGroup => 'Miembros por grupo';
+
+  @override
+  String get geofencesPerGroup => 'Geocercas por grupo';
+
+  @override
+  String get historyRetention => 'Historial';
+
+  @override
+  String get days => 'días';
+
+  @override
+  String get unlimited => 'Ilimitado';
+
+  @override
+  String get renewsOn => 'Se renueva el';
+
+  @override
+  String get errorGroupLimitReached => 'Mejora tu plan para crear más grupos';
+
+  @override
+  String get errorGeofenceLimitReached =>
+      'Límite de geocercas alcanzado para este grupo';
+
+  @override
+  String get errorMemberLimitReached =>
+      'Límite de miembros del grupo alcanzado';
+
+  @override
   String get close => 'Cerrar';
 
   @override

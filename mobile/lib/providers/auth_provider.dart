@@ -6,6 +6,7 @@ import 'package:fence/models/user.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/services/local_notification_service.dart';
 import 'package:fence/services/notification_service.dart';
+import 'package:fence/services/revenuecat_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -63,6 +64,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(data['user'] as Map<String, dynamic>);
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
       await _initNotifications();
+      await _initRevenueCat(user.id);
     } on Exception catch (_) {
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
@@ -73,6 +75,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _notificationService =
         NotificationService(_apiClient, _localNotifications);
     await _notificationService!.initialize();
+  }
+
+  Future<void> _initRevenueCat(String userId) async {
+    try {
+      await RevenueCatService.initialize(userId);
+    } on Exception catch (_) {
+      // RevenueCat init failure is non-fatal
+    }
   }
 
   Future<void> register(

@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:dio/dio.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/providers/geofences_provider.dart';
+import 'package:fence/widgets/upgrade_banner.dart';
 
 class GeofenceCreateScreen extends ConsumerStatefulWidget {
   final String groupId;
@@ -25,6 +27,7 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
   LatLng? _selectedLocation;
   bool _loading = false;
   bool _searching = false;
+  bool _showUpgradeBanner = false;
   List<_SearchResult> _searchResults = [];
 
   Future<void> _search() async {
@@ -100,6 +103,16 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
       if (mounted) {
         context.go('/groups/${widget.groupId}');
       }
+    } on DioException catch (e) {
+      if (mounted) {
+        if (e.response?.statusCode == 402) {
+          setState(() => _showUpgradeBanner = true);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.failedWithError(e.toString()))),
+          );
+        }
+      }
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,6 +133,8 @@ class _GeofenceCreateScreenState extends ConsumerState<GeofenceCreateScreen> {
       appBar: AppBar(title: Text(l10n.createGeofence)),
       body: Column(
         children: [
+          if (_showUpgradeBanner)
+            UpgradeBanner(message: l10n.geofenceLimitReached),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

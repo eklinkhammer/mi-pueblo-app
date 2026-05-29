@@ -1,7 +1,7 @@
 defmodule FenceWeb.GroupController do
   use FenceWeb, :controller
 
-  alias Fence.Groups
+  alias Fence.{Groups, Subscriptions}
 
   def index(conn, _params) do
     groups = Groups.list_user_groups_with_sharing_count(conn.assigns.current_user.id)
@@ -15,16 +15,24 @@ defmodule FenceWeb.GroupController do
   end
 
   def create(conn, params) do
-    case Groups.create_group(conn.assigns.current_user, params) do
-      {:ok, group} ->
-        conn
-        |> put_status(:created)
-        |> json(%{group: group_json(group)})
+    user = conn.assigns.current_user
 
-      {:error, reason} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: %{code: "validation_failed", message: inspect(reason)}})
+    if not Subscriptions.can_create_group?(user.id) do
+      conn
+      |> put_status(:payment_required)
+      |> json(%{error: %{code: "group_limit_reached", message: "Upgrade your plan to create more groups"}})
+    else
+      case Groups.create_group(user, params) do
+        {:ok, group} ->
+          conn
+          |> put_status(:created)
+          |> json(%{group: group_json(group)})
+
+        {:error, reason} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: %{code: "validation_failed", message: inspect(reason)}})
+      end
     end
   end
 
@@ -95,6 +103,11 @@ defmodule FenceWeb.GroupController do
         conn
         |> put_status(:conflict)
         |> json(%{error: %{code: "already_member", message: "Already a member"}})
+
+      {:error, :member_limit_reached} ->
+        conn
+        |> put_status(:payment_required)
+        |> json(%{error: %{code: "member_limit_reached", message: "Group member limit reached"}})
     end
   end
 

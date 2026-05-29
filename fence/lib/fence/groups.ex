@@ -3,6 +3,7 @@ defmodule Fence.Groups do
   alias Fence.Accounts
   alias Fence.Groups.{Group, Invite, Membership, VisibilityPair}
   alias Fence.Repo
+  alias Fence.Subscriptions
   alias Fence.Workers.PushNotificationWorker
 
   def create_group(user, attrs) do
@@ -181,30 +182,34 @@ defmodule Fence.Groups do
   end
 
   defp do_anonymous_join(invite, user_attrs) do
-    Repo.transaction(fn ->
-      case Accounts.create_anonymous_user(user_attrs) do
-        {:ok, user} ->
-          %Membership{}
-          |> Membership.changeset(%{
-            user_id: user.id,
-            group_id: invite.group_id,
-            role: "member"
-          })
-          |> Repo.insert!()
+    if not Subscriptions.can_add_member?(invite.group_id) do
+      {:error, :member_limit_reached}
+    else
+      Repo.transaction(fn ->
+        case Accounts.create_anonymous_user(user_attrs) do
+          {:ok, user} ->
+            %Membership{}
+            |> Membership.changeset(%{
+              user_id: user.id,
+              group_id: invite.group_id,
+              role: "member"
+            })
+            |> Repo.insert!()
 
-          create_pending_visibility_pairs(invite.group_id, user.id)
+            create_pending_visibility_pairs(invite.group_id, user.id)
 
-          %{type: "member_joined", group_id: invite.group_id, user_id: user.id}
-          |> PushNotificationWorker.new()
-          |> Oban.insert()
+            %{type: "member_joined", group_id: invite.group_id, user_id: user.id}
+            |> PushNotificationWorker.new()
+            |> Oban.insert()
 
-          group = Repo.get!(Group, invite.group_id)
-          {user, group}
+            group = Repo.get!(Group, invite.group_id)
+            {user, group}
 
-        {:error, changeset} ->
-          Repo.rollback(changeset)
-      end
-    end)
+          {:error, changeset} ->
+            Repo.rollback(changeset)
+        end
+      end)
+    end
   end
 
   def join_by_invite_code(user_id, code) do
@@ -252,24 +257,28 @@ defmodule Fence.Groups do
   end
 
   defp do_join(user_id, group_id) do
-    %Membership{}
-    |> Membership.changeset(%{user_id: user_id, group_id: group_id, role: "member"})
-    |> Repo.insert()
-    |> case do
-      {:ok, membership} ->
-        create_pending_visibility_pairs(group_id, user_id)
+    if not Subscriptions.can_add_member?(group_id) do
+      {:error, :member_limit_reached}
+    else
+      %Membership{}
+      |> Membership.changeset(%{user_id: user_id, group_id: group_id, role: "member"})
+      |> Repo.insert()
+      |> case do
+        {:ok, membership} ->
+          create_pending_visibility_pairs(group_id, user_id)
 
-        %{type: "member_joined", group_id: group_id, user_id: user_id}
-        |> PushNotificationWorker.new()
-        |> Oban.insert()
+          %{type: "member_joined", group_id: group_id, user_id: user_id}
+          |> PushNotificationWorker.new()
+          |> Oban.insert()
 
-        {:ok, Repo.preload(membership, :group)}
+          {:ok, Repo.preload(membership, :group)}
 
-      {:error, %{errors: [{:user_id, _} | _]}} ->
-        {:error, :already_member}
+        {:error, %{errors: [{:user_id, _} | _]}} ->
+          {:error, :already_member}
 
-      error ->
-        error
+        error ->
+          error
+      end
     end
   end
 

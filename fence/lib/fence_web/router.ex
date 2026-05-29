@@ -34,6 +34,9 @@ defmodule FenceWeb.Router do
     post "/auth/anonymous-create", AuthController, :anonymous_create
     post "/auth/forgot-password", AuthController, :forgot_password
     post "/auth/reset-password", AuthController, :reset_password
+
+    # Webhooks (unauthenticated, use shared secret)
+    post "/webhooks/revenuecat", WebhookController, :revenuecat
   end
 
   scope "/api/v1", FenceWeb do
@@ -89,6 +92,11 @@ defmodule FenceWeb.Router do
 
     # Stats
     get "/stats", StatsController, :index
+
+    # Subscription
+    get "/subscription", SubscriptionController, :show
+    get "/subscription/limits", SubscriptionController, :limits
+    post "/subscription/restore", SubscriptionController, :restore
 
     # Geocoding
     get "/geocode", GeocodingController, :search

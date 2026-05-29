@@ -40,7 +40,8 @@ config :fence, Oban,
     {Oban.Plugins.Cron,
      crontab: [
        {"0 * * * *", Fence.Workers.ExpireGeofencesWorker},
-       {"0 */6 * * *", Fence.Workers.CleanupPasswordResetCodesWorker}
+       {"0 */6 * * *", Fence.Workers.CleanupPasswordResetCodesWorker},
+       {"0 3 * * *", Fence.Workers.HistoryCleanupWorker}
      ]}
   ]
 

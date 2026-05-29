@@ -49,6 +49,15 @@ if google_client_ids do
   config :fence, :google_oauth_client_ids, ids
 end
 
+# RevenueCat
+if rc_api_key = System.get_env("REVENUECAT_API_KEY") do
+  config :fence, :revenuecat_api_key, rc_api_key
+end
+
+if rc_webhook_secret = System.get_env("REVENUECAT_WEBHOOK_SECRET") do
+  config :fence, :revenuecat_webhook_secret, rc_webhook_secret
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

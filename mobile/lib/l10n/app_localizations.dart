@@ -1088,6 +1088,150 @@ abstract class AppLocalizations {
   /// **'Exited'**
   String get exited;
 
+  /// No description provided for @subscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get subscription;
+
+  /// No description provided for @villageMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Village Member'**
+  String get villageMember;
+
+  /// No description provided for @villageElder.
+  ///
+  /// In en, this message translates to:
+  /// **'Village Elder'**
+  String get villageElder;
+
+  /// No description provided for @villageLeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Village Leader'**
+  String get villageLeader;
+
+  /// No description provided for @currentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Plan'**
+  String get currentPlan;
+
+  /// No description provided for @freeTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get freeTier;
+
+  /// No description provided for @perMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'/mo'**
+  String get perMonth;
+
+  /// No description provided for @upgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get upgrade;
+
+  /// No description provided for @subscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe'**
+  String get subscribe;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Purchases'**
+  String get restorePurchases;
+
+  /// No description provided for @restorePurchasesSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases restored'**
+  String get restorePurchasesSuccess;
+
+  /// No description provided for @groupLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached your group limit. Upgrade to create more.'**
+  String get groupLimitReached;
+
+  /// No description provided for @geofenceLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'This group has reached its geofence limit. The group creator can upgrade to add more.'**
+  String get geofenceLimitReached;
+
+  /// No description provided for @memberLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'This group has reached its member limit.'**
+  String get memberLimitReached;
+
+  /// No description provided for @groupsYouCanCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups you can create'**
+  String get groupsYouCanCreate;
+
+  /// No description provided for @membersPerGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Members per group'**
+  String get membersPerGroup;
+
+  /// No description provided for @geofencesPerGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Geofences per group'**
+  String get geofencesPerGroup;
+
+  /// No description provided for @historyRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get historyRetention;
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get days;
+
+  /// No description provided for @unlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get unlimited;
+
+  /// No description provided for @renewsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews on'**
+  String get renewsOn;
+
+  /// No description provided for @errorGroupLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade your plan to create more groups'**
+  String get errorGroupLimitReached;
+
+  /// No description provided for @errorGeofenceLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Geofence limit reached for this group'**
+  String get errorGeofenceLimitReached;
+
+  /// No description provided for @errorMemberLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Group member limit reached'**
+  String get errorMemberLimitReached;
+
   /// No description provided for @close.
   ///
   /// In en, this message translates to:

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/groups_provider.dart';
+import 'package:fence/providers/subscription_provider.dart';
+import 'package:fence/widgets/upgrade_banner.dart';
 
 class GroupCreateScreen extends ConsumerStatefulWidget {
   const GroupCreateScreen({super.key});
@@ -41,6 +43,8 @@ class _GroupCreateScreenState extends ConsumerState<GroupCreateScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final canCreate = ref.watch(canCreateGroupProvider);
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.createGroup)),
       body: Padding(
@@ -48,6 +52,9 @@ class _GroupCreateScreenState extends ConsumerState<GroupCreateScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (!canCreate)
+              UpgradeBanner(message: l10n.groupLimitReached),
+            if (!canCreate) const SizedBox(height: 16),
             TextField(
               controller: _nameController,
               decoration: InputDecoration(

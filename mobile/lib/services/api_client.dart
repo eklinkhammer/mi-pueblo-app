@@ -275,6 +275,16 @@ class ApiClient {
   Future<Response<Map<String, dynamic>>> getStats() =>
       _dio.get<Map<String, dynamic>>('/stats');
 
+  // Subscription
+  Future<Response<Map<String, dynamic>>> getSubscription_() =>
+      _dio.get<Map<String, dynamic>>('/subscription');
+
+  Future<Response<Map<String, dynamic>>> getSubscriptionLimits() =>
+      _dio.get<Map<String, dynamic>>('/subscription/limits');
+
+  Future<Response<Map<String, dynamic>>> restoreSubscription() =>
+      _dio.post<Map<String, dynamic>>('/subscription/restore');
+
   // History
   Future<Response<Map<String, dynamic>>> getUserHistory(String userId) =>
       _dio.get<Map<String, dynamic>>('/users/$userId/history');

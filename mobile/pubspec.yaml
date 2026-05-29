@@ -48,6 +48,9 @@ dependencies:
   share_plus: ^10.1.4
   app_links: ^6.3.3
 
+  # In-App Purchases
+  purchases_flutter: ^8.0.0
+
   # Utilities
   url_launcher: ^6.3.1
 

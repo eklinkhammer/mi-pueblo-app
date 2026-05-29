@@ -544,6 +544,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exited => 'Exited';
 
   @override
+  String get subscription => 'Subscription';
+
+  @override
+  String get villageMember => 'Village Member';
+
+  @override
+  String get villageElder => 'Village Elder';
+
+  @override
+  String get villageLeader => 'Village Leader';
+
+  @override
+  String get currentPlan => 'Current Plan';
+
+  @override
+  String get freeTier => 'Free';
+
+  @override
+  String get perMonth => '/mo';
+
+  @override
+  String get upgrade => 'Upgrade';
+
+  @override
+  String get subscribe => 'Subscribe';
+
+  @override
+  String get restorePurchases => 'Restore Purchases';
+
+  @override
+  String get restorePurchasesSuccess => 'Purchases restored';
+
+  @override
+  String get groupLimitReached =>
+      'You\'ve reached your group limit. Upgrade to create more.';
+
+  @override
+  String get geofenceLimitReached =>
+      'This group has reached its geofence limit. The group creator can upgrade to add more.';
+
+  @override
+  String get memberLimitReached => 'This group has reached its member limit.';
+
+  @override
+  String get groupsYouCanCreate => 'Groups you can create';
+
+  @override
+  String get membersPerGroup => 'Members per group';
+
+  @override
+  String get geofencesPerGroup => 'Geofences per group';
+
+  @override
+  String get historyRetention => 'History';
+
+  @override
+  String get days => 'days';
+
+  @override
+  String get unlimited => 'Unlimited';
+
+  @override
+  String get renewsOn => 'Renews on';
+
+  @override
+  String get errorGroupLimitReached =>
+      'Upgrade your plan to create more groups';
+
+  @override
+  String get errorGeofenceLimitReached =>
+      'Geofence limit reached for this group';
+
+  @override
+  String get errorMemberLimitReached => 'Group member limit reached';
+
+  @override
   String get close => 'Close';
 
   @override
