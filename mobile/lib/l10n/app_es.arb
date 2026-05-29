@@ -191,6 +191,20 @@
   "leaveGroupConfirmation": "Ya no verás los miembros ni las geocercas de este grupo.",
   "leave": "Salir",
 
+  "stats": "Estadísticas",
+  "noStatsYet": "Marca un hogar para ver estadísticas",
+  "homeVisits": "Visitas al hogar",
+  "totalVisits": "Visitas totales",
+  "yourTopPlaces": "Tus lugares frecuentes",
+  "housemateTopPlaces": "Lugares frecuentes de compañeros",
+  "visitsCount": "{count} visitas",
+  "@visitsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "noVisitsYet": "Sin visitas aún",
+
   "history": "Historial",
   "noHistoryYet": "Sin historial aún",
   "entered": "Entró",

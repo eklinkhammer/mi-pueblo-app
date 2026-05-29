@@ -14,7 +14,8 @@ class ShellScaffold extends ConsumerWidget {
     if (location.startsWith('/map')) return 0;
     if (location.startsWith('/groups')) return 1;
     if (location.startsWith('/history')) return 2;
-    if (location.startsWith('/settings')) return 3;
+    if (location.startsWith('/stats')) return 3;
+    if (location.startsWith('/settings')) return 4;
     return 0;
   }
 
@@ -38,6 +39,8 @@ class ShellScaffold extends ConsumerWidget {
                   case 2:
                     context.go('/history');
                   case 3:
+                    context.go('/stats');
+                  case 4:
                     context.go('/settings');
                 }
               },
@@ -56,6 +59,11 @@ class ShellScaffold extends ConsumerWidget {
                   icon: const Icon(Icons.history_outlined),
                   selectedIcon: const Icon(Icons.history),
                   label: l10n.history,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.bar_chart_outlined),
+                  selectedIcon: const Icon(Icons.bar_chart),
+                  label: l10n.stats,
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.settings_outlined),

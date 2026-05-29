@@ -511,6 +511,32 @@ class AppLocalizationsEs extends AppLocalizations {
   String get leave => 'Salir';
 
   @override
+  String get stats => 'Estadísticas';
+
+  @override
+  String get noStatsYet => 'Marca un hogar para ver estadísticas';
+
+  @override
+  String get homeVisits => 'Visitas al hogar';
+
+  @override
+  String get totalVisits => 'Visitas totales';
+
+  @override
+  String get yourTopPlaces => 'Tus lugares frecuentes';
+
+  @override
+  String get housemateTopPlaces => 'Lugares frecuentes de compañeros';
+
+  @override
+  String visitsCount(int count) {
+    return '$count visitas';
+  }
+
+  @override
+  String get noVisitsYet => 'Sin visitas aún';
+
+  @override
   String get history => 'Historial';
 
   @override

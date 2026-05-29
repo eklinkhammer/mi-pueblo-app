@@ -506,6 +506,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leave => 'Leave';
 
   @override
+  String get stats => 'Stats';
+
+  @override
+  String get noStatsYet => 'Claim a home geofence to see stats';
+
+  @override
+  String get homeVisits => 'Home Visits';
+
+  @override
+  String get totalVisits => 'Total Visits';
+
+  @override
+  String get yourTopPlaces => 'Your Top Places';
+
+  @override
+  String get housemateTopPlaces => 'Housemate Top Places';
+
+  @override
+  String visitsCount(int count) {
+    return '$count visits';
+  }
+
+  @override
+  String get noVisitsYet => 'No visits yet';
+
+  @override
   String get history => 'History';
 
   @override

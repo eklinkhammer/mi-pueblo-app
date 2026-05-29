@@ -17,6 +17,7 @@ import 'package:fence/screens/geofences/geofence_create_screen.dart';
 import 'package:fence/screens/geofences/geofence_detail_screen.dart';
 import 'package:fence/screens/groups/group_notification_settings_screen.dart';
 import 'package:fence/screens/history/history_screen.dart';
+import 'package:fence/screens/stats/stats_screen.dart';
 import 'package:fence/screens/settings/settings_screen.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
 
@@ -141,6 +142,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ),
               ),
             ],
+          ),
+          GoRoute(
+            path: '/stats',
+            builder: (context, state) => const StatsScreen(),
           ),
           GoRoute(
             path: '/settings',

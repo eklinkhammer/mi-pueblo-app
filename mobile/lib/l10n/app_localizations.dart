@@ -1016,6 +1016,54 @@ abstract class AppLocalizations {
   /// **'Leave'**
   String get leave;
 
+  /// No description provided for @stats.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats'**
+  String get stats;
+
+  /// No description provided for @noStatsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim a home geofence to see stats'**
+  String get noStatsYet;
+
+  /// No description provided for @homeVisits.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Visits'**
+  String get homeVisits;
+
+  /// No description provided for @totalVisits.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Visits'**
+  String get totalVisits;
+
+  /// No description provided for @yourTopPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Top Places'**
+  String get yourTopPlaces;
+
+  /// No description provided for @housemateTopPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Housemate Top Places'**
+  String get housemateTopPlaces;
+
+  /// No description provided for @visitsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} visits'**
+  String visitsCount(int count);
+
+  /// No description provided for @noVisitsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No visits yet'**
+  String get noVisitsYet;
+
   /// No description provided for @history.
   ///
   /// In en, this message translates to:

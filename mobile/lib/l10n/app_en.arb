@@ -236,6 +236,20 @@
   "leaveGroupConfirmation": "You will no longer see this group's members or geofences.",
   "leave": "Leave",
 
+  "stats": "Stats",
+  "noStatsYet": "Claim a home geofence to see stats",
+  "homeVisits": "Home Visits",
+  "totalVisits": "Total Visits",
+  "yourTopPlaces": "Your Top Places",
+  "housemateTopPlaces": "Housemate Top Places",
+  "visitsCount": "{count} visits",
+  "@visitsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "noVisitsYet": "No visits yet",
+
   "history": "History",
   "noHistoryYet": "No history yet",
   "entered": "Entered",

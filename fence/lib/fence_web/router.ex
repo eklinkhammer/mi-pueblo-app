@@ -87,6 +87,9 @@ defmodule FenceWeb.Router do
     # History
     get "/users/:user_id/history", HistoryController, :show
 
+    # Stats
+    get "/stats", StatsController, :index
+
     # Geocoding
     get "/geocode", GeocodingController, :search
   end
