@@ -35,7 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isOnboarding = state.matchedLocation.startsWith('/onboarding');
 
-      if (!onboardingCompleted && !isOnboarding) return '/onboarding';
+      // If user navigates to onboarding but already completed, go to map
       if (onboardingCompleted && isOnboarding) return '/map';
 
       final isAuth = authStatus == AuthStatus.authenticated;
@@ -45,7 +45,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (authStatus == AuthStatus.unknown) return null;
 
       final isMapRoute = state.matchedLocation == '/map';
-      if (!isAuth && !isAuthRoute && !isMapRoute) return '/auth/create';
+      if (!isAuth && !isAuthRoute && !isMapRoute) return '/map';
       if (isAuth && isAuthRoute) return '/map';
       return null;
     },

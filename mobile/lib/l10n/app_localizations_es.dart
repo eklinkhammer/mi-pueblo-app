@@ -346,6 +346,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get locationSharingNotificationText => 'Ubicación compartida activa';
 
   @override
+  String get color => 'Color';
+
+  @override
   String get language => 'Idioma';
 
   @override
@@ -624,6 +627,15 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get errorMemberLimitReached =>
       'Límite de miembros del grupo alcanzado';
+
+  @override
+  String get currentLocation => 'Ubicación actual';
+
+  @override
+  String get lastUpdated => 'Última actualización';
+
+  @override
+  String get arrivedAt => 'Llegó';
 
   @override
   String get close => 'Cerrar';

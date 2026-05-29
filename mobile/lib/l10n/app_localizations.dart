@@ -710,6 +710,12 @@ abstract class AppLocalizations {
   /// **'Location sharing active'**
   String get locationSharingNotificationText;
 
+  /// No description provided for @color.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get color;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:
@@ -1231,6 +1237,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Group member limit reached'**
   String get errorMemberLimitReached;
+
+  /// No description provided for @currentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Location'**
+  String get currentLocation;
+
+  /// No description provided for @lastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Updated'**
+  String get lastUpdated;
+
+  /// No description provided for @arrivedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrived'**
+  String get arrivedAt;
 
   /// No description provided for @close.
   ///

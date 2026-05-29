@@ -9,6 +9,7 @@ import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/geofence_notification_provider.dart';
 import 'package:fence/providers/geofence_sync_provider.dart';
 import 'package:fence/providers/locale_provider.dart';
+import 'package:fence/providers/theme_color_provider.dart';
 import 'package:fence/providers/location_manager_provider.dart';
 import 'package:fence/providers/websocket_provider.dart';
 import 'package:fence/providers/auth_provider.dart';
@@ -97,16 +98,17 @@ class _FenceAppState extends ConsumerState<FenceApp> {
     ref.watch(locationManagerProvider);
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
+    final themeColor = ref.watch(themeColorProvider);
 
     return MaterialApp.router(
       title: 'Fence',
       theme: ThemeData(
-        colorSchemeSeed: Colors.blue,
+        colorSchemeSeed: themeColor,
         useMaterial3: true,
         brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
-        colorSchemeSeed: Colors.blue,
+        colorSchemeSeed: themeColor,
         useMaterial3: true,
         brightness: Brightness.dark,
       ),

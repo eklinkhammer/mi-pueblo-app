@@ -109,10 +109,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isAuth =
-        ref.watch(authProvider.select((s) => s.status == AuthStatus.authenticated));
-
-    if (!isAuth) return _buildAnonymousView(context);
     return _buildAuthenticatedView(context);
   }
 
@@ -222,38 +218,74 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.map),
-        actions: [
-          groupsAsync.when(
-            data: (groups) {
-              final effectiveId = (selectedGroupId != null &&
-                      groups.any((g) => g.id == selectedGroupId))
-                  ? selectedGroupId
-                  : null;
-              if (effectiveId != selectedGroupId) {
-                _didAutoSelect = false;
-              }
-              return DropdownButton<String>(
-                value: effectiveId,
-                hint: Text(l10n.selectGroup),
-                items: groups
-                    .map((g) => DropdownMenuItem(
-                          value: g.id,
-                          child: Text(g.name),
-                        ))
-                    .toList(),
-                onChanged: _selectGroup,
-              );
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
-          ),
+      body: Stack(
+        children: [
+          // Full-screen map
+          selectedGroupId == null ? _buildBasicMap() : _buildMap(),
+          // Top-center floating group selector
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, left: 32, right: 32),
+                child: groupsAsync.when(
+                    data: (groups) {
+                      if (groups.isEmpty) {
+                        return FilledButton(
+                          onPressed: () => context.go('/groups/create'),
+                          child: const Text('Join My Village'),
+                        );
+                      }
+                      final effectiveId = (selectedGroupId != null &&
+                              groups.any((g) => g.id == selectedGroupId))
+                          ? selectedGroupId
+                          : null;
+                      if (effectiveId != selectedGroupId) {
+                        _didAutoSelect = false;
+                      }
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: DropdownButton<String>(
+                                  value: effectiveId,
+                                  hint: Text(l10n.selectGroup),
+                                  isExpanded: true,
+                                  items: groups
+                                      .map((g) => DropdownMenuItem(
+                                            value: g.id,
+                                            child: Text(g.name),
+                                          ))
+                                      .toList(),
+                                  onChanged: _selectGroup,
+                                  underline: const SizedBox.shrink(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Card(
+                            child: IconButton(
+                              icon: const Icon(Icons.settings),
+                              onPressed: () => context.go('/settings'),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
-      body: selectedGroupId == null
-          ? Center(child: Text(l10n.selectGroupToViewMap))
-          : _buildMap(),
       floatingActionButton: selectedGroupId != null
           ? Column(
               mainAxisSize: MainAxisSize.min,
@@ -276,7 +308,32 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ],
             )
-          : null,
+          : (_myPosition != null
+              ? FloatingActionButton(
+                  heroTag: 'myLocation',
+                  onPressed: _centerOnMe,
+                  child: const Icon(Icons.my_location),
+                )
+              : null),
+    );
+  }
+
+  Widget _buildBasicMap() {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: _myPosition != null
+            ? LatLng(_myPosition!.latitude, _myPosition!.longitude)
+            : const LatLng(37.7749, -122.4194),
+        initialZoom: 12,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.fence.app',
+        ),
+        _buildMyLocationMarker(),
+      ],
     );
   }
 
@@ -288,8 +345,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     // Build a lookup: userId → list of geofence names they're in
     final userGeofenceNames = <String, List<String>>{};
+    // Build a lookup: userId → first presence (for arrival time)
+    final userPresence = <String, GeofencePresence>{};
     for (final p in presenceList) {
       userGeofenceNames.putIfAbsent(p.userId, () => []).add(p.geofenceName);
+      userPresence.putIfAbsent(p.userId, () => p);
     }
 
     // Geofence-only users: those with sharing_mode == "geofences"
@@ -350,7 +410,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             _buildMyLocationMarker(),
           ],
         ),
-        _buildSidebar(locationsAsync, geofenceOnlyUsers, userGeofenceNames),
+        _buildSidebar(locationsAsync, geofenceOnlyUsers, userGeofenceNames, userPresence),
         _buildHistoryDrawer(),
       ],
     );
@@ -433,10 +493,122 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  void _showMemberDetail(MemberLocation member, List<String>? geofenceNames, GeofencePresence? presence) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final locationText = geofenceNames != null && geofenceNames.isNotEmpty
+        ? geofenceNames.join(', ')
+        : member.latitude != null
+            ? '${member.latitude!.toStringAsFixed(4)}, ${member.longitude!.toStringAsFixed(4)}'
+            : l10n.unknown;
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: colorForUser(member.userId),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(member.displayName,
+                        style: theme.textTheme.titleLarge),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _detailRow(Icons.place, l10n.currentLocation, locationText),
+                const SizedBox(height: 8),
+                _detailRow(Icons.update, l10n.lastUpdated,
+                    _timeAgo(member.updatedAt)),
+                if (presence != null) ...[
+                  const SizedBox(height: 8),
+                  _detailRow(Icons.login, l10n.arrivedAt,
+                      '${presence.geofenceName} - ${_timeAgo(presence.enteredAt)}'),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showGeofenceMemberDetail(GeofencePresence presence) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: colorForUser(presence.userId),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(presence.displayName,
+                        style: theme.textTheme.titleLarge),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _detailRow(
+                    Icons.place, l10n.currentLocation, presence.geofenceName),
+                const SizedBox(height: 8),
+                _detailRow(Icons.login, l10n.arrivedAt,
+                    _timeAgo(presence.enteredAt)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _detailRow(IconData icon, String label, String value) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Text('$label: ', style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600)),
+        Flexible(
+          child: Text(value, style: theme.textTheme.bodyMedium,
+              overflow: TextOverflow.ellipsis),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSidebar(
     AsyncValue<List<MemberLocation>> locationsAsync,
     Map<String, GeofencePresence> geofenceOnlyUsers,
     Map<String, List<String>> userGeofenceNames,
+    Map<String, GeofencePresence> userPresence,
   ) {
     return locationsAsync.when(
       data: (locations) {
@@ -450,7 +622,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ? ' @ ${geofences.first}'
               : '';
           return InkWell(
-            onTap: () => _focusOnMember(l),
+            onTap: () {
+              _focusOnMember(l);
+              _showMemberDetail(l, userGeofenceNames[l.userId], userPresence[l.userId]);
+            },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
@@ -481,7 +656,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         final geofenceEntries = geofenceOnlyUsers.values
             .map((p) {
           return InkWell(
-            onTap: () => _focusOnPresence(p),
+            onTap: () {
+              _focusOnPresence(p);
+              _showGeofenceMemberDetail(p);
+            },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/locale_provider.dart';
+import 'package:fence/providers/theme_color_provider.dart';
 import 'package:fence/services/location_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -44,6 +45,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 : authState.user?.email ?? ''),
           ),
           const Divider(),
+
+          // Color theme
+          ListTile(
+            leading: Icon(Icons.palette, color: ref.watch(themeColorProvider)),
+            title: Text(l10n.color),
+            onTap: () => _showColorPicker(context),
+          ),
 
           // Language selector
           ListTile(
@@ -131,6 +139,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showColorPicker(BuildContext context) {
+    final currentColor = ref.read(themeColorProvider);
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: themeColorOptions.entries.map((e) {
+                final isSelected = e.value == currentColor;
+                return GestureDetector(
+                  onTap: () {
+                    ref.read(themeColorProvider.notifier).setColor(e.key);
+                    Navigator.pop(sheetContext);
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: e.value,
+                      shape: BoxShape.circle,
+                      border: isSelected
+                          ? Border.all(color: Colors.white, width: 3)
+                          : null,
+                      boxShadow: isSelected
+                          ? [BoxShadow(color: e.value, blurRadius: 8)]
+                          : null,
+                    ),
+                    child: isSelected
+                        ? const Icon(Icons.check, color: Colors.white)
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
     );
   }
 

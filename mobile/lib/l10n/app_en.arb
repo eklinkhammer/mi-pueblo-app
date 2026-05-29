@@ -161,6 +161,7 @@
   "locationSharingNotificationTitle": "Fence",
   "locationSharingNotificationText": "Location sharing active",
 
+  "color": "Color",
   "language": "Language",
   "systemDefault": "System Default",
   "english": "English",
@@ -281,6 +282,9 @@
   "errorGeofenceLimitReached": "Geofence limit reached for this group",
   "errorMemberLimitReached": "Group member limit reached",
 
+  "currentLocation": "Current Location",
+  "lastUpdated": "Last Updated",
+  "arrivedAt": "Arrived",
   "close": "Close",
   "share": "Share",
   "inviteShareMessage": "Join my family on Mi Pueblo! Tap this link: {url}",

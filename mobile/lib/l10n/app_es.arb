@@ -116,6 +116,7 @@
   "locationSharingNotificationTitle": "Fence",
   "locationSharingNotificationText": "Ubicación compartida activa",
 
+  "color": "Color",
   "language": "Idioma",
   "systemDefault": "Predeterminado del sistema",
   "english": "English",
@@ -236,6 +237,9 @@
   "errorGeofenceLimitReached": "Límite de geocercas alcanzado para este grupo",
   "errorMemberLimitReached": "Límite de miembros del grupo alcanzado",
 
+  "currentLocation": "Ubicación actual",
+  "lastUpdated": "Última actualización",
+  "arrivedAt": "Llegó",
   "close": "Cerrar",
   "share": "Compartir",
   "inviteShareMessage": "¡Únete a mi familia en Mi Pueblo! Toca este enlace: {url}",
