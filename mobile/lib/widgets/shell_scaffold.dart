@@ -71,21 +71,24 @@ class ShellScaffold extends ConsumerWidget {
     );
   }
 
-  void _showStatsDrawer(BuildContext context, WidgetRef ref) {
-    // Refresh stats each time the drawer opens
-    ref.invalidate(statsProvider);
-    // Pre-fetch stats to center map on home when data is available
-    final stats = ref.read(statsProvider).valueOrNull;
-    if (stats != null && stats.isNotEmpty) {
-      final first = stats.first;
-      if (first.homeLatitude != null && first.homeLongitude != null) {
-        // Navigate to map first, then center
-        context.go('/map');
-        ref.read(mapFocusLatLngProvider.notifier).state =
-            (lat: first.homeLatitude!, lng: first.homeLongitude!);
-      }
-    }
+  void _showStatsDrawer(BuildContext context, WidgetRef ref) async {
+    // Navigate to map first so it's visible behind the drawer
+    context.go('/map');
 
+    // Refresh stats and wait for the result
+    ref.invalidate(statsProvider);
+    try {
+      final stats = await ref.read(statsProvider.future);
+      if (stats.isNotEmpty) {
+        final first = stats.first;
+        if (first.homeLatitude != null && first.homeLongitude != null) {
+          ref.read(mapFocusLatLngProvider.notifier).state =
+              (lat: first.homeLatitude!, lng: first.homeLongitude!);
+        }
+      }
+    } catch (_) {}
+
+    if (!context.mounted) return;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
