@@ -393,8 +393,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     final focusLatLng = ref.watch(mapFocusLatLngProvider);
     if (focusLatLng != null) {
-      ref.read(mapFocusLatLngProvider.notifier).state = null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(mapFocusLatLngProvider.notifier).state = null;
         _mapController.move(LatLng(focusLatLng.lat, focusLatLng.lng), 15);
       });
     }
