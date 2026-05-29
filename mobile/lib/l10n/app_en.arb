@@ -243,6 +243,7 @@
   "totalVisits": "Total Visits",
   "yourTopPlaces": "Your Top Places",
   "housemateTopPlaces": "Housemate Top Places",
+  "allTime": "All time",
   "visitsCount": "{count} visits",
   "@visitsCount": {
     "placeholders": {

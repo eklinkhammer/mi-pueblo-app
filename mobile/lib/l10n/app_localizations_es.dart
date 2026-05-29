@@ -532,6 +532,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get housemateTopPlaces => 'Lugares frecuentes de compañeros';
 
   @override
+  String get allTime => 'Desde siempre';
+
+  @override
   String visitsCount(int count) {
     return '$count visitas';
   }

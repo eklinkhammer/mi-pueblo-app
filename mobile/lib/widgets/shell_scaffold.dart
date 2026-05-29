@@ -72,6 +72,8 @@ class ShellScaffold extends ConsumerWidget {
   }
 
   void _showStatsDrawer(BuildContext context, WidgetRef ref) {
+    // Refresh stats each time the drawer opens
+    ref.invalidate(statsProvider);
     // Pre-fetch stats to center map on home when data is available
     final stats = ref.read(statsProvider).valueOrNull;
     if (stats != null && stats.isNotEmpty) {
@@ -173,7 +175,15 @@ class _StatsSheet extends ConsumerWidget {
         ),
         if (stats.yourTopGeofences.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text(l10n.yourTopPlaces, style: theme.textTheme.titleSmall),
+          Row(
+            children: [
+              Text(l10n.yourTopPlaces, style: theme.textTheme.titleSmall),
+              const SizedBox(width: 8),
+              Text(l10n.allTime, style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              )),
+            ],
+          ),
           const SizedBox(height: 4),
           ...stats.yourTopGeofences.map((g) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
@@ -192,7 +202,15 @@ class _StatsSheet extends ConsumerWidget {
         ],
         if (stats.housemates.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text(l10n.housemateTopPlaces, style: theme.textTheme.titleSmall),
+          Row(
+            children: [
+              Text(l10n.housemateTopPlaces, style: theme.textTheme.titleSmall),
+              const SizedBox(width: 8),
+              Text(l10n.allTime, style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              )),
+            ],
+          ),
           const SizedBox(height: 4),
           ...stats.housemates.map((hm) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),

@@ -1058,6 +1058,12 @@ abstract class AppLocalizations {
   /// **'Housemate Top Places'**
   String get housemateTopPlaces;
 
+  /// No description provided for @allTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All time'**
+  String get allTime;
+
   /// No description provided for @visitsCount.
   ///
   /// In en, this message translates to:

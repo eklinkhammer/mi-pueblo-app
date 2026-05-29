@@ -198,6 +198,7 @@
   "totalVisits": "Visitas totales",
   "yourTopPlaces": "Tus lugares frecuentes",
   "housemateTopPlaces": "Lugares frecuentes de compañeros",
+  "allTime": "Desde siempre",
   "visitsCount": "{count} visitas",
   "@visitsCount": {
     "placeholders": {

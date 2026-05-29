@@ -103,7 +103,15 @@ class _GroupStatsCard extends StatelessWidget {
             // Your top places
             if (stats.yourTopGeofences.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Text(l10n.yourTopPlaces, style: theme.textTheme.titleSmall),
+              Row(
+                children: [
+                  Text(l10n.yourTopPlaces, style: theme.textTheme.titleSmall),
+                  const SizedBox(width: 8),
+                  Text(l10n.allTime, style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  )),
+                ],
+              ),
               const SizedBox(height: 8),
               ...stats.yourTopGeofences.map(
                 (g) => _VisitRow(name: g.geofenceName, count: g.visitCount),
@@ -113,7 +121,15 @@ class _GroupStatsCard extends StatelessWidget {
             // Housemates
             if (stats.housemates.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Text(l10n.housemateTopPlaces, style: theme.textTheme.titleSmall),
+              Row(
+                children: [
+                  Text(l10n.housemateTopPlaces, style: theme.textTheme.titleSmall),
+                  const SizedBox(width: 8),
+                  Text(l10n.allTime, style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  )),
+                ],
+              ),
               const SizedBox(height: 8),
               ...stats.housemates.map((hm) => _HousemateSection(housemate: hm)),
             ],

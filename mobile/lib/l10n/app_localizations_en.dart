@@ -527,6 +527,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get housemateTopPlaces => 'Housemate Top Places';
 
   @override
+  String get allTime => 'All time';
+
+  @override
   String visitsCount(int count) {
     return '$count visits';
   }
