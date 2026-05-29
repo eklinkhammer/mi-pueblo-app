@@ -230,12 +230,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.only(top: 8, left: 32, right: 32),
+                padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
                 child: groupsAsync.when(
                     data: (groups) {
                       if (groups.isEmpty) {
                         return FilledButton(
-                          onPressed: () => context.go('/groups/create'),
+                          onPressed: () => _showJoinSheet(context),
                           child: const Text('Join My Village'),
                         );
                       }
