@@ -1016,6 +1016,36 @@ abstract class AppLocalizations {
   /// **'Leave'**
   String get leave;
 
+  /// No description provided for @history.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get history;
+
+  /// No description provided for @noHistoryYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No history yet'**
+  String get noHistoryYet;
+
+  /// No description provided for @entered.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered'**
+  String get entered;
+
+  /// No description provided for @exited.
+  ///
+  /// In en, this message translates to:
+  /// **'Exited'**
+  String get exited;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
   /// No description provided for @share.
   ///
   /// In en, this message translates to:

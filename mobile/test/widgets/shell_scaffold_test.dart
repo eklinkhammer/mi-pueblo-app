@@ -27,6 +27,10 @@ void main() {
               builder: (_, __) => const Text('Groups Page'),
             ),
             GoRoute(
+              path: '/history',
+              builder: (_, __) => const Text('History Page'),
+            ),
+            GoRoute(
               path: '/settings',
               builder: (_, __) => const Text('Settings Page'),
             ),
@@ -58,7 +62,7 @@ void main() {
   });
 
   group('ShellScaffold', () {
-    testWidgets('shows 3 navigation destinations when authenticated',
+    testWidgets('shows 4 navigation destinations when authenticated',
         (tester) async {
       final router = createRouter();
       await tester.pumpWidget(ProviderScope(
@@ -73,9 +77,10 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byType(NavigationDestination), findsNWidgets(3));
+      expect(find.byType(NavigationDestination), findsNWidgets(4));
       expect(find.text('Map'), findsOneWidget);
       expect(find.text('Groups'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
     });
 
@@ -117,6 +122,25 @@ void main() {
       expect(navBar.selectedIndex, 1);
     });
 
+    testWidgets('correct tab selected for /history route', (tester) async {
+      final router = createRouter(initialLocation: '/history');
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
+        ],
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      final navBar =
+          tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(navBar.selectedIndex, 2);
+    });
+
     testWidgets('correct tab selected for /settings route', (tester) async {
       final router = createRouter(initialLocation: '/settings');
       await tester.pumpWidget(ProviderScope(
@@ -133,7 +157,7 @@ void main() {
 
       final navBar =
           tester.widget<NavigationBar>(find.byType(NavigationBar));
-      expect(navBar.selectedIndex, 2);
+      expect(navBar.selectedIndex, 3);
     });
 
     testWidgets('no bottom nav for unauthenticated users', (tester) async {

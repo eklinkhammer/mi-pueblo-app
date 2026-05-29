@@ -84,6 +84,9 @@ defmodule FenceWeb.Router do
     post "/location", LocationController, :report
     get "/groups/:id/locations", LocationController, :group_locations
 
+    # History
+    get "/users/:user_id/history", HistoryController, :show
+
     # Geocoding
     get "/geocode", GeocodingController, :search
   end

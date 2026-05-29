@@ -511,6 +511,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get leave => 'Salir';
 
   @override
+  String get history => 'Historial';
+
+  @override
+  String get noHistoryYet => 'Sin historial aún';
+
+  @override
+  String get entered => 'Entró';
+
+  @override
+  String get exited => 'Salió';
+
+  @override
+  String get close => 'Cerrar';
+
+  @override
   String get share => 'Compartir';
 
   @override

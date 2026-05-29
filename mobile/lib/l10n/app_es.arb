@@ -191,6 +191,12 @@
   "leaveGroupConfirmation": "Ya no verás los miembros ni las geocercas de este grupo.",
   "leave": "Salir",
 
+  "history": "Historial",
+  "noHistoryYet": "Sin historial aún",
+  "entered": "Entró",
+  "exited": "Salió",
+
+  "close": "Cerrar",
   "share": "Compartir",
   "inviteShareMessage": "¡Únete a mi familia en Mi Pueblo! Toca este enlace: {url}",
   "@inviteShareMessage": {

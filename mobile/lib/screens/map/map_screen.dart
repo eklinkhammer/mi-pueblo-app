@@ -15,9 +15,11 @@ import 'package:fence/models/geofence.dart';
 import 'package:fence/models/geofence_presence.dart';
 import 'package:fence/models/app_location.dart';
 import 'package:fence/providers/auth_provider.dart';
+import 'package:fence/providers/history_provider.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/services/location_service.dart';
 import 'package:fence/utils/user_colors.dart';
+import 'package:fence/widgets/history_event_list.dart';
 import 'package:fence/widgets/member_marker.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -349,7 +351,85 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ],
         ),
         _buildSidebar(locationsAsync, geofenceOnlyUsers, userGeofenceNames),
+        _buildHistoryDrawer(),
       ],
+    );
+  }
+
+  Widget _buildHistoryDrawer() {
+    final historyUserId = ref.watch(historyDrawerUserIdProvider);
+    if (historyUserId == null) return const SizedBox.shrink();
+
+    final l10n = AppLocalizations.of(context);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.4,
+      minChildSize: 0.15,
+      maxChildSize: 0.8,
+      builder: (sheetContext, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Drag handle + close button
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 16, right: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Center(
+                        child: Container(
+                          width: 32,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[400],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        ref.read(historyDrawerUserIdProvider.notifier).state =
+                            null;
+                      },
+                      tooltip: l10n.close,
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.history,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Expanded(
+                child: HistoryEventList(
+                  userId: historyUserId,
+                  scrollController: scrollController,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -119,6 +119,14 @@ const visibilityPairJson = {
   'granted_at': null,
 };
 
+const geofenceEventJson = {
+  'id': '880e8400-e29b-41d4-a716-446655440010',
+  'event': 'entered',
+  'geofence_id': '770e8400-e29b-41d4-a716-446655440002',
+  'geofence_name': 'Home',
+  'inserted_at': '2025-06-15T14:30:00Z',
+};
+
 const anonymousCreateResponseJson = {
   'access_token': 'test-access-token',
   'refresh_token': 'test-refresh-token',

@@ -82,9 +82,19 @@ defmodule Fence.Integration.LocationGeofencePipelineTest do
       state_ids = Fence.Locations.get_user_geofence_ids(user_a.id)
       assert MapSet.member?(state_ids, geofence_id)
 
-      # Verify push_log entry
+      # Verify GeofenceEvent records are created
       import Ecto.Query
 
+      geofence_events =
+        Fence.Repo.all(
+          from e in Fence.Locations.GeofenceEvent,
+            where: e.user_id == ^user_a.id and e.geofence_id == ^geofence_id
+        )
+
+      assert length(geofence_events) == 1
+      assert hd(geofence_events).event == "entered"
+
+      # Verify push_log entry
       logs =
         Fence.Repo.all(
           from p in Fence.Notifications.PushLog, where: p.geofence_id == ^geofence_id
@@ -155,6 +165,18 @@ defmodule Fence.Integration.LocationGeofencePipelineTest do
       # Verify state cleared
       state_ids = Fence.Locations.get_user_geofence_ids(user_a.id)
       refute MapSet.member?(state_ids, geofence_id)
+
+      # Verify GeofenceEvent records include the exit event
+      import Ecto.Query
+
+      exit_events =
+        Fence.Repo.all(
+          from e in Fence.Locations.GeofenceEvent,
+            where:
+              e.user_id == ^user_a.id and e.geofence_id == ^geofence_id and e.event == "exited"
+        )
+
+      assert length(exit_events) == 1
     end
   end
 

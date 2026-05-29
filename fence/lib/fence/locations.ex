@@ -1,7 +1,8 @@
 defmodule Fence.Locations do
   import Ecto.Query
+  require Logger
   alias Fence.{Accounts, Groups}
-  alias Fence.Locations.{DeviceLocation, UserGeofenceState}
+  alias Fence.Locations.{DeviceLocation, GeofenceEvent, UserGeofenceState}
   alias Fence.Repo
   alias Fence.Workers.{GeofenceCheckWorker, PushNotificationWorker}
 
@@ -153,29 +154,137 @@ defmodule Fence.Locations do
 
   def update_geofence_state(user_id, entered_ids, exited_ids) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
+    entered_list = MapSet.to_list(entered_ids)
+    exited_list = MapSet.to_list(exited_ids)
 
-    # Insert new entries
-    for geofence_id <- entered_ids do
-      %UserGeofenceState{}
-      |> UserGeofenceState.changeset(%{
-        user_id: user_id,
-        geofence_id: geofence_id,
-        entered_at: now
-      })
-      |> Repo.insert(on_conflict: :nothing, conflict_target: [:user_id, :geofence_id])
+    transaction_result =
+      Repo.transaction(fn ->
+        # Insert new state entries
+        state_rows =
+          Enum.map(entered_list, fn geofence_id ->
+            %{
+              id: Ecto.UUID.generate(),
+              user_id: user_id,
+              geofence_id: geofence_id,
+              entered_at: now,
+              inserted_at: now,
+              updated_at: now
+            }
+          end)
+
+        if state_rows != [] do
+          Repo.insert_all(UserGeofenceState, state_rows,
+            on_conflict: :nothing,
+            conflict_target: [:user_id, :geofence_id]
+          )
+        end
+
+        # Remove exited
+        if exited_list != [] do
+          from(s in UserGeofenceState,
+            where: s.user_id == ^user_id and s.geofence_id in ^exited_list
+          )
+          |> Repo.delete_all()
+        end
+
+        # Log geofence events for history
+        entered_events =
+          Enum.map(entered_list, fn geofence_id ->
+            %{
+              id: Ecto.UUID.generate(),
+              user_id: user_id,
+              geofence_id: geofence_id,
+              event: "entered",
+              inserted_at: now,
+              updated_at: now
+            }
+          end)
+
+        exited_events =
+          Enum.map(exited_list, fn geofence_id ->
+            %{
+              id: Ecto.UUID.generate(),
+              user_id: user_id,
+              geofence_id: geofence_id,
+              event: "exited",
+              inserted_at: now,
+              updated_at: now
+            }
+          end)
+
+        all_events = entered_events ++ exited_events
+
+        if all_events != [], do: insert_geofence_events(all_events)
+      end)
+
+    case transaction_result do
+      {:ok, _} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("Failed to update geofence state for user #{user_id}: #{inspect(reason)}")
+        :ok
     end
+  end
 
-    # Remove exited
-    if MapSet.size(exited_ids) > 0 do
-      exited_list = MapSet.to_list(exited_ids)
+  defp insert_geofence_events(events) do
+    case Repo.insert_all(GeofenceEvent, events) do
+      {count, _} when count == length(events) ->
+        :ok
 
-      from(s in UserGeofenceState,
-        where: s.user_id == ^user_id and s.geofence_id in ^exited_list
-      )
-      |> Repo.delete_all()
+      {count, _} ->
+        Logger.warning(
+          "Geofence event insert_all: expected #{length(events)} rows, inserted #{count}"
+        )
     end
+  end
 
-    :ok
+  def log_geofence_event(user_id, geofence_id, event) do
+    %GeofenceEvent{}
+    |> GeofenceEvent.changeset(%{user_id: user_id, geofence_id: geofence_id, event: event})
+    |> Repo.insert()
+  end
+
+  def list_user_geofence_events(user_id, limit \\ 50)
+
+  def list_user_geofence_events(user_id, limit) when is_integer(limit) do
+    from(e in GeofenceEvent,
+      join: g in Fence.Geofences.Geofence,
+      on: g.id == e.geofence_id,
+      where: e.user_id == ^user_id,
+      order_by: [desc: e.inserted_at],
+      limit: ^limit,
+      select: %{
+        id: e.id,
+        event: e.event,
+        geofence_id: e.geofence_id,
+        geofence_name: g.name,
+        inserted_at: e.inserted_at
+      }
+    )
+    |> Repo.all()
+  end
+
+  def list_user_geofence_events(user_id, group_ids) when is_list(group_ids) do
+    list_user_geofence_events(user_id, group_ids, 50)
+  end
+
+  def list_user_geofence_events(user_id, group_ids, limit) when is_list(group_ids) do
+    from(e in GeofenceEvent,
+      join: g in Fence.Geofences.Geofence,
+      on: g.id == e.geofence_id,
+      where: e.user_id == ^user_id and g.group_id in ^group_ids,
+      order_by: [desc: e.inserted_at],
+      limit: ^limit,
+      select: %{
+        id: e.id,
+        event: e.event,
+        geofence_id: e.geofence_id,
+        geofence_name: g.name,
+        inserted_at: e.inserted_at
+      }
+    )
+    |> Repo.all()
   end
 
   def broadcast_location_update(user_id, location_id) do

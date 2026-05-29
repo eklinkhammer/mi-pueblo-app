@@ -270,4 +270,8 @@ class ApiClient {
 
   Future<Response<Map<String, dynamic>>> getGroupLocations(String groupId) =>
       _dio.get<Map<String, dynamic>>('/groups/$groupId/locations');
+
+  // History
+  Future<Response<Map<String, dynamic>>> getUserHistory(String userId) =>
+      _dio.get<Map<String, dynamic>>('/users/$userId/history');
 }

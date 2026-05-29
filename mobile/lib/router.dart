@@ -16,14 +16,19 @@ import 'package:fence/screens/groups/join_group_screen.dart';
 import 'package:fence/screens/geofences/geofence_create_screen.dart';
 import 'package:fence/screens/geofences/geofence_detail_screen.dart';
 import 'package:fence/screens/groups/group_notification_settings_screen.dart';
+import 'package:fence/screens/history/history_screen.dart';
 import 'package:fence/screens/settings/settings_screen.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
+
+/// Global reference to the current GoRouter for use outside the widget tree
+/// (e.g., notification tap handling).
+GoRouter? activeRouter;
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authStatus = ref.watch(authProvider.select((s) => s.status));
   final onboardingCompleted = ref.watch(onboardingProvider);
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: '/map',
     redirect: (context, state) {
       final isOnboarding = state.matchedLocation.startsWith('/onboarding');
@@ -126,6 +131,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
+            path: '/history',
+            builder: (context, state) => const HistoryScreen(),
+            routes: [
+              GoRoute(
+                path: ':userId',
+                builder: (context, state) => HistoryScreen(
+                  userId: state.pathParameters['userId'],
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
             path: '/settings',
             builder: (context, state) => const SettingsScreen(),
           ),
@@ -133,4 +150,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  activeRouter = router;
+  return router;
 });

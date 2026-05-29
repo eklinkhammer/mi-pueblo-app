@@ -236,6 +236,12 @@
   "leaveGroupConfirmation": "You will no longer see this group's members or geofences.",
   "leave": "Leave",
 
+  "history": "History",
+  "noHistoryYet": "No history yet",
+  "entered": "Entered",
+  "exited": "Exited",
+
+  "close": "Close",
   "share": "Share",
   "inviteShareMessage": "Join my family on Mi Pueblo! Tap this link: {url}",
   "@inviteShareMessage": {

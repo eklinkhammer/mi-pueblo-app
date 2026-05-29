@@ -388,6 +388,19 @@ defmodule Fence.Groups do
     end
   end
 
+  @doc """
+  Returns the list of group IDs where user_a and user_b share an active visibility pair.
+  """
+  def visible_group_ids(user_a_id, user_b_id) do
+    {a, b} = if user_a_id < user_b_id, do: {user_a_id, user_b_id}, else: {user_b_id, user_a_id}
+
+    from(vp in VisibilityPair,
+      where: vp.user_a_id == ^a and vp.user_b_id == ^b and vp.status == "active",
+      select: vp.group_id
+    )
+    |> Repo.all()
+  end
+
   def visible_user_ids(user_id, group_id) do
     pairs =
       from(vp in VisibilityPair,
