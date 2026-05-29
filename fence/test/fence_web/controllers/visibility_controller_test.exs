@@ -20,7 +20,7 @@ defmodule FenceWeb.VisibilityControllerTest do
   end
 
   describe "GET /api/v1/groups/:id/visibility" do
-    test "lists pending visibility pairs for new joiner", %{conn: conn, user: user} do
+    test "lists active visibility pairs for new joiner", %{conn: conn, user: user} do
       {group, member} = setup_group_with_member(user)
 
       conn = get(conn, "/api/v1/groups/#{group.id}/visibility")
@@ -29,8 +29,8 @@ defmodule FenceWeb.VisibilityControllerTest do
 
       pair = hd(pairs)
       assert pair["other_user_id"] == member.id
-      assert pair["status"] == "pending"
-      assert is_nil(pair["granted_by_id"])
+      assert pair["status"] == "active"
+      assert pair["granted_by_id"] == member.id
     end
 
     test "returns 403 for non-member", %{conn: conn} do
@@ -56,7 +56,7 @@ defmodule FenceWeb.VisibilityControllerTest do
       {group, member} = setup_group_with_member(user)
 
       # First grant
-      {:ok, _} = Groups.grant_visibility(user.id, group.id, member.id)
+      {:ok, _} = Groups.share_visibility(user.id, group.id, member.id)
 
       conn =
         conn

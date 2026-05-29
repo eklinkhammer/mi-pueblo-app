@@ -67,8 +67,8 @@ defmodule Fence.IntegrationCase do
     Oban.drain_queue(Oban, queue: :notifications)
   end
 
-  @doc "Grant visibility between two users in a group (activates the pending pair)."
-  def grant_mutual_visibility(user_id_a, user_id_b, group_id) do
-    {:ok, _} = Fence.Groups.grant_visibility(user_id_a, group_id, user_id_b)
+  @doc "Share visibility between two users in a group (activates the pending pair)."
+  def share_mutual_visibility(user_id_a, user_id_b, group_id) do
+    {:ok, _} = Fence.Groups.share_visibility(user_id_a, group_id, user_id_b)
   end
 end

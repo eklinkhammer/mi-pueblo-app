@@ -266,7 +266,7 @@ defmodule Fence.GroupsTest do
       pairs = Groups.list_visibility_pairs(admin.id, group.id)
       assert length(pairs) == 1
       assert hd(pairs).other_user_id == anon_user.id
-      assert hd(pairs).status == "pending"
+      assert hd(pairs).status == "active"
     end
   end
 
@@ -336,21 +336,21 @@ defmodule Fence.GroupsTest do
       {admin, joiner, group}
     end
 
-    test "join_by_invite_code creates pending pairs automatically" do
+    test "join_by_invite_code creates active pairs automatically" do
       {admin, joiner, group} = setup_group_with_joiner()
 
       pairs = Groups.list_visibility_pairs(admin.id, group.id)
       assert length(pairs) == 1
       pair = hd(pairs)
       assert pair.other_user_id == joiner.id
-      assert pair.status == "pending"
-      assert is_nil(pair.granted_by_id)
+      assert pair.status == "active"
+      assert pair.granted_by_id == joiner.id
     end
 
-    test "grant_visibility updates to active with granted_by_id" do
+    test "share_visibility updates to active with granted_by_id" do
       {admin, joiner, group} = setup_group_with_joiner()
 
-      assert {:ok, pair} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      assert {:ok, pair} = Groups.share_visibility(admin.id, group.id, joiner.id)
       assert pair.status == "active"
       assert pair.granted_by_id == admin.id
       assert pair.granted_at
@@ -359,46 +359,48 @@ defmodule Fence.GroupsTest do
     test "revoke_visibility resets to pending and clears grant fields" do
       {admin, joiner, group} = setup_group_with_joiner()
 
-      {:ok, _} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      {:ok, _} = Groups.share_visibility(admin.id, group.id, joiner.id)
       assert {:ok, pair} = Groups.revoke_visibility(admin.id, group.id, joiner.id)
       assert pair.status == "pending"
       assert is_nil(pair.granted_by_id)
       assert is_nil(pair.granted_at)
     end
 
-    test "grant_visibility returns not_found for missing pair" do
+    test "share_visibility returns not_found for missing pair" do
       admin = create_user()
       group = create_group(admin)
 
       assert {:error, :not_found} =
-               Groups.grant_visibility(admin.id, group.id, Ecto.UUID.generate())
+               Groups.share_visibility(admin.id, group.id, Ecto.UUID.generate())
     end
 
     test "visible_user_ids returns only active pairs" do
       {admin, joiner, group} = setup_group_with_joiner()
 
-      # Pending — should be empty
-      assert MapSet.size(Groups.visible_user_ids(admin.id, group.id)) == 0
-
-      # Grant — should include joiner
-      {:ok, _} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      # Active by default after join — should include joiner
       visible = Groups.visible_user_ids(admin.id, group.id)
       assert MapSet.member?(visible, joiner.id)
+
+      # Revoke — should be empty
+      {:ok, _} = Groups.revoke_visibility(admin.id, group.id, joiner.id)
+      assert MapSet.size(Groups.visible_user_ids(admin.id, group.id)) == 0
     end
 
-    test "visible_to? true when active, false when pending" do
+    test "visible_to? true when active, false when revoked" do
       {admin, joiner, group} = setup_group_with_joiner()
 
-      refute Groups.visible_to?(admin.id, joiner.id, group.id)
-
-      {:ok, _} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      # Active by default after join
       assert Groups.visible_to?(admin.id, joiner.id, group.id)
+
+      # Revoke — should be false
+      {:ok, _} = Groups.revoke_visibility(admin.id, group.id, joiner.id)
+      refute Groups.visible_to?(admin.id, joiner.id, group.id)
     end
 
     test "remove_member cleans up all visibility pairs" do
       {admin, joiner, group} = setup_group_with_joiner()
 
-      {:ok, _} = Groups.grant_visibility(admin.id, group.id, joiner.id)
+      {:ok, _} = Groups.share_visibility(admin.id, group.id, joiner.id)
       assert length(Groups.list_visibility_pairs(admin.id, group.id)) == 1
 
       {:ok, _} = Groups.remove_member(group.id, joiner.id)

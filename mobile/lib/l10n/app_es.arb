@@ -172,7 +172,7 @@
   "whoCanSeeMe": "¿Quién puede verme?",
   "pendingVisibility": "Solicitudes pendientes",
   "visibleMembers": "Miembros visibles",
-  "grant": "Conceder",
+  "share": "Compartir",
   "noVisibilityPairsYet": "Aún no hay miembros en el grupo. Invita a alguien para comenzar.",
 
   "sharingWithCount": "Compartiendo con {count} personas",

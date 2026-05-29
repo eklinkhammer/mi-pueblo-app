@@ -168,7 +168,7 @@ defmodule FenceWeb.GeofenceControllerTest do
       {:ok, _} = Fence.Groups.join_by_invite_code(other.id, invite.code)
 
       # Grant visibility both ways
-      {:ok, _} = Fence.Groups.grant_visibility(user.id, group.id, other.id)
+      {:ok, _} = Fence.Groups.share_visibility(user.id, group.id, other.id)
 
       {:ok, _} =
         Fence.Notifications.log_push(%{
@@ -218,6 +218,9 @@ defmodule FenceWeb.GeofenceControllerTest do
       # Add user as a member so they can query, but they didn't create the geofence
       {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(user.id, invite.code)
+
+      # Revoke auto-shared visibility so no auto-subscription is created
+      {:ok, _} = Fence.Groups.revoke_visibility(admin.id, group.id, user.id)
 
       geofence = create_geofence(group, admin)
 

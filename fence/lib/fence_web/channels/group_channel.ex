@@ -41,11 +41,11 @@ defmodule FenceWeb.GroupChannel do
     end
   end
 
-  def handle_in("visibility:grant", %{"user_id" => other_user_id}, socket) do
+  def handle_in("visibility:share", %{"user_id" => other_user_id}, socket) do
     user_id = socket.assigns.user_id
     group_id = socket.assigns.group_id
 
-    case Groups.grant_visibility(user_id, group_id, other_user_id) do
+    case Groups.share_visibility(user_id, group_id, other_user_id) do
       {:ok, pair} ->
         broadcast!(socket, "visibility:changed", %{
           user_a_id: pair.user_a_id,

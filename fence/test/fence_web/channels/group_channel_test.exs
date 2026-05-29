@@ -50,7 +50,7 @@ defmodule FenceWeb.GroupChannelTest do
     end
   end
 
-  describe "handle_in visibility:grant" do
+  describe "handle_in visibility:share" do
     setup %{admin: admin, group: group} do
       member = create_user(%{"display_name" => "Member"})
       {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
@@ -66,7 +66,7 @@ defmodule FenceWeb.GroupChannelTest do
     } do
       {:ok, _, socket} = subscribe_and_join(socket, "group:#{group.id}", %{})
 
-      ref = push(socket, "visibility:grant", %{"user_id" => member.id})
+      ref = push(socket, "visibility:share", %{"user_id" => member.id})
       assert_reply ref, :ok
 
       {a, b} = if admin.id < member.id, do: {admin.id, member.id}, else: {member.id, admin.id}
@@ -81,7 +81,7 @@ defmodule FenceWeb.GroupChannelTest do
     test "returns error for invalid pair", %{socket: socket, group: group} do
       {:ok, _, socket} = subscribe_and_join(socket, "group:#{group.id}", %{})
 
-      ref = push(socket, "visibility:grant", %{"user_id" => Ecto.UUID.generate()})
+      ref = push(socket, "visibility:share", %{"user_id" => Ecto.UUID.generate()})
       assert_reply ref, :error, %{reason: "not_found"}
     end
   end
@@ -92,7 +92,7 @@ defmodule FenceWeb.GroupChannelTest do
       {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
       # Grant first so we can revoke
-      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+      {:ok, _} = Fence.Groups.share_visibility(admin.id, group.id, member.id)
       %{member: member}
     end
 

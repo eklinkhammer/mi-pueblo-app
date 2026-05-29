@@ -27,7 +27,7 @@ defmodule Fence.Integration.NotificationFilteringTest do
       group = setup_group_with_invite(conn_a, conn_b)
       group_id = group["id"]
 
-      grant_mutual_visibility(alice["id"], bob["id"], group_id)
+      share_mutual_visibility(alice["id"], bob["id"], group_id)
 
       geofence_resp =
         conn_a
@@ -147,8 +147,8 @@ defmodule Fence.Integration.NotificationFilteringTest do
       |> post("/api/v1/groups/join", %{"invite_code" => invite_resp2["invite"]["code"]})
       |> json_response(200)
 
-      grant_mutual_visibility(alice["id"], bob["id"], group_id)
-      grant_mutual_visibility(alice["id"], carol["id"], group_id)
+      share_mutual_visibility(alice["id"], bob["id"], group_id)
+      share_mutual_visibility(alice["id"], carol["id"], group_id)
 
       geofence_resp =
         conn_a
@@ -236,7 +236,7 @@ defmodule Fence.Integration.NotificationFilteringTest do
       group = setup_group_with_invite(conn_a, conn_b)
       group_id = group["id"]
 
-      grant_mutual_visibility(alice["id"], bob["id"], group_id)
+      share_mutual_visibility(alice["id"], bob["id"], group_id)
 
       geofence_resp =
         conn_a
@@ -320,7 +320,7 @@ defmodule Fence.Integration.NotificationFilteringTest do
       group = setup_group_with_invite(conn_a, conn_b)
       group_id = group["id"]
 
-      grant_mutual_visibility(alice["id"], bob["id"], group_id)
+      share_mutual_visibility(alice["id"], bob["id"], group_id)
 
       geofence_resp =
         conn_a

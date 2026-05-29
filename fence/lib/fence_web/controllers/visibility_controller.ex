@@ -33,7 +33,7 @@ defmodule FenceWeb.VisibilityController do
     if Groups.member?(user.id, group_id) do
       result =
         if visible do
-          Groups.grant_visibility(user.id, group_id, other_user_id)
+          Groups.share_visibility(user.id, group_id, other_user_id)
         else
           Groups.revoke_visibility(user.id, group_id, other_user_id)
         end

@@ -474,7 +474,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get visibleMembers => 'Visible Members';
 
   @override
-  String get grant => 'Grant';
+  String get share => 'Share';
 
   @override
   String get noVisibilityPairsYet =>

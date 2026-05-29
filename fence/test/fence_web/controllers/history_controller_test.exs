@@ -40,7 +40,7 @@ defmodule FenceWeb.HistoryControllerTest do
       group = create_group(user)
       {:ok, invite} = Groups.get_or_create_invite(group.id, user.id)
       {:ok, _} = Groups.join_by_invite_code(other.id, invite.code)
-      {:ok, _} = Groups.grant_visibility(user.id, group.id, other.id)
+      {:ok, _} = Groups.share_visibility(user.id, group.id, other.id)
 
       geofence = create_geofence(group, user)
 

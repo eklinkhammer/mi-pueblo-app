@@ -28,7 +28,7 @@ defmodule FenceWeb.WebCrossUserTest do
     {:ok, _membership} = Groups.join_by_invite_code(user_b.id, invite.code)
 
     # Grant mutual visibility
-    {:ok, _} = Groups.grant_visibility(user_a.id, group.id, user_b.id)
+    {:ok, _} = Groups.share_visibility(user_a.id, group.id, user_b.id)
 
     %{user_a: user_a, user_b: user_b, group: group}
   end

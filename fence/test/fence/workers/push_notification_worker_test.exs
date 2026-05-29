@@ -30,7 +30,7 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
       })
 
     # Grant mutual visibility so notifications can flow
-    {:ok, _} = Groups.grant_visibility(triggering_user.id, group.id, subscriber.id)
+    {:ok, _} = Groups.share_visibility(triggering_user.id, group.id, subscriber.id)
 
     {triggering_user, subscriber, geofence, group}
   end
@@ -189,13 +189,16 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
                })
     end
 
-    test "skips geofence notification when visibility not granted" do
+    test "skips geofence notification when visibility revoked" do
       triggering_user = create_user(%{"display_name" => "Trigger"})
       subscriber = create_user(%{"display_name" => "Subscriber"})
       group = create_group(triggering_user)
 
       {:ok, invite} = Groups.get_or_create_invite(group.id, triggering_user.id)
       {:ok, _} = Groups.join_by_invite_code(subscriber.id, invite.code)
+
+      # Revoke auto-shared visibility
+      {:ok, _} = Groups.revoke_visibility(triggering_user.id, group.id, subscriber.id)
 
       geofence = create_geofence(group, triggering_user)
 
@@ -206,8 +209,6 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
           "throttle_seconds" => 0
         })
 
-      # Do NOT grant visibility — pair stays pending
-
       assert :ok =
                perform_job(PushNotificationWorker, %{
                  "user_id" => triggering_user.id,
@@ -215,7 +216,7 @@ defmodule Fence.Workers.PushNotificationWorkerTest do
                  "event" => "entered"
                })
 
-      # No notification because visibility is pending
+      # No notification because visibility is revoked
       assert is_nil(Notifications.last_notification_time(subscriber.id, geofence.id))
     end
 

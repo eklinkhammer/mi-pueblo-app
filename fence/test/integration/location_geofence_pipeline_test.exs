@@ -30,7 +30,7 @@ defmodule Fence.Integration.LocationGeofencePipelineTest do
       group = setup_group_with_invite(conn_a, conn_b)
       group_id = group["id"]
 
-      grant_mutual_visibility(user_a["id"], user_b["id"], group_id)
+      share_mutual_visibility(user_a["id"], user_b["id"], group_id)
 
       # A creates geofence at SF (5km radius)
       geofence_resp =

@@ -44,8 +44,8 @@ defmodule Fence.Integration.ProfileAndMiscTest do
       |> post("/api/v1/groups/join", %{"invite_code" => invite2["invite"]["code"]})
       |> json_response(200)
 
-      grant_mutual_visibility(alice["id"], bob["id"], group_id)
-      grant_mutual_visibility(alice["id"], carol["id"], group_id)
+      share_mutual_visibility(alice["id"], bob["id"], group_id)
+      share_mutual_visibility(alice["id"], carol["id"], group_id)
 
       # Each reports a location at different coordinates
       conn_a

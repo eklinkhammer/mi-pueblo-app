@@ -479,7 +479,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get visibleMembers => 'Miembros visibles';
 
   @override
-  String get grant => 'Conceder';
+  String get share => 'Compartir';
 
   @override
   String get noVisibilityPairsYet =>

@@ -962,11 +962,11 @@ abstract class AppLocalizations {
   /// **'Visible Members'**
   String get visibleMembers;
 
-  /// No description provided for @grant.
+  /// No description provided for @share.
   ///
   /// In en, this message translates to:
-  /// **'Grant'**
-  String get grant;
+  /// **'Share'**
+  String get share;
 
   /// No description provided for @noVisibilityPairsYet.
   ///

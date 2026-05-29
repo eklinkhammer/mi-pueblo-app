@@ -45,7 +45,7 @@ else
 
   # ── Activate all visibility pairs ─────────────────────────────────
   for {u1, u2} <- [{alice, bob}, {alice, carol}, {bob, alice}, {bob, carol}, {carol, alice}, {carol, bob}] do
-    Groups.grant_visibility(u1.id, group.id, u2.id)
+    Groups.share_visibility(u1.id, group.id, u2.id)
   end
 
   # ── Geofences ─────────────────────────────────────────────────────

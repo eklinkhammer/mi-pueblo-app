@@ -61,20 +61,18 @@ defmodule Fence.LocationsTest do
       {:ok, _} =
         Locations.report_location(member.id, %{"latitude" => 40.0, "longitude" => -74.0})
 
-      # Before granting visibility, admin can only see their own location
-      locations = Locations.get_group_last_locations(group.id, admin.id)
-      assert length(locations) == 1
-      assert hd(locations).user_id == admin.id
-
-      # Grant visibility
-      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
-
-      # Now admin can see both
+      # Visibility is active by default after join — admin can see both
       locations = Locations.get_group_last_locations(group.id, admin.id)
       assert length(locations) == 2
       user_ids = Enum.map(locations, & &1.user_id) |> MapSet.new()
       assert MapSet.member?(user_ids, admin.id)
       assert MapSet.member?(user_ids, member.id)
+
+      # Revoke visibility — admin can only see their own location
+      {:ok, _} = Fence.Groups.revoke_visibility(admin.id, group.id, member.id)
+      locations = Locations.get_group_last_locations(group.id, admin.id)
+      assert length(locations) == 1
+      assert hd(locations).user_id == admin.id
     end
 
     test "excludes members with sharing_mode set to geofences" do
@@ -86,7 +84,7 @@ defmodule Fence.LocationsTest do
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
 
       # Grant mutual visibility
-      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+      {:ok, _} = Fence.Groups.share_visibility(admin.id, group.id, member.id)
 
       # Both report locations
       {:ok, _} =
@@ -119,7 +117,7 @@ defmodule Fence.LocationsTest do
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
 
       # Grant visibility
-      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+      {:ok, _} = Fence.Groups.share_visibility(admin.id, group.id, member.id)
 
       # Create geofence and place member inside it
       geofence = create_geofence(group, admin, %{"name" => "Office"})
@@ -144,7 +142,8 @@ defmodule Fence.LocationsTest do
       {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
 
-      # No visibility granted
+      # Revoke auto-shared visibility
+      {:ok, _} = Fence.Groups.revoke_visibility(admin.id, group.id, member.id)
       geofence = create_geofence(group, admin)
       Locations.update_geofence_state(member.id, MapSet.new([geofence.id]), MapSet.new())
 
@@ -160,7 +159,7 @@ defmodule Fence.LocationsTest do
 
       {:ok, invite} = Fence.Groups.get_or_create_invite(group.id, admin.id)
       {:ok, _} = Fence.Groups.join_by_invite_code(member.id, invite.code)
-      {:ok, _} = Fence.Groups.grant_visibility(admin.id, group.id, member.id)
+      {:ok, _} = Fence.Groups.share_visibility(admin.id, group.id, member.id)
 
       geofence = create_geofence(group, admin)
 

@@ -217,7 +217,7 @@
   "whoCanSeeMe": "Who Can See Me?",
   "pendingVisibility": "Pending Requests",
   "visibleMembers": "Visible Members",
-  "grant": "Grant",
+  "share": "Share",
   "noVisibilityPairsYet": "No group members yet. Invite someone to get started.",
 
   "sharingWithCount": "Sharing with {count} people",

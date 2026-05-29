@@ -203,7 +203,7 @@ class GroupDetailScreen extends ConsumerWidget {
     if (pair.isPending) {
       return FilledButton(
         onPressed: () => _toggleVisibility(ref, pair.otherUserId, visible: true),
-        child: Text(l10n.grant),
+        child: Text(l10n.share),
       );
     }
     if (pair.isActive) {

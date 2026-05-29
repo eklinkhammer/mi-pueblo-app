@@ -73,7 +73,7 @@ defmodule Fence.StatsTest do
       # Add housemate to group
       {:ok, invite} = Groups.get_or_create_invite(group.id, user.id)
       {:ok, _} = Groups.join_by_invite_code(housemate.id, invite.code)
-      {:ok, _} = Groups.grant_visibility(user.id, group.id, housemate.id)
+      {:ok, _} = Groups.share_visibility(user.id, group.id, housemate.id)
 
       # Both claim same home
       {:ok, _} = Geofences.claim_home(user.id, home.id, group.id)
@@ -91,9 +91,10 @@ defmodule Fence.StatsTest do
       group = create_group(user)
       home = create_geofence(group, user, %{"name" => "Home"})
 
-      # Add stranger to group but do NOT grant visibility
+      # Add stranger to group, then revoke auto-shared visibility
       {:ok, invite} = Groups.get_or_create_invite(group.id, user.id)
       {:ok, _} = Groups.join_by_invite_code(stranger.id, invite.code)
+      {:ok, _} = Groups.revoke_visibility(user.id, group.id, stranger.id)
 
       {:ok, _} = Geofences.claim_home(user.id, home.id, group.id)
       {:ok, _} = Geofences.claim_home(stranger.id, home.id, group.id)

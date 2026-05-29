@@ -197,7 +197,7 @@ defmodule Fence.Groups do
             })
             |> Repo.insert!()
 
-            create_pending_visibility_pairs(invite.group_id, user.id)
+            create_visibility_pairs(invite.group_id, user.id)
 
             %{type: "member_joined", group_id: invite.group_id, user_id: user.id}
             |> PushNotificationWorker.new()
@@ -266,7 +266,7 @@ defmodule Fence.Groups do
       |> Repo.insert()
       |> case do
         {:ok, membership} ->
-          create_pending_visibility_pairs(group_id, user_id)
+          create_visibility_pairs(group_id, user_id)
 
           %{type: "member_joined", group_id: group_id, user_id: user_id}
           |> PushNotificationWorker.new()
@@ -285,7 +285,7 @@ defmodule Fence.Groups do
 
   # --- Visibility Pairs ---
 
-  def create_pending_visibility_pairs(group_id, new_user_id) do
+  def create_visibility_pairs(group_id, new_user_id) do
     existing_member_ids =
       from(m in Membership,
         where: m.group_id == ^group_id and m.user_id != ^new_user_id,
@@ -305,9 +305,9 @@ defmodule Fence.Groups do
           group_id: group_id,
           user_a_id: a,
           user_b_id: b,
-          status: "pending",
-          granted_by_id: nil,
-          granted_at: nil,
+          status: "active",
+          granted_by_id: new_user_id,
+          granted_at: now,
           inserted_at: now,
           updated_at: now
         }
@@ -356,7 +356,7 @@ defmodule Fence.Groups do
     end)
   end
 
-  def grant_visibility(granting_user_id, group_id, other_user_id) do
+  def share_visibility(granting_user_id, group_id, other_user_id) do
     {a, b} =
       if granting_user_id < other_user_id,
         do: {granting_user_id, other_user_id},
