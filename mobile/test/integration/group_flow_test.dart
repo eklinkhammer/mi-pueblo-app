@@ -30,8 +30,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No groups yet'), findsOneWidget);
-      expect(find.text('Create a Group'), findsOneWidget);
-      expect(find.text('Join with Invite Code'), findsOneWidget);
+      // Create and Join buttons are in the AppBar
+      expect(find.text('Create Group'), findsOneWidget);
+      expect(find.text('Join Group'), findsOneWidget);
     });
 
     testWidgets('create group navigates to group detail', (tester) async {
@@ -46,8 +47,8 @@ void main() {
       await tester.tap(find.text('Groups'));
       await tester.pumpAndSettle();
 
-      // Tap "Create a Group"
-      await tester.tap(find.text('Create a Group'));
+      // Tap "Create Group" in AppBar
+      await tester.tap(find.text('Create Group'));
       await tester.pumpAndSettle();
 
       // Should be on create group screen
@@ -99,8 +100,8 @@ void main() {
       await tester.tap(find.text('Groups'));
       await tester.pumpAndSettle();
 
-      // Tap "Join with Invite Code"
-      await tester.tap(find.text('Join with Invite Code'));
+      // Tap "Join Group" in AppBar
+      await tester.tap(find.text('Join Group'));
       await tester.pumpAndSettle();
 
       expect(find.text('Join Group'), findsWidgets);
@@ -142,8 +143,9 @@ void main() {
       // Should show both sections
       expect(find.text('Members'), findsOneWidget);
       expect(find.text('Alice'), findsOneWidget);
-      expect(find.text('Geofences'), findsOneWidget);
-      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Geofences'), findsWidgets);
+      // Use ListTile finder to disambiguate "Home" from bottom nav
+      expect(find.widgetWithText(ListTile, 'Home'), findsOneWidget);
       expect(find.text('100m radius'), findsOneWidget);
     });
     testWidgets('non-admin member sees leave button, not delete',

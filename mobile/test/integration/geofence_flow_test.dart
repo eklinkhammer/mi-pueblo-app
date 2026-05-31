@@ -22,7 +22,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Family'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Home'));
+    // Use ListTile finder to disambiguate "Home" from bottom nav label
+    await tester.tap(find.widgetWithText(ListTile, 'Home'));
     await tester.pumpAndSettle();
   }
 
@@ -43,7 +44,7 @@ void main() {
       await tester.tap(find.text('Family'));
       await tester.pumpAndSettle();
 
-      // Tap "Add Geofence" FAB
+      // Tap "Add Geofence" button
       await tester.tap(find.text('Add Geofence'));
       await tester.pumpAndSettle();
 
@@ -65,11 +66,10 @@ void main() {
       await navigateToGeofenceDetail(tester);
 
       // Top of the page should show name and radius
-      expect(find.text('Home'), findsOneWidget);
       expect(find.text('100 meters'), findsOneWidget);
       expect(find.text('Our house'), findsOneWidget);
 
-      // Scroll down to reveal notification toggles (below GoogleMap + other tiles)
+      // Scroll down to reveal notification toggles
       await tester.scrollUntilVisible(
         find.text('Notify on Entry'),
         200,

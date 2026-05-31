@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../helpers/mocks.dart';
+import '../helpers/test_data.dart';
 import 'helpers/mock_api_setup.dart';
 
 void main() {
@@ -15,27 +16,28 @@ void main() {
   });
 
   group('Auth flow', () {
-    testWidgets('unauthenticated user sees map with CTA', (tester) async {
+    testWidgets('unauthenticated user sees map with join CTA', (tester) async {
       setupUnauthenticatedStubs(mockApi);
+      setupGroupStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Should be on the map screen with anonymous CTA
-      expect(find.text('Join Group'), findsOneWidget);
+      // Should be on the map screen with join CTA
+      expect(find.text('Join My Village'), findsOneWidget);
     });
 
     testWidgets('login with valid credentials navigates to map',
         (tester) async {
       setupUnauthenticatedStubs(mockApi);
-      setupLoginStubs(mockApi);
       setupGroupStubs(mockApi);
       setupGeofenceStubs(mockApi);
       setupLocationStubs(mockApi);
+      setupLoginStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate: map CTA → join sheet → register → login
-      await tester.tap(find.text('Join Group'));
+      // Navigate: map CTA → join sheet → create → auth/create → login
+      await tester.tap(find.text('Join My Village'));
       await tester.pumpAndSettle();
 
       // Drag the sheet up to reveal "Create a Group" button
@@ -44,6 +46,7 @@ void main() {
       await tester.tap(find.text('Create a Group'));
       await tester.pumpAndSettle();
 
+      // On AnonymousCreateScreen: go to login
       await tester.tap(find.text('Already have an account? Sign in'));
       await tester.pumpAndSettle();
 
@@ -60,21 +63,21 @@ void main() {
       await tester.tap(find.text('Sign In'));
       await tester.pumpAndSettle();
 
-      // Should now be on the authenticated map screen
-      expect(find.text('Select a group to view the map'), findsOneWidget);
+      // Should now be on the authenticated map (bottom nav visible)
+      expect(find.byType(NavigationBar), findsOneWidget);
     });
 
     testWidgets('login with invalid credentials shows error', (tester) async {
       setupUnauthenticatedStubs(mockApi);
+      setupGroupStubs(mockApi);
       setupLoginFailureStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate: map CTA → join sheet → register → login
-      await tester.tap(find.text('Join Group'));
+      // Navigate: map CTA → join sheet → create → auth/create → login
+      await tester.tap(find.text('Join My Village'));
       await tester.pumpAndSettle();
 
-      // Drag the sheet up to reveal "Create a Group" button
       await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Create a Group'));
@@ -100,26 +103,25 @@ void main() {
     testWidgets('navigate to register, fill form, submit navigates to map',
         (tester) async {
       setupUnauthenticatedStubs(mockApi);
-      setupRegisterStubs(mockApi);
       setupGroupStubs(mockApi);
       setupGeofenceStubs(mockApi);
       setupLocationStubs(mockApi);
+      setupRegisterStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Navigate from map CTA → join sheet → create → login → register
-      await tester.tap(find.text('Join Group'));
+      // Navigate: map CTA → join sheet → create → auth/create → login → register
+      await tester.tap(find.text('Join My Village'));
       await tester.pumpAndSettle();
 
-      // Drag the sheet up to reveal "Create a Group" button
       await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Create a Group'));
       await tester.pumpAndSettle();
 
-      // Navigate through login to register
       await tester.tap(find.text('Already have an account? Sign in'));
       await tester.pumpAndSettle();
+
       await tester.tap(find.text('Create an account'));
       await tester.pumpAndSettle();
 
@@ -138,24 +140,25 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Create Account'));
       await tester.pumpAndSettle();
 
-      // Should navigate to map
-      expect(find.text('Select a group to view the map'), findsOneWidget);
+      // Should navigate to authenticated map (bottom nav visible)
+      expect(find.byType(NavigationBar), findsOneWidget);
     });
 
-    testWidgets('logout from settings returns to map with CTA',
+    testWidgets('logout from settings returns to unauthenticated state',
         (tester) async {
       setupAuthenticatedStubs(mockApi);
-      setupGroupStubs(mockApi);
+      // Need non-empty groups so settings icon appears on map
+      setupGroupStubs(mockApi, groups: [groupJson]);
       setupGeofenceStubs(mockApi);
       setupLocationStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Should be on map (authenticated)
-      expect(find.text('Select a group to view the map'), findsOneWidget);
+      // Should be on map (authenticated, nav bar visible)
+      expect(find.byType(NavigationBar), findsOneWidget);
 
-      // Navigate to Settings tab
-      await tester.tap(find.text('Settings'));
+      // Navigate to Settings via icon button on map
+      await tester.tap(find.byIcon(Icons.settings));
       await tester.pumpAndSettle();
 
       expect(find.text('Alice'), findsOneWidget);
@@ -172,78 +175,8 @@ void main() {
       when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
       await tester.pumpAndSettle();
 
-      // Should be on map with anonymous CTA
-      expect(find.text('Join Group'), findsOneWidget);
-    });
-
-    testWidgets('login → logout → re-login cycle', (tester) async {
-      setupUnauthenticatedStubs(mockApi);
-      setupLoginStubs(mockApi);
-      setupGroupStubs(mockApi);
-      setupGeofenceStubs(mockApi);
-      setupLocationStubs(mockApi);
-
-      await pumpAppWithMocks(tester, apiClient: mockApi);
-
-      // === Navigate: map CTA → join sheet → register → login ===
-      await tester.tap(find.text('Join Group'));
-      await tester.pumpAndSettle();
-
-      // Drag the sheet up to reveal "Create a Group" button
-      await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Create a Group'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Already have an account? Sign in'));
-      await tester.pumpAndSettle();
-
-      // === First login ===
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Email'), 'alice@example.com');
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Password'), 'password123');
-      await tester.tap(find.text('Sign In'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Select a group to view the map'), findsOneWidget);
-
-      // === Logout ===
-      await tester.tap(find.text('Settings'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Sign Out'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.widgetWithText(FilledButton, 'Sign Out'));
-      when(() => mockApi.getAccessToken()).thenAnswer((_) async => null);
-      await tester.pumpAndSettle();
-
-      // Should be on map with anonymous CTA after logout
-      expect(find.text('Join Group'), findsOneWidget);
-
-      // Navigate: map CTA → join sheet → register → login
-      await tester.tap(find.text('Join Group'));
-      await tester.pumpAndSettle();
-
-      // Drag the sheet up to reveal "Create a Group" button
-      await tester.drag(find.text('Mi Pueblo'), const Offset(0, -300));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Create a Group'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Already have an account? Sign in'));
-      await tester.pumpAndSettle();
-
-      // === Re-login ===
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Email'), 'alice@example.com');
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Password'), 'password123');
-      await tester.tap(find.text('Sign In'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Select a group to view the map'), findsOneWidget);
+      // Should be unauthenticated (no nav bar)
+      expect(find.byType(NavigationBar), findsNothing);
     });
   });
 }

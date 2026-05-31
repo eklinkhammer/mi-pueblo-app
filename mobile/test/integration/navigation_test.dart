@@ -15,7 +15,7 @@ void main() {
   });
 
   group('Navigation', () {
-    testWidgets('tab switching: Map ↔ Groups ↔ Subscription via bottom nav',
+    testWidgets('tab switching: Map ↔ Groups via bottom nav',
         (tester) async {
       setupAuthenticatedStubs(mockApi);
       setupGroupStubs(mockApi);
@@ -25,25 +25,21 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      // Starts on Map (title in both AppBar and bottom nav)
-      expect(find.text('Select a group to view the map'), findsOneWidget);
+      // Starts on Map with join CTA (no groups)
+      expect(find.text('Join My Village'), findsOneWidget);
 
       // Switch to Groups
       await tester.tap(find.text('Groups'));
       await tester.pumpAndSettle();
       expect(find.text('No groups yet'), findsOneWidget);
 
-      // Switch to Subscription
-      await tester.tap(find.text('Subscription'));
-      await tester.pumpAndSettle();
-
       // Back to Map (tap the bottom nav label)
       await tester.tap(find.text('Map').last);
       await tester.pumpAndSettle();
-      expect(find.text('Select a group to view the map'), findsOneWidget);
+      expect(find.text('Join My Village'), findsOneWidget);
     });
 
-    testWidgets('map screen shows group selector when authenticated',
+    testWidgets('map screen shows join CTA when no groups',
         (tester) async {
       setupAuthenticatedStubs(mockApi);
       setupGroupStubs(mockApi);
@@ -53,20 +49,21 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      expect(find.text('Select a group to view the map'), findsOneWidget);
+      expect(find.text('Join My Village'), findsOneWidget);
     });
 
-    testWidgets('map screen shows "Select a group" when no group selected',
+    testWidgets('map screen shows group selector when groups exist',
         (tester) async {
       setupAuthenticatedStubs(mockApi);
-      setupGroupStubs(mockApi);
+      setupGroupStubs(mockApi, groups: [groupJson]);
       setupGeofenceStubs(mockApi);
       setupLocationStubs(mockApi);
       setupStatsStubs(mockApi);
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      expect(find.text('Select a group to view the map'), findsOneWidget);
+      // Group dropdown should show the group name
+      expect(find.text('Family'), findsOneWidget);
     });
 
     testWidgets('deep navigation: Groups → Group Detail → back',

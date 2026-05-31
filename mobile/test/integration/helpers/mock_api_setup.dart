@@ -84,6 +84,10 @@ void setupGroupStubs(MockApiClient mock, {List<Map<String, dynamic>>? groups}) {
           }));
   when(() => mock.removeMember(any(), any()))
       .thenAnswer((_) async => fakeResponse(null, statusCode: 204));
+  when(() => mock.getVisibilityPairs(any()))
+      .thenAnswer((_) async => fakeResponse({'visibility_pairs': <dynamic>[]}));
+  when(() => mock.getSharingMode(any()))
+      .thenAnswer((_) async => fakeResponse({'sharing_mode': 'live'}));
 }
 
 /// Stub geofence-related methods.
@@ -104,6 +108,10 @@ void setupGeofenceStubs(MockApiClient mock,
       .thenAnswer((_) async => fakeResponse({'subscription': subscriptionJson}));
   when(() => mock.createOptOut(any()))
       .thenAnswer((_) async => fakeResponse(null, statusCode: 201));
+  when(() => mock.getGeofence(any(), any()))
+      .thenAnswer((_) async => fakeResponse({'residents': <dynamic>[]}));
+  when(() => mock.getGeofenceActivity(any(), any()))
+      .thenAnswer((_) async => fakeResponse({'activity': <dynamic>[]}));
 }
 
 /// Stub stats-related methods.

@@ -34,8 +34,9 @@ void main() {
           .pumpWidget(createApp(groupsState: const AsyncValue.data([])));
 
       expect(find.text('No groups yet'), findsOneWidget);
-      expect(find.text('Create a Group'), findsOneWidget);
-      expect(find.text('Join with Invite Code'), findsOneWidget);
+      // Create and Join buttons are in the AppBar
+      expect(find.text('Create Group'), findsOneWidget);
+      expect(find.text('Join Group'), findsOneWidget);
     });
 
     testWidgets('shows group names when data is present', (tester) async {

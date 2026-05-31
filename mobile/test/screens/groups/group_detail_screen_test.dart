@@ -119,12 +119,11 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsWidgets);
     });
 
-    testWidgets('shows Add Geofence FAB', (tester) async {
+    testWidgets('shows Add Geofence button', (tester) async {
       await tester.pumpWidget(createApp());
       await tester.pump();
 
       expect(find.text('Add Geofence'), findsOneWidget);
-      expect(find.byType(FloatingActionButton), findsOneWidget);
     });
 
     testWidgets('invite button in app bar', (tester) async {
