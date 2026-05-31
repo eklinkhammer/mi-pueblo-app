@@ -46,6 +46,8 @@ defmodule FenceWeb.Router do
     put "/me", AuthController, :update_me
     delete "/me", AuthController, :delete_me
     post "/me/device-token", AuthController, :register_device_token
+    post "/me/avatar", AvatarController, :upload
+    delete "/me/avatar", AvatarController, :delete
 
     # Groups
     get "/groups", GroupController, :index

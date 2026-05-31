@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:fence/utils/avatar_url.dart';
 import 'package:fence/utils/user_colors.dart';
 
 class MemberMarker extends StatelessWidget {
   final String userId;
   final String displayName;
   final String timeAgo;
+  final String? avatarUrl;
 
   const MemberMarker({
     super.key,
     required this.userId,
     required this.displayName,
     required this.timeAgo,
+    this.avatarUrl,
   });
 
   @override
@@ -19,18 +22,19 @@ class MemberMarker extends StatelessWidget {
     final textColor =
         bgColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
     final firstName = displayName.trim().split(RegExp(r'\s+')).first;
+    final resolvedUrl = fullAvatarUrl(avatarUrl);
 
     return Tooltip(
       message: '$displayName\n$timeAgo',
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Circular avatar with initials
+          // Circular avatar with image or initials
           Container(
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: bgColor,
+              color: resolvedUrl == null ? bgColor : null,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: [
@@ -40,16 +44,24 @@ class MemberMarker extends StatelessWidget {
                   offset: const Offset(0, 2),
                 ),
               ],
+              image: resolvedUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(resolvedUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
             alignment: Alignment.center,
-            child: Text(
-              getInitials(displayName),
-              style: TextStyle(
-                color: textColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: resolvedUrl == null
+                ? Text(
+                    getInitials(displayName),
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(height: 2),
           // Name label pill

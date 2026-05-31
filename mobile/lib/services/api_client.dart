@@ -288,4 +288,15 @@ class ApiClient {
   // History
   Future<Response<Map<String, dynamic>>> getUserHistory(String userId) =>
       _dio.get<Map<String, dynamic>>('/users/$userId/history');
+
+  // Avatar
+  Future<Response<Map<String, dynamic>>> uploadAvatar(String filePath) {
+    final formData = FormData.fromMap({
+      'avatar': MultipartFile.fromFileSync(filePath),
+    });
+    return _dio.post<Map<String, dynamic>>('/me/avatar', data: formData);
+  }
+
+  Future<Response<dynamic>> deleteAvatar() =>
+      _dio.delete<dynamic>('/me/avatar');
 }

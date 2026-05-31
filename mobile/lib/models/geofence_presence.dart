@@ -1,6 +1,7 @@
 class GeofencePresence {
   final String userId;
   final String displayName;
+  final String? avatarUrl;
   final String sharingMode;
   final String geofenceId;
   final String geofenceName;
@@ -11,6 +12,7 @@ class GeofencePresence {
   const GeofencePresence({
     required this.userId,
     required this.displayName,
+    this.avatarUrl,
     required this.sharingMode,
     required this.geofenceId,
     required this.geofenceName,
@@ -23,6 +25,7 @@ class GeofencePresence {
     return GeofencePresence(
       userId: json['user_id'] as String,
       displayName: json['display_name'] as String,
+      avatarUrl: json['avatar_url'] as String?,
       sharingMode: json['sharing_mode'] as String,
       geofenceId: json['geofence_id'] as String,
       geofenceName: json['geofence_name'] as String,

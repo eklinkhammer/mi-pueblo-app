@@ -127,6 +127,7 @@ class GroupLocationsNotifier
       final entry = GeofencePresence(
         userId: userId,
         displayName: payload['display_name'] as String,
+        avatarUrl: payload['avatar_url'] as String?,
         sharingMode: (payload['sharing_mode'] as String?) ?? '',
         geofenceId: payload['geofence_id'] as String,
         geofenceName: payload['geofence_name'] as String,

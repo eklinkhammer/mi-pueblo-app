@@ -59,6 +59,12 @@ defmodule Fence.Accounts do
     |> Repo.update()
   end
 
+  def update_avatar(%User{} = user, avatar_url) do
+    user
+    |> User.avatar_changeset(%{avatar_url: avatar_url})
+    |> Repo.update()
+  end
+
   def delete_user(%User{} = user) do
     cancel_pending_jobs_for_user(user.id)
     Repo.delete(user)

@@ -46,6 +46,7 @@ defmodule Fence.Locations do
       select: %{
         user_id: l.user_id,
         display_name: u.display_name,
+        avatar_url: u.avatar_url,
         point: l.point,
         accuracy: l.accuracy,
         speed: l.speed,
@@ -75,6 +76,7 @@ defmodule Fence.Locations do
       select: %{
         user_id: l.user_id,
         display_name: u.display_name,
+        avatar_url: u.avatar_url,
         point: l.point,
         accuracy: l.accuracy,
         speed: l.speed,
@@ -104,6 +106,7 @@ defmodule Fence.Locations do
       select: %{
         user_id: s.user_id,
         display_name: u.display_name,
+        avatar_url: u.avatar_url,
         sharing_mode: m.sharing_mode,
         geofence_id: g.id,
         geofence_name: g.name,
@@ -321,6 +324,7 @@ defmodule Fence.Locations do
       payload = %{
         user_id: user_id,
         display_name: user && user.display_name,
+        avatar_url: user && user.avatar_url,
         latitude: lat,
         longitude: lng,
         accuracy: location.accuracy,

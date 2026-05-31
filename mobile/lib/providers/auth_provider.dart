@@ -200,6 +200,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> refreshUser() async {
+    try {
+      final response = await _apiClient.getMe();
+      final data = response.data!;
+      final user = User.fromJson(data['user'] as Map<String, dynamic>);
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+    } on Exception catch (_) {
+      // Silently fail - user data will refresh on next app restart
+    }
+  }
+
   Future<void> logout() async {
     _notificationService?.dispose();
     _notificationService = null;

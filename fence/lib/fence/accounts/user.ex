@@ -13,6 +13,7 @@ defmodule Fence.Accounts.User do
     field :google_id, :string
     field :locale, :string, default: "en"
     field :is_anonymous, :boolean, default: false
+    field :avatar_url, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -59,6 +60,11 @@ defmodule Fence.Accounts.User do
     |> validate_required([:display_name])
     |> validate_length(:display_name, min: 1, max: 100)
     |> put_change(:is_anonymous, true)
+  end
+
+  def avatar_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:avatar_url])
   end
 
   def link_google_changeset(user, attrs) do

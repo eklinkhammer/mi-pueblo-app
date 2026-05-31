@@ -372,6 +372,7 @@ defmodule Fence.Workers.PushNotificationWorker do
     payload = %{
       user_id: triggering_user.id,
       display_name: triggering_user.display_name,
+      avatar_url: triggering_user.avatar_url,
       geofence_id: geofence.id,
       geofence_name: geofence.name,
       geofence_latitude: geofence_latitude,

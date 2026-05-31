@@ -39,6 +39,7 @@ defmodule FenceWeb.LocationController do
             %{
               user_id: loc.user_id,
               display_name: loc.display_name,
+              avatar_url: loc.avatar_url,
               latitude: lat,
               longitude: lng,
               accuracy: loc.accuracy,
@@ -58,6 +59,7 @@ defmodule FenceWeb.LocationController do
             %{
               user_id: p.user_id,
               display_name: p.display_name,
+              avatar_url: p.avatar_url,
               sharing_mode: p.sharing_mode,
               geofence_id: p.geofence_id,
               geofence_name: p.geofence_name,

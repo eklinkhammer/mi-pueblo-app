@@ -646,9 +646,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
-  String get share => 'Share';
-
-  @override
   String inviteShareMessage(String url) {
     return 'Join my family on Mi Pueblo! Tap this link: $url';
   }

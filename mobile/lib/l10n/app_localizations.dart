@@ -1280,12 +1280,6 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
-  /// No description provided for @share.
-  ///
-  /// In en, this message translates to:
-  /// **'Share'**
-  String get share;
-
   /// No description provided for @inviteShareMessage.
   ///
   /// In en, this message translates to:

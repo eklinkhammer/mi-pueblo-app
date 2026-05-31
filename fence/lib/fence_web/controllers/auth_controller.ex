@@ -288,6 +288,7 @@ defmodule FenceWeb.AuthController do
       display_name: user.display_name,
       locale: user.locale,
       is_anonymous: user.is_anonymous,
+      avatar_url: user.avatar_url,
       inserted_at: user.inserted_at
     }
   end

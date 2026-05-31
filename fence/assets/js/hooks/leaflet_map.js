@@ -64,6 +64,34 @@ const LeafletMap = {
     setTimeout(() => this.map.invalidateSize(), 100)
   },
 
+  _userColors: ["#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6","#1abc9c","#e67e22","#34495e"],
+
+  _hashUserId(id) {
+    let hash = 0
+    for (let i = 0; i < id.length; i++) {
+      hash = ((hash << 5) - hash) + id.charCodeAt(i)
+      hash |= 0
+    }
+    return Math.abs(hash) % this._userColors.length
+  },
+
+  _createUserIcon(loc) {
+    const initial = (loc.display_name || "?").charAt(0).toUpperCase()
+    const color = this._userColors[this._hashUserId(loc.user_id)]
+    const innerStyle = loc.avatar_url
+      ? `background-image:url(${loc.avatar_url});background-size:cover;background-position:center;`
+      : `background-color:${color};`
+    const initialHtml = loc.avatar_url ? "" : `<span style="color:#fff;font-size:14px;font-weight:bold;">${initial}</span>`
+
+    return L.divIcon({
+      className: "",
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18],
+      html: `<div style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;${innerStyle}">${initialHtml}</div>`
+    })
+  },
+
   _updateLocations(locations) {
     const seen = new Set()
 
@@ -72,11 +100,12 @@ const LeafletMap = {
 
       if (this.markers[loc.user_id]) {
         this.markers[loc.user_id].setLatLng([loc.lat, loc.lng])
+        this.markers[loc.user_id].setIcon(this._createUserIcon(loc))
         this.markers[loc.user_id].setPopupContent(
           `<strong>${loc.display_name}</strong><br>${loc.time_ago}`
         )
       } else {
-        const marker = L.marker([loc.lat, loc.lng])
+        const marker = L.marker([loc.lat, loc.lng], {icon: this._createUserIcon(loc)})
           .addTo(this.map)
           .bindPopup(`<strong>${loc.display_name}</strong><br>${loc.time_ago}`)
         this.markers[loc.user_id] = marker

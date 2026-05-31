@@ -19,6 +19,7 @@ import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/history_provider.dart';
 import 'package:fence/services/api_client.dart';
 import 'package:fence/services/location_service.dart';
+import 'package:fence/utils/avatar_url.dart';
 import 'package:fence/utils/user_colors.dart';
 import 'package:fence/widgets/member_marker.dart';
 
@@ -430,6 +431,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       builder: (_) => _MemberDetailSheet(
         userId: member.userId,
         displayName: member.displayName,
+        avatarUrl: member.avatarUrl,
         updatedAt: member.updatedAt,
         presences: presences ?? [],
         groupId: groupId,
@@ -445,6 +447,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       builder: (_) => _MemberDetailSheet(
         userId: presence.userId,
         displayName: presence.displayName,
+        avatarUrl: presence.avatarUrl,
         updatedAt: null,
         presences: [presence],
         groupId: groupId,
@@ -500,14 +503,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: colorForUser(l.userId),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  _buildSmallAvatar(l.userId, l.displayName, l.avatarUrl),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
@@ -534,7 +530,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.fence, size: 8, color: colorForUser(p.userId)),
+                  _buildSmallAvatar(p.userId, p.displayName, p.avatarUrl),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
@@ -573,6 +569,29 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  Widget _buildSmallAvatar(String userId, String displayName, String? avatarUrl) {
+    final resolved = fullAvatarUrl(avatarUrl);
+    if (resolved != null) {
+      return CircleAvatar(
+        radius: 8,
+        backgroundImage: NetworkImage(resolved),
+      );
+    }
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        color: colorForUser(userId),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
   MarkerLayer _buildGeofencePresenceMarkerLayer(List<GeofencePresence> presenceUsers) {
     // Build userId -> homeGeofenceId map
     final groupId = ref.watch(selectedGroupIdProvider);
@@ -601,6 +620,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   userId: p.userId,
                   displayName: p.displayName,
                   timeAgo: '@ $label',
+                  avatarUrl: p.avatarUrl,
                 ),
               ),
             );
@@ -625,6 +645,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   userId: l.userId,
                   displayName: l.displayName,
                   timeAgo: _timeAgo(l.updatedAt),
+                  avatarUrl: l.avatarUrl,
                 ),
               ))
           .toList(),
@@ -837,6 +858,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 class _MemberDetailSheet extends ConsumerWidget {
   final String userId;
   final String displayName;
+  final String? avatarUrl;
   final DateTime? updatedAt;
   final List<GeofencePresence> presences;
   final String? groupId;
@@ -844,6 +866,7 @@ class _MemberDetailSheet extends ConsumerWidget {
   const _MemberDetailSheet({
     required this.userId,
     required this.displayName,
+    this.avatarUrl,
     required this.updatedAt,
     required this.presences,
     required this.groupId,
@@ -891,31 +914,42 @@ class _MemberDetailSheet extends ConsumerWidget {
             // Header: avatar + name + last updated
             Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    getInitials(displayName),
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                Builder(builder: (_) {
+                  final resolvedUrl = fullAvatarUrl(avatarUrl);
+                  return Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: resolvedUrl == null ? bgColor : null,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                      image: resolvedUrl != null
+                          ? DecorationImage(
+                              image: NetworkImage(resolvedUrl),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                     ),
-                  ),
-                ),
+                    alignment: Alignment.center,
+                    child: resolvedUrl == null
+                        ? Text(
+                            getInitials(displayName),
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
+                  );
+                }),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

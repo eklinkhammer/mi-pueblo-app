@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:fence/l10n/app_localizations.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/locale_provider.dart';
 import 'package:fence/providers/theme_color_provider.dart';
+import 'package:fence/services/api_client.dart';
 import 'package:fence/services/location_service.dart';
+import 'package:fence/utils/avatar_url.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -38,7 +41,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           // Profile section
           ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
+            leading: GestureDetector(
+              onTap: () => _pickAndUploadAvatar(context),
+              child: Builder(builder: (_) {
+                final resolved = fullAvatarUrl(authState.user?.avatarUrl);
+                if (resolved != null) {
+                  return CircleAvatar(backgroundImage: NetworkImage(resolved));
+                }
+                return const CircleAvatar(child: Icon(Icons.camera_alt));
+              }),
+            ),
             title: Text(authState.user?.displayName ?? l10n.unknown),
             subtitle: Text((authState.user?.isAnonymous ?? false)
                 ? l10n.anonymousAccount
@@ -140,6 +152,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _pickAndUploadAvatar(BuildContext context) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 85,
+    );
+    if (image == null) return;
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.uploadAvatar(image.path);
+      await ref.read(authProvider.notifier).refreshUser();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Avatar updated')),
+      );
+    } on Exception catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to upload avatar')),
+      );
+    }
   }
 
   void _showColorPicker(BuildContext context) {

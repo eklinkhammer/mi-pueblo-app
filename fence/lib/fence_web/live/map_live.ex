@@ -133,6 +133,7 @@ defmodule FenceWeb.MapLive do
         %{
           user_id: loc.user_id,
           display_name: loc.display_name || "Unknown",
+          avatar_url: loc.avatar_url,
           lat: lat,
           lng: lng,
           time_ago: time_ago(loc.updated_at)
@@ -250,9 +251,15 @@ defmodule FenceWeb.MapLive do
         </div>
         <div class="w-64 space-y-2">
           <h3 class="font-semibold text-sm text-gray-700">Members</h3>
-          <div :for={loc <- @locations} class="text-sm">
-            <span class="font-medium">{loc.display_name}</span>
-            <span class="text-gray-500 ml-1">{loc.time_ago}</span>
+          <div :for={loc <- @locations} class="text-sm flex items-center gap-2">
+            <div
+              class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold bg-cover bg-center"
+              style={if loc.avatar_url, do: "background-image: url(#{loc.avatar_url})", else: "background-color: #{user_color(loc.user_id)}"}
+            >
+              <span :if={!loc.avatar_url}>{String.first(loc.display_name)}</span>
+            </div>
+            <span class="font-medium truncate">{loc.display_name}</span>
+            <span class="text-gray-500 ml-auto text-xs whitespace-nowrap">{loc.time_ago}</span>
           </div>
           <div :if={@locations == []} class="text-sm text-gray-400">No locations yet</div>
 
@@ -276,4 +283,10 @@ defmodule FenceWeb.MapLive do
 
   defp round_radius(val) when is_float(val), do: Float.round(val) |> trunc()
   defp round_radius(val), do: val
+
+  @user_colors ~w(#e74c3c #3498db #2ecc71 #f39c12 #9b59b6 #1abc9c #e67e22 #34495e)
+  defp user_color(user_id) do
+    index = :erlang.phash2(user_id, length(@user_colors))
+    Enum.at(@user_colors, index)
+  end
 end
