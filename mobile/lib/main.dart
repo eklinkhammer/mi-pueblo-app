@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fence/firebase_options.dart';
 import 'package:fence/l10n/app_localizations.dart';
@@ -15,12 +14,10 @@ import 'package:fence/providers/websocket_provider.dart';
 import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/router.dart';
 import 'package:fence/services/deep_link_service.dart';
-import 'package:fence/services/headless_task.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await bg.BackgroundGeolocation.registerHeadlessTask(headlessTask);
+  FlutterForegroundTask.initCommunicationPort();
   runApp(const ProviderScope(child: FenceApp()));
 }
 

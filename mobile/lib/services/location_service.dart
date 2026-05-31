@@ -1,81 +1,230 @@
 import 'dart:async';
+import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:fence/config.dart';
+import 'package:fence/models/app_geofence.dart';
 import 'package:fence/models/app_location.dart';
 import 'package:fence/services/api_client.dart';
 
-enum PermissionStatus { granted, denied, notDetermined }
+enum AppPermissionStatus { granted, denied, notDetermined }
 
-/// Abstraction over [bg.BackgroundGeolocation] static methods so that
-/// [LocationService] can be unit-tested with a fake/mock backend.
+/// Abstraction over location services so that [LocationService] can be
+/// unit-tested with a fake/mock backend.
 abstract class GeolocationBackend {
-  Future<int> requestPermission();
-  Future<bg.State> ready(bg.Config config);
-  Future<bg.State> start();
-  Future<bg.State> stop();
-  Future<bg.Location> getCurrentPosition(
-      {Map<String, dynamic> extras = const {}});
-  void onLocation(void Function(bg.Location) callback);
-  void onMotionChange(void Function(bg.Location) callback);
-  Future<void> addGeofences(List<bg.Geofence> geofences);
+  Future<AppPermissionStatus> requestPermission();
+  Future<void> configure({
+    required int distanceFilter,
+    required int intervalMs,
+    required bool debug,
+  });
+  Future<void> start();
+  Future<void> stop();
+  Future<AppLocation?> getCurrentPosition();
+  Stream<AppLocation> get onLocation;
+  Future<void> addGeofences(List<AppGeofence> geofences);
   Future<void> removeGeofences([List<String>? identifiers]);
-  void onGeofence(void Function(bg.GeofenceEvent) callback);
+  Stream<AppGeofenceEvent> get onGeofence;
 }
 
-/// Default implementation that delegates to the real plugin.
-class BgGeolocationBackend implements GeolocationBackend {
-  @override
-  Future<int> requestPermission() =>
-      bg.BackgroundGeolocation.requestPermission();
+/// Implementation using geolocator + flutter_foreground_task.
+class GeolocatorForegroundBackend implements GeolocationBackend {
+  final _locationController = StreamController<AppLocation>.broadcast();
+  final _geofenceController = StreamController<AppGeofenceEvent>.broadcast();
+  final _battery = Battery();
+  StreamSubscription<geo.Position>? _positionSub;
+  bool _configured = false;
+  int _distanceFilter = 50;
 
   @override
-  Future<bg.State> ready(bg.Config config) =>
-      bg.BackgroundGeolocation.ready(config);
+  Future<AppPermissionStatus> requestPermission() async {
+    // Request "when in use" first
+    var status = await ph.Permission.locationWhenInUse.request();
+    if (!status.isGranted) {
+      return status.isDenied
+          ? AppPermissionStatus.denied
+          : AppPermissionStatus.notDetermined;
+    }
+
+    // Then request "always" for background location
+    status = await ph.Permission.locationAlways.request();
+    if (status.isGranted || status.isLimited) {
+      return AppPermissionStatus.granted;
+    }
+    // "when in use" alone is not sufficient for background location
+    return AppPermissionStatus.denied;
+  }
 
   @override
-  Future<bg.State> start() => bg.BackgroundGeolocation.start();
+  Future<void> configure({
+    required int distanceFilter,
+    required int intervalMs,
+    required bool debug,
+  }) async {
+    _distanceFilter = distanceFilter;
+
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'fence_location_channel',
+        channelName: 'Location Tracking',
+        channelDescription: 'Shares your location with family members',
+        channelImportance: NotificationChannelImportance.LOW,
+        priority: NotificationPriority.LOW,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        autoRunOnBoot: true,
+        autoRunOnMyPackageReplaced: true,
+        allowWakeLock: true,
+        allowWifiLock: false,
+        eventAction: ForegroundTaskEventAction.repeat(intervalMs),
+      ),
+    );
+
+    _configured = true;
+  }
 
   @override
-  Future<bg.State> stop() => bg.BackgroundGeolocation.stop();
+  Future<void> start() async {
+    if (!_configured) return;
 
-  @override
-  Future<bg.Location> getCurrentPosition(
-          {Map<String, dynamic> extras = const {}}) =>
-      bg.BackgroundGeolocation.getCurrentPosition(extras: extras);
+    // Start listening to the position stream.
+    // flutter_foreground_task handles the foreground service, so we use plain
+    // LocationSettings here to avoid a duplicate notification.
+    await _positionSub?.cancel();
 
-  @override
-  void onLocation(void Function(bg.Location) callback) =>
-      bg.BackgroundGeolocation.onLocation(callback);
+    _positionSub = geo.Geolocator.getPositionStream(
+      locationSettings: geo.LocationSettings(
+        accuracy: geo.LocationAccuracy.high,
+        distanceFilter: _distanceFilter,
+      ),
+    ).listen((position) async {
+      final batteryLevel = await _getBatteryLevel();
+      final appLoc = AppLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+        altitude: position.altitude,
+        speed: position.speed,
+        heading: position.heading,
+        batteryLevel: batteryLevel,
+      );
+      _locationController.add(appLoc);
+    });
 
-  @override
-  void onMotionChange(void Function(bg.Location) callback) =>
-      bg.BackgroundGeolocation.onMotionChange(callback);
-
-  @override
-  Future<void> addGeofences(List<bg.Geofence> geofences) =>
-      bg.BackgroundGeolocation.addGeofences(geofences);
-
-  @override
-  Future<void> removeGeofences([List<String>? identifiers]) async {
-    if (identifiers == null) {
-      await bg.BackgroundGeolocation.removeGeofences();
-    } else {
-      for (final id in identifiers) {
-        await bg.BackgroundGeolocation.removeGeofence(id);
-      }
+    // Start the foreground task service
+    final serviceRunning = await FlutterForegroundTask.isRunningService;
+    if (!serviceRunning) {
+      await FlutterForegroundTask.startService(
+        serviceId: 256,
+        notificationTitle: 'Mi Pueblo',
+        notificationText: 'Location sharing active',
+        callback: _foregroundTaskCallback,
+      );
     }
   }
 
   @override
-  void onGeofence(void Function(bg.GeofenceEvent) callback) =>
-      bg.BackgroundGeolocation.onGeofence(callback);
+  Future<void> stop() async {
+    await _positionSub?.cancel();
+    _positionSub = null;
+    await FlutterForegroundTask.stopService();
+  }
+
+  @override
+  Future<AppLocation?> getCurrentPosition() async {
+    try {
+      final position = await geo.Geolocator.getCurrentPosition(
+        locationSettings: const geo.LocationSettings(
+          accuracy: geo.LocationAccuracy.high,
+        ),
+      );
+      final batteryLevel = await _getBatteryLevel();
+      return AppLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+        altitude: position.altitude,
+        speed: position.speed,
+        heading: position.heading,
+        batteryLevel: batteryLevel,
+      );
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Stream<AppLocation> get onLocation => _locationController.stream;
+
+  @override
+  Future<void> addGeofences(List<AppGeofence> geofences) async {
+    // Delegated to GeofenceSyncService which uses native_geofence directly
+  }
+
+  @override
+  Future<void> removeGeofences([List<String>? identifiers]) async {
+    // Delegated to GeofenceSyncService which uses native_geofence directly
+  }
+
+  @override
+  Stream<AppGeofenceEvent> get onGeofence => _geofenceController.stream;
+
+  Future<double?> _getBatteryLevel() async {
+    try {
+      final level = await _battery.batteryLevel;
+      if (level < 0) return null;
+      return level / 100.0;
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  void dispose() {
+    _positionSub?.cancel();
+    _locationController.close();
+    _geofenceController.close();
+  }
+}
+
+/// Top-level callback for flutter_foreground_task — required to be top-level.
+@pragma('vm:entry-point')
+void _foregroundTaskCallback() {
+  FlutterForegroundTask.setTaskHandler(LocationTaskHandler());
+}
+
+/// TaskHandler that runs inside the foreground service isolate.
+class LocationTaskHandler extends TaskHandler {
+  @override
+  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
+    // Nothing needed on start
+  }
+
+  @override
+  void onRepeatEvent(DateTime timestamp) {
+    // The main location tracking is handled by Geolocator.getPositionStream()
+    // in the main isolate. This handler keeps the foreground service alive.
+  }
+
+  @override
+  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
+    // Cleanup
+  }
+
+  @override
+  void onReceiveData(Object data) {
+    // Handle data from main isolate if needed
+  }
 }
 
 final geolocationBackendProvider = Provider<GeolocationBackend>((ref) {
-  return BgGeolocationBackend();
+  return GeolocatorForegroundBackend();
 });
 
 final locationServiceProvider = Provider<LocationService>((ref) {
@@ -90,22 +239,15 @@ class LocationService {
   Future<void>? _readyFuture;
   bool _disposed = false;
   final _locationController = StreamController<AppLocation>.broadcast();
+  StreamSubscription<AppLocation>? _backendSub;
 
   LocationService(this._apiClient, [GeolocationBackend? backend])
-      : _backend = backend ?? BgGeolocationBackend();
+      : _backend = backend ?? GeolocatorForegroundBackend();
 
   Stream<AppLocation> get onLocation => _locationController.stream;
 
-  Future<PermissionStatus> requestPermissions() async {
-    final status = await _backend.requestPermission();
-    if (status == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS ||
-        status == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_WHEN_IN_USE) {
-      return PermissionStatus.granted;
-    }
-    if (status == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_DENIED) {
-      return PermissionStatus.denied;
-    }
-    return PermissionStatus.notDetermined;
+  Future<AppPermissionStatus> requestPermissions() async {
+    return _backend.requestPermission();
   }
 
   Future<void> _ensureConfigured() {
@@ -114,59 +256,19 @@ class LocationService {
   }
 
   Future<void> _configure() async {
-    _backend.onLocation(_onLocation);
-    _backend.onMotionChange(_onMotionChange);
+    _backendSub = _backend.onLocation.listen(_onLocation);
 
-    await _backend.ready(bg.Config(
-      desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-      distanceFilter: kDebugMode ? 10.0 : AppConfig.locationDistanceFilter.toDouble(),
-      locationUpdateInterval: kDebugMode ? 30000 : AppConfig.locationIntervalMs,
-      disableStopDetection: kDebugMode,
+    await _backend.configure(
+      distanceFilter: kDebugMode ? 10 : AppConfig.locationDistanceFilter,
+      intervalMs: kDebugMode ? 30000 : AppConfig.locationIntervalMs,
       debug: kDebugMode,
-      stopOnTerminate: false,
-      startOnBoot: true,
-      enableHeadless: true,
-      autoSync: false,
-      foregroundService: true,
-      backgroundPermissionRationale: bg.PermissionRationale(
-        title: 'Allow Mi Pueblo to access your location in the background?',
-        message: 'This app collects location data so you can share your location and arrival data with family members',
-        positiveAction: 'Change to "Allow all the time"',
-        negativeAction: 'Cancel',
-      ),
-      notification: bg.Notification(
-        title: 'Mi Pueblo',
-        text: 'Location sharing active',
-      ),
-    ));
-  }
-
-  void _onLocation(bg.Location location) {
-    if (_disposed) return;
-    final appLoc = _toAppLocation(location);
-    _locationController.add(appLoc);
-    _reportAppLocation(appLoc);
-  }
-
-  void _onMotionChange(bg.Location location) {
-    if (_disposed) return;
-    final appLoc = _toAppLocation(location);
-    _locationController.add(appLoc);
-    _reportAppLocation(appLoc);
-  }
-
-  AppLocation _toAppLocation(bg.Location location) {
-    final coords = location.coords;
-    final battery = location.battery;
-    return AppLocation(
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      accuracy: coords.accuracy,
-      altitude: coords.altitude,
-      speed: coords.speed,
-      heading: coords.heading,
-      batteryLevel: battery.level,
     );
+  }
+
+  void _onLocation(AppLocation appLoc) {
+    if (_disposed) return;
+    _locationController.add(appLoc);
+    _reportAppLocation(appLoc);
   }
 
   Future<void> _reportAppLocation(AppLocation loc) async {
@@ -188,10 +290,7 @@ class LocationService {
   Future<AppLocation?> getCurrentPosition() async {
     try {
       await _ensureConfigured();
-      final location = await _backend.getCurrentPosition(
-        extras: {},
-      );
-      return _toAppLocation(location);
+      return await _backend.getCurrentPosition();
     } on Exception catch (_) {
       return null;
     }
@@ -208,6 +307,8 @@ class LocationService {
 
   void dispose() {
     _disposed = true;
+    _backend.stop();
+    _backendSub?.cancel();
     _locationController.close();
   }
 }

@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:fence/models/app_location.dart';
+import 'package:fence/models/app_geofence.dart';
 import 'package:fence/services/location_service.dart';
 import '../helpers/fakes.dart';
 import '../helpers/mocks.dart';
@@ -15,113 +15,88 @@ import '../helpers/mocks.dart';
 
 class MockGeolocationBackend extends Mock implements GeolocationBackend {}
 
-/// Build a [bg.Location] from a simple map.  The real constructor parses a
-/// native payload, so we supply the same shape it expects.
-bg.Location fakeBgLocation({
+AppLocation fakeAppLocation({
   double latitude = 37.7749,
   double longitude = -122.4194,
   double accuracy = 10.0,
   double altitude = 50.0,
   double speed = 1.5,
   double heading = 90.0,
-  double batteryLevel = 0.85,
-  bool isCharging = false,
+  double? batteryLevel = 0.85,
 }) {
-  return bg.Location({
-    'coords': {
-      'latitude': latitude,
-      'longitude': longitude,
-      'accuracy': accuracy,
-      'altitude': altitude,
-      'speed': speed,
-      'heading': heading,
-      'heading_accuracy': 5.0,
-      'speed_accuracy': 1.0,
-      'altitude_accuracy': 3.0,
-      'ellipsoidal_altitude': altitude,
-    },
-    'battery': {
-      'level': batteryLevel,
-      'is_charging': isCharging,
-    },
-    'activity': {
-      'type': 'unknown',
-      'confidence': 100,
-    },
-    'timestamp': DateTime.now().toIso8601String(),
-    'age': 0,
-    'is_moving': speed > 0,
-    'uuid': 'test-uuid',
-    'odometer': 0.0,
-  });
+  return AppLocation(
+    latitude: latitude,
+    longitude: longitude,
+    accuracy: accuracy,
+    altitude: altitude,
+    speed: speed,
+    heading: heading,
+    batteryLevel: batteryLevel,
+  );
 }
-
-// Fallback values for mocktail matchers.
-class _FakeBgConfig extends Fake implements bg.Config {}
-
-class _FakeBgState extends Fake implements bg.State {}
 
 void main() {
   late MockGeolocationBackend backend;
   late MockApiClient apiClient;
   late LocationService service;
+  late StreamController<AppLocation> locationStreamController;
 
   setUpAll(() {
-    registerFallbackValue(_FakeBgConfig());
     registerFallbackValue(<String, dynamic>{});
+    registerFallbackValue(<AppGeofence>[]);
   });
 
   setUp(() {
     backend = MockGeolocationBackend();
     apiClient = MockApiClient();
+    locationStreamController = StreamController<AppLocation>.broadcast();
     service = LocationService(apiClient, backend);
 
     // Default stubs — individual tests can override.
-    when(() => backend.ready(any())).thenAnswer((_) async => _FakeBgState());
-    when(() => backend.start()).thenAnswer((_) async => _FakeBgState());
-    when(() => backend.stop()).thenAnswer((_) async => _FakeBgState());
-    when(() => backend.onLocation(any())).thenReturn(null);
-    when(() => backend.onMotionChange(any())).thenReturn(null);
+    when(() => backend.configure(
+          distanceFilter: any(named: 'distanceFilter'),
+          intervalMs: any(named: 'intervalMs'),
+          debug: any(named: 'debug'),
+        )).thenAnswer((_) async {});
+    when(() => backend.start()).thenAnswer((_) async {});
+    when(() => backend.stop()).thenAnswer((_) async {});
+    when(() => backend.onLocation)
+        .thenAnswer((_) => locationStreamController.stream);
     when(() => apiClient.reportLocation(any()))
         .thenAnswer((_) async => fakeResponse({'status': 'ok'}));
   });
 
   tearDown(() {
     service.dispose();
+    locationStreamController.close();
   });
 
   // -----------------------------------------------------------------------
   // requestPermissions
   // -----------------------------------------------------------------------
   group('requestPermissions', () {
-    test('returns granted for AUTHORIZATION_STATUS_ALWAYS', () async {
-      when(() => backend.requestPermission()).thenAnswer(
-          (_) async => bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS);
-
-      expect(await service.requestPermissions(), PermissionStatus.granted);
-    });
-
-    test('returns granted for AUTHORIZATION_STATUS_WHEN_IN_USE', () async {
-      when(() => backend.requestPermission()).thenAnswer((_) async =>
-          bg.ProviderChangeEvent.AUTHORIZATION_STATUS_WHEN_IN_USE);
-
-      expect(await service.requestPermissions(), PermissionStatus.granted);
-    });
-
-    test('returns denied for AUTHORIZATION_STATUS_DENIED', () async {
-      when(() => backend.requestPermission()).thenAnswer(
-          (_) async => bg.ProviderChangeEvent.AUTHORIZATION_STATUS_DENIED);
-
-      expect(await service.requestPermissions(), PermissionStatus.denied);
-    });
-
-    test('returns notDetermined for AUTHORIZATION_STATUS_NOT_DETERMINED',
-        () async {
-      when(() => backend.requestPermission()).thenAnswer((_) async =>
-          bg.ProviderChangeEvent.AUTHORIZATION_STATUS_NOT_DETERMINED);
+    test('returns granted', () async {
+      when(() => backend.requestPermission())
+          .thenAnswer((_) async => AppPermissionStatus.granted);
 
       expect(
-          await service.requestPermissions(), PermissionStatus.notDetermined);
+          await service.requestPermissions(), AppPermissionStatus.granted);
+    });
+
+    test('returns denied', () async {
+      when(() => backend.requestPermission())
+          .thenAnswer((_) async => AppPermissionStatus.denied);
+
+      expect(
+          await service.requestPermissions(), AppPermissionStatus.denied);
+    });
+
+    test('returns notDetermined', () async {
+      when(() => backend.requestPermission())
+          .thenAnswer((_) async => AppPermissionStatus.notDetermined);
+
+      expect(await service.requestPermissions(),
+          AppPermissionStatus.notDetermined);
     });
   });
 
@@ -130,7 +105,7 @@ void main() {
   // -----------------------------------------------------------------------
   group('getCurrentPosition', () {
     test('returns AppLocation with correct field mapping', () async {
-      final loc = fakeBgLocation(
+      final loc = fakeAppLocation(
         latitude: 40.0,
         longitude: -74.0,
         accuracy: 5.0,
@@ -139,7 +114,7 @@ void main() {
         heading: 180.0,
         batteryLevel: 0.6,
       );
-      when(() => backend.getCurrentPosition(extras: any(named: 'extras')))
+      when(() => backend.getCurrentPosition())
           .thenAnswer((_) async => loc);
 
       final result = await service.getCurrentPosition();
@@ -155,7 +130,7 @@ void main() {
     });
 
     test('returns null on error', () async {
-      when(() => backend.getCurrentPosition(extras: any(named: 'extras')))
+      when(() => backend.getCurrentPosition())
           .thenThrow(Exception('GPS unavailable'));
 
       expect(await service.getCurrentPosition(), isNull);
@@ -166,18 +141,26 @@ void main() {
   // startTracking / stopTracking
   // -----------------------------------------------------------------------
   group('startTracking', () {
-    test('calls _ensureConfigured then start', () async {
+    test('calls configure then start', () async {
       await service.startTracking();
 
-      verify(() => backend.ready(any())).called(1);
+      verify(() => backend.configure(
+            distanceFilter: any(named: 'distanceFilter'),
+            intervalMs: any(named: 'intervalMs'),
+            debug: any(named: 'debug'),
+          )).called(1);
       verify(() => backend.start()).called(1);
     });
 
-    test('_ensureConfigured is idempotent — ready called only once', () async {
+    test('configure is idempotent — called only once', () async {
       await service.startTracking();
       await service.startTracking();
 
-      verify(() => backend.ready(any())).called(1);
+      verify(() => backend.configure(
+            distanceFilter: any(named: 'distanceFilter'),
+            intervalMs: any(named: 'intervalMs'),
+            debug: any(named: 'debug'),
+          )).called(1);
       verify(() => backend.start()).called(2);
     });
   });
@@ -194,29 +177,16 @@ void main() {
   // Location callbacks → stream + API report
   // -----------------------------------------------------------------------
   group('location callbacks', () {
-    late void Function(bg.Location) capturedOnLocation;
-    late void Function(bg.Location) capturedOnMotionChange;
-
     setUp(() async {
-      // Capture the callbacks registered during _ensureConfigured.
-      when(() => backend.onLocation(any())).thenAnswer((invocation) {
-        capturedOnLocation =
-            invocation.positionalArguments[0] as void Function(bg.Location);
-      });
-      when(() => backend.onMotionChange(any())).thenAnswer((invocation) {
-        capturedOnMotionChange =
-            invocation.positionalArguments[0] as void Function(bg.Location);
-      });
-
-      // Trigger configuration.
+      // Trigger configuration so the backend stream is subscribed.
       await service.startTracking();
     });
 
-    test('onLocation callback emits to stream and reports to API', () async {
-      final loc = fakeBgLocation(latitude: 51.5, longitude: -0.1);
+    test('onLocation stream emits and reports to API', () async {
+      final loc = fakeAppLocation(latitude: 51.5, longitude: -0.1);
 
       final future = service.onLocation.first;
-      capturedOnLocation(loc);
+      locationStreamController.add(loc);
       final emitted = await future;
 
       expect(emitted.latitude, 51.5);
@@ -227,23 +197,8 @@ void main() {
       verify(() => apiClient.reportLocation(any())).called(1);
     });
 
-    test('onMotionChange callback emits to stream and reports to API',
-        () async {
-      final loc = fakeBgLocation(latitude: 48.8, longitude: 2.3);
-
-      final future = service.onLocation.first;
-      capturedOnMotionChange(loc);
-      final emitted = await future;
-
-      expect(emitted.latitude, 48.8);
-      expect(emitted.longitude, 2.3);
-
-      await Future<void>.delayed(Duration.zero);
-      verify(() => apiClient.reportLocation(any())).called(1);
-    });
-
     test('reportAppLocation sends correct payload shape', () async {
-      final loc = fakeBgLocation(
+      final loc = fakeAppLocation(
         latitude: 35.0,
         longitude: 139.0,
         accuracy: 8.0,
@@ -253,7 +208,7 @@ void main() {
         batteryLevel: 0.9,
       );
 
-      capturedOnLocation(loc);
+      locationStreamController.add(loc);
       await Future<void>.delayed(Duration.zero);
 
       final captured =
@@ -273,10 +228,10 @@ void main() {
       when(() => apiClient.reportLocation(any()))
           .thenThrow(Exception('Network error'));
 
-      final loc = fakeBgLocation();
+      final loc = fakeAppLocation();
 
       // Should not throw.
-      capturedOnLocation(loc);
+      locationStreamController.add(loc);
       await Future<void>.delayed(Duration.zero);
     });
   });

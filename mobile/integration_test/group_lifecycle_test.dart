@@ -27,7 +27,7 @@ void main() {
 
     mockLocation = _MockLocationService();
     when(() => mockLocation.requestPermissions())
-        .thenAnswer((_) async => PermissionStatus.granted);
+        .thenAnswer((_) async => AppPermissionStatus.granted);
     when(() => mockLocation.getCurrentPosition())
         .thenAnswer((_) async => null);
     when(() => mockLocation.startTracking()).thenAnswer((_) async {});

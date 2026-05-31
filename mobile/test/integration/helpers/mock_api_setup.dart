@@ -135,7 +135,7 @@ Future<void> pumpAppWithMocks(
 
   // Stub location service methods to avoid crashes
   when(locService.requestPermissions)
-      .thenAnswer((_) async => PermissionStatus.granted);
+      .thenAnswer((_) async => AppPermissionStatus.granted);
   when(locService.getCurrentPosition).thenAnswer((_) async => null);
   when(locService.startTracking).thenAnswer((_) async {});
   when(locService.stopTracking).thenAnswer((_) async {});

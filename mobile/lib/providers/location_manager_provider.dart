@@ -14,7 +14,7 @@ final locationManagerProvider = Provider<void>((ref) {
   var disposed = false;
 
   locationService.requestPermissions().then((status) {
-    if (!disposed && status == PermissionStatus.granted) {
+    if (!disposed && status == AppPermissionStatus.granted) {
       locationService.startTracking();
     }
   });

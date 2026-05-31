@@ -44,8 +44,8 @@ class FakeLocationService {
     accuracy = acc;
   }
 
-  Future<PermissionStatus> requestPermissions() async =>
-      PermissionStatus.granted;
+  Future<AppPermissionStatus> requestPermissions() async =>
+      AppPermissionStatus.granted;
   Future<void> startTracking() async {}
   Future<void> stopTracking() async {}
   void dispose() => _locationController.close();

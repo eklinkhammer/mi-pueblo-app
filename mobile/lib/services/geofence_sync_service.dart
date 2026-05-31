@@ -1,22 +1,18 @@
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:native_geofence/native_geofence.dart';
 import 'package:fence/services/api_client.dart';
-import 'package:fence/services/location_service.dart';
+import 'package:fence/services/headless_task.dart';
 
 final geofenceSyncServiceProvider = Provider<GeofenceSyncService>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  final backend = ref.watch(geolocationBackendProvider);
-  return GeofenceSyncService(apiClient, backend);
+  return GeofenceSyncService(apiClient);
 });
 
 class GeofenceSyncService {
   final ApiClient _apiClient;
-  final GeolocationBackend _backend;
-  bool _listening = false;
   bool _disposed = false;
 
-  GeofenceSyncService(this._apiClient, this._backend);
+  GeofenceSyncService(this._apiClient);
 
   Future<void> syncGeofences() async {
     if (_disposed) return;
@@ -26,64 +22,42 @@ class GeofenceSyncService {
       final geofences = data['geofences'] as List<dynamic>;
 
       // Remove all existing geofences first
-      await _backend.removeGeofences();
+      await NativeGeofenceManager.instance.removeAllGeofences();
 
       if (geofences.isEmpty) return;
 
       // Add all server geofences as native geofences
-      final nativeGeofences = geofences.map((g) {
+      for (final g in geofences) {
         final map = g as Map<String, dynamic>;
-        return bg.Geofence(
-          identifier: map['id'] as String,
-          latitude: (map['latitude'] as num).toDouble(),
-          longitude: (map['longitude'] as num).toDouble(),
-          radius: (map['radius_meters'] as num).toDouble(),
-          notifyOnEntry: true,
-          notifyOnExit: true,
+        final geofence = Geofence(
+          id: map['id'] as String,
+          location: Location(
+            latitude: (map['latitude'] as num).toDouble(),
+            longitude: (map['longitude'] as num).toDouble(),
+          ),
+          radiusMeters: (map['radius_meters'] as num).toDouble(),
+          triggers: {GeofenceEvent.enter, GeofenceEvent.exit},
+          androidSettings: const AndroidGeofenceSettings(
+            initialTriggers: {GeofenceEvent.enter},
+          ),
+          iosSettings: const IosGeofenceSettings(
+            initialTrigger: true,
+          ),
         );
-      }).toList();
-
-      await _backend.addGeofences(nativeGeofences);
+        await NativeGeofenceManager.instance
+            .createGeofence(geofence, geofenceCallback);
+      }
     } on Exception catch (_) {
       // Silently fail - will retry on next sync trigger
     }
   }
 
-  void startListening() {
-    if (_listening || _disposed) return;
-    _listening = true;
-
-    _backend.onGeofence(_handleGeofenceEvent);
-  }
-
   Future<void> dispose() async {
     _disposed = true;
-    _listening = false;
-    await _backend.removeGeofences();
-  }
-
-  Future<void> _handleGeofenceEvent(bg.GeofenceEvent event) async {
-    if (_disposed) return;
-    final identifier = event.identifier;
-    final action = event.action == 'ENTER' ? 'entered' : 'exited';
-    final location = event.location;
-    final coords = location.coords;
-    final battery = location.battery;
-
     try {
-      await _apiClient.reportGeofenceEvent({
-        'geofence_id': identifier,
-        'action': action,
-        'latitude': coords.latitude,
-        'longitude': coords.longitude,
-        'accuracy': coords.accuracy,
-        'altitude': coords.altitude,
-        'speed': coords.speed,
-        'bearing': coords.heading,
-        'battery_level': battery.level,
-      });
+      await NativeGeofenceManager.instance.removeAllGeofences();
     } on Exception catch (_) {
-      // Silently fail - periodic location checks are the safety net
+      // Best effort cleanup
     }
   }
 }

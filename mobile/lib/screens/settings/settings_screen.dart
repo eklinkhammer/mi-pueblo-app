@@ -99,10 +99,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               final status = await locationService.requestPermissions();
               if (!context.mounted) return;
               final message = switch (status) {
-                PermissionStatus.granted => l10n.locationPermissionGranted,
-                PermissionStatus.denied =>
+                AppPermissionStatus.granted => l10n.locationPermissionGranted,
+                AppPermissionStatus.denied =>
                   l10n.locationPermissionDeniedSettings,
-                PermissionStatus.notDetermined =>
+                AppPermissionStatus.notDetermined =>
                   l10n.locationPermissionNotDetermined,
               };
               ScaffoldMessenger.of(context).showSnackBar(

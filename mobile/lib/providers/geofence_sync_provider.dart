@@ -11,9 +11,6 @@ final geofenceSyncManagerProvider = Provider<void>((ref) {
 
   final syncService = ref.read(geofenceSyncServiceProvider);
 
-  // Start listening for native geofence events
-  syncService.startListening();
-
   // Initial sync
   syncService.syncGeofences();
 
