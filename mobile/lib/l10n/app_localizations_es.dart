@@ -669,4 +669,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get currentlyAtHome => 'Actualmente en casa';
+
+  @override
+  String get homeGeofencesDontCount => 'Las geocercas de hogar no cuentan';
 }

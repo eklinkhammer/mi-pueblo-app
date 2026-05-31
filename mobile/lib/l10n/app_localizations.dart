@@ -1309,6 +1309,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Currently at home'**
   String get currentlyAtHome;
+
+  /// No description provided for @homeGeofencesDontCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Home geofences don\'t count'**
+  String get homeGeofencesDontCount;
 }
 
 class _AppLocalizationsDelegate

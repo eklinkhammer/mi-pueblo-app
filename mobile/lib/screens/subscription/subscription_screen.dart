@@ -149,21 +149,21 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   price: _tierPrice(tier, l10n),
                   isCurrent: tier == currentTier,
                   features: [
-                    '${l10n.groupsYouCanCreate}: ${_limitDisplay(
+                    (text: '${l10n.groupsYouCanCreate}: ${_limitDisplay(
                       tier == SubscriptionTier.villageMember
                           ? 1
                           : tier == SubscriptionTier.villageElder
                               ? 3
                               : -1,
                       l10n,
-                    )}',
-                    '${l10n.groupsYouCanJoin}: ${l10n.unlimited}',
-                    '${l10n.membersPerGroup}: ${tier == SubscriptionTier.villageMember ? 10 : tier == SubscriptionTier.villageElder ? 50 : 100}',
-                    '${l10n.geofencesPerGroup}: ${_limitDisplay(
+                    )}', subtitle: null),
+                    (text: '${l10n.groupsYouCanJoin}: ${l10n.unlimited}', subtitle: null),
+                    (text: '${l10n.membersPerGroup}: ${tier == SubscriptionTier.villageMember ? 10 : tier == SubscriptionTier.villageElder ? 50 : 100}', subtitle: null),
+                    (text: '${l10n.geofencesPerGroup}: ${_limitDisplay(
                       tier == SubscriptionTier.villageMember ? 3 : -1,
                       l10n,
-                    )}',
-                    '${l10n.historyRetention}: ${tier == SubscriptionTier.villageMember ? 7 : 90} ${l10n.days}',
+                    )}', subtitle: tier == SubscriptionTier.villageMember ? l10n.homeGeofencesDontCount : null),
+                    (text: '${l10n.historyRetention}: ${tier == SubscriptionTier.villageMember ? 7 : 90} ${l10n.days}', subtitle: null),
                   ],
                   onUpgrade: tier.index > currentTier.index && !_purchasing
                       ? () => _purchase(tier)
@@ -201,7 +201,7 @@ class _TierCard extends StatelessWidget {
   final String tierName;
   final String price;
   final bool isCurrent;
-  final List<String> features;
+  final List<({String text, String? subtitle})> features;
   final VoidCallback? onUpgrade;
   final bool purchasing;
   final AppLocalizations l10n;
@@ -249,17 +249,28 @@ class _TierCard extends StatelessWidget {
                 style: theme.textTheme.titleLarge
                     ?.copyWith(color: theme.colorScheme.primary)),
             const SizedBox(height: 8),
-            for (final feature in features)
+            for (final feature in features) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(
                   children: [
                     Icon(Icons.check, size: 16, color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
-                    Text(feature, style: theme.textTheme.bodyMedium),
+                    Text(feature.text, style: theme.textTheme.bodyMedium),
                   ],
                 ),
               ),
+              if (feature.subtitle != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 24),
+                  child: Text(
+                    feature.subtitle!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
             if (onUpgrade != null) ...[
               const SizedBox(height: 12),
               SizedBox(

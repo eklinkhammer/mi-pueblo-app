@@ -265,5 +265,7 @@
     }
   },
   "replaceHome": "Reemplazar hogar",
-  "currentlyAtHome": "Actualmente en casa"
+  "currentlyAtHome": "Actualmente en casa",
+
+  "homeGeofencesDontCount": "Las geocercas de hogar no cuentan"
 }

@@ -663,4 +663,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get currentlyAtHome => 'Currently at home';
+
+  @override
+  String get homeGeofencesDontCount => 'Home geofences don\'t count';
 }

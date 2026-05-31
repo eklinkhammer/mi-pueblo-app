@@ -310,5 +310,7 @@
     }
   },
   "replaceHome": "Replace Home",
-  "currentlyAtHome": "Currently at home"
+  "currentlyAtHome": "Currently at home",
+
+  "homeGeofencesDontCount": "Home geofences don't count"
 }
