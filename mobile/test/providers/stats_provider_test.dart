@@ -30,9 +30,9 @@ void main() {
                 'group_name': 'Family',
                 'home_geofence_name': 'Home',
                 'home_visit_count': 5,
-                'housemates': [],
+                'housemates': <Map<String, dynamic>>[],
                 'your_top_geofences': [
-                  {'geofence_name': 'Work', 'visit_count': 3},
+                  {'geofence_id': 'gf1', 'geofence_name': 'Work', 'visit_count': 3},
                 ],
               }
             ]
@@ -48,7 +48,7 @@ void main() {
 
     test('handles empty stats list', () async {
       when(() => mockApi.getStats())
-          .thenAnswer((_) async => fakeResponse({'stats': []}));
+          .thenAnswer((_) async => fakeResponse({'stats': <Map<String, dynamic>>[]}));
 
       final stats = await container.read(statsProvider.future);
 

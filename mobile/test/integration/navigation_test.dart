@@ -15,7 +15,7 @@ void main() {
   });
 
   group('Navigation', () {
-    testWidgets('tab switching: Map ↔ Groups ↔ Stats ↔ Settings via bottom nav',
+    testWidgets('tab switching: Map ↔ Groups ↔ Subscription via bottom nav',
         (tester) async {
       setupAuthenticatedStubs(mockApi);
       setupGroupStubs(mockApi);
@@ -33,15 +33,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('No groups yet'), findsOneWidget);
 
-      // Switch to Stats
-      await tester.tap(find.text('Stats'));
+      // Switch to Subscription
+      await tester.tap(find.text('Subscription'));
       await tester.pumpAndSettle();
-      expect(find.text('Claim a home geofence to see stats'), findsOneWidget);
-
-      // Switch to Settings
-      await tester.tap(find.text('Settings'));
-      await tester.pumpAndSettle();
-      expect(find.text('Sign Out'), findsOneWidget);
 
       // Back to Map (tap the bottom nav label)
       await tester.tap(find.text('Map').last);
@@ -49,7 +43,8 @@ void main() {
       expect(find.text('Select a group to view the map'), findsOneWidget);
     });
 
-    testWidgets('settings screen shows user profile info', (tester) async {
+    testWidgets('map screen shows group selector when authenticated',
+        (tester) async {
       setupAuthenticatedStubs(mockApi);
       setupGroupStubs(mockApi);
       setupGeofenceStubs(mockApi);
@@ -58,13 +53,7 @@ void main() {
 
       await pumpAppWithMocks(tester, apiClient: mockApi);
 
-      await tester.tap(find.text('Settings'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Alice'), findsOneWidget);
-      expect(find.text('alice@example.com'), findsOneWidget);
-      expect(find.text('Location Sharing'), findsOneWidget);
-      expect(find.text('Location Permissions'), findsOneWidget);
+      expect(find.text('Select a group to view the map'), findsOneWidget);
     });
 
     testWidgets('map screen shows "Select a group" when no group selected',

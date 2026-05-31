@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -71,7 +73,7 @@ class ShellScaffold extends ConsumerWidget {
     );
   }
 
-  void _showStatsDrawer(BuildContext context, WidgetRef ref) async {
+  Future<void> _showStatsDrawer(BuildContext context, WidgetRef ref) async {
     // Navigate to map first so it's visible behind the drawer
     context.go('/map');
 
@@ -86,14 +88,14 @@ class ShellScaffold extends ConsumerWidget {
               (lat: first.homeLatitude!, lng: first.homeLongitude!);
         }
       }
-    } catch (_) {}
+    } on Exception catch (_) {}
 
     if (!context.mounted) return;
-    showModalBottomSheet<void>(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => const _StatsSheet(),
-    );
+    ));
   }
 }
 

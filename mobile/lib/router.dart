@@ -16,8 +16,6 @@ import 'package:fence/screens/groups/join_group_screen.dart';
 import 'package:fence/screens/geofences/geofence_create_screen.dart';
 import 'package:fence/screens/geofences/geofence_detail_screen.dart';
 import 'package:fence/screens/groups/group_notification_settings_screen.dart';
-import 'package:fence/screens/history/history_screen.dart';
-import 'package:fence/screens/stats/stats_screen.dart';
 import 'package:fence/screens/subscription/subscription_screen.dart';
 import 'package:fence/screens/settings/settings_screen.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
@@ -131,22 +129,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ],
               ),
             ],
-          ),
-          GoRoute(
-            path: '/history',
-            builder: (context, state) => const HistoryScreen(),
-            routes: [
-              GoRoute(
-                path: ':userId',
-                builder: (context, state) => HistoryScreen(
-                  userId: state.pathParameters['userId'],
-                ),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/stats',
-            builder: (context, state) => const StatsScreen(),
           ),
           GoRoute(
             path: '/subscription',

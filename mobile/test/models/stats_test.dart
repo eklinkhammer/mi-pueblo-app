@@ -5,6 +5,7 @@ void main() {
   group('GeofenceVisitStat.fromJson', () {
     test('parses all fields correctly', () {
       final stat = GeofenceVisitStat.fromJson({
+        'geofence_id': 'gf1',
         'geofence_name': 'Work',
         'visit_count': 15,
       });
@@ -19,8 +20,8 @@ void main() {
       final stat = HousemateStat.fromJson({
         'display_name': 'Alice',
         'top_geofences': [
-          {'geofence_name': 'Office', 'visit_count': 10},
-          {'geofence_name': 'Gym', 'visit_count': 5},
+          {'geofence_id': 'gf1', 'geofence_name': 'Office', 'visit_count': 10},
+          {'geofence_id': 'gf2', 'geofence_name': 'Gym', 'visit_count': 5},
         ],
       });
 
@@ -33,7 +34,7 @@ void main() {
     test('parses with empty top geofences', () {
       final stat = HousemateStat.fromJson({
         'display_name': 'Bob',
-        'top_geofences': [],
+        'top_geofences': <Map<String, dynamic>>[],
       });
 
       expect(stat.displayName, 'Bob');
@@ -52,12 +53,12 @@ void main() {
           {
             'display_name': 'Alice',
             'top_geofences': [
-              {'geofence_name': 'Work', 'visit_count': 15},
+              {'geofence_id': 'gf1', 'geofence_name': 'Work', 'visit_count': 15},
             ],
           },
         ],
         'your_top_geofences': [
-          {'geofence_name': 'Office', 'visit_count': 22},
+          {'geofence_id': 'gf2', 'geofence_name': 'Office', 'visit_count': 22},
         ],
       });
 
@@ -77,8 +78,8 @@ void main() {
         'group_name': 'Family',
         'home_geofence_name': 'Home',
         'home_visit_count': 0,
-        'housemates': [],
-        'your_top_geofences': [],
+        'housemates': <Map<String, dynamic>>[],
+        'your_top_geofences': <Map<String, dynamic>>[],
       });
 
       expect(stat.homeVisitCount, 0);

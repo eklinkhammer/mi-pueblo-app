@@ -113,54 +113,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     return _buildAuthenticatedView(context);
   }
 
-  Widget _buildAnonymousView(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      body: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _myPosition != null
-                  ? LatLng(_myPosition!.latitude, _myPosition!.longitude)
-                  : const LatLng(37.7749, -122.4194),
-              initialZoom: 12,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.fence.app',
-              ),
-              _buildMyLocationMarker(),
-            ],
-          ),
-          Positioned(
-            bottom: 32,
-            left: 32,
-            right: 32,
-            child: FilledButton(
-              onPressed: () => _showJoinSheet(context),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Text(l10n.joinGroup),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: _myPosition != null
-          ? Padding(
-              padding: const EdgeInsets.only(bottom: 80),
-              child: FloatingActionButton(
-                heroTag: 'myLocation',
-                onPressed: _centerOnMe,
-                child: const Icon(Icons.my_location),
-              ),
-            )
-          : null,
-    );
-  }
-
   void _showJoinSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -222,7 +174,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       body: Stack(
         children: [
           // Full-screen map
-          selectedGroupId == null ? _buildBasicMap() : _buildMap(),
+          if (selectedGroupId == null) _buildBasicMap() else _buildMap(),
           // Top-center floating group selector
           Positioned(
             top: 0,

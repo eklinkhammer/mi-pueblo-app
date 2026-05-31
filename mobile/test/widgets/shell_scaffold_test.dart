@@ -27,12 +27,8 @@ void main() {
               builder: (_, __) => const Text('Groups Page'),
             ),
             GoRoute(
-              path: '/history',
-              builder: (_, __) => const Text('History Page'),
-            ),
-            GoRoute(
-              path: '/settings',
-              builder: (_, __) => const Text('Settings Page'),
+              path: '/subscription',
+              builder: (_, __) => const Text('Subscription Page'),
             ),
           ],
         ),
@@ -79,9 +75,9 @@ void main() {
 
       expect(find.byType(NavigationDestination), findsNWidgets(4));
       expect(find.text('Map'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
       expect(find.text('Groups'), findsOneWidget);
-      expect(find.text('History'), findsOneWidget);
-      expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('Subscription'), findsOneWidget);
     });
 
     testWidgets('correct tab selected for /map route', (tester) async {
@@ -119,30 +115,11 @@ void main() {
 
       final navBar =
           tester.widget<NavigationBar>(find.byType(NavigationBar));
-      expect(navBar.selectedIndex, 1);
-    });
-
-    testWidgets('correct tab selected for /history route', (tester) async {
-      final router = createRouter(initialLocation: '/history');
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
-        ],
-        child: MaterialApp.router(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: router,
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      final navBar =
-          tester.widget<NavigationBar>(find.byType(NavigationBar));
       expect(navBar.selectedIndex, 2);
     });
 
-    testWidgets('correct tab selected for /settings route', (tester) async {
-      final router = createRouter(initialLocation: '/settings');
+    testWidgets('correct tab selected for /subscription route', (tester) async {
+      final router = createRouter(initialLocation: '/subscription');
       await tester.pumpWidget(ProviderScope(
         overrides: [
           authProvider.overrideWith((ref) => AuthNotifier(mockApi, MockLocalNotificationService())),
