@@ -529,17 +529,19 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         backgroundImage: NetworkImage(resolved),
       );
     }
+    final bgColor = colorForUser(userId);
+    final textColor = bgColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
     return Container(
       width: 16,
       height: 16,
       decoration: BoxDecoration(
-        color: colorForUser(userId),
+        color: bgColor,
         shape: BoxShape.circle,
       ),
       alignment: Alignment.center,
       child: Text(
         displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-        style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 9, fontWeight: FontWeight.bold),
+        style: TextStyle(color: textColor, fontSize: 9, fontWeight: FontWeight.bold),
       ),
     );
   }
