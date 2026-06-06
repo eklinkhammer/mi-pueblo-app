@@ -460,7 +460,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   Flexible(
                     child: Text(
                       '${l.displayName}$suffix - ${_timeAgo(l.updatedAt)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black87),
+                      style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -487,7 +487,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   Flexible(
                     child: Text(
                       '${p.displayName} @ ${p.geofenceId == homeGeofenceIds[p.userId] ? AppLocalizations.of(context).home : p.geofenceName}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black87),
+                      style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -539,7 +539,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       alignment: Alignment.center,
       child: Text(
         displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+        style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 9, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -874,7 +874,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: resolvedUrl == null ? bgColor : null,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.2),

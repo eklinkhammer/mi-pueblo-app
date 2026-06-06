@@ -36,7 +36,7 @@ class MemberMarker extends StatelessWidget {
             decoration: BoxDecoration(
               color: resolvedUrl == null ? bgColor : null,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
+              border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.3),
@@ -68,12 +68,12 @@ class MemberMarker extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               firstName,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87),
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
               overflow: TextOverflow.ellipsis,
             ),
           ),
