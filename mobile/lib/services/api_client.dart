@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fence/config.dart';
@@ -291,8 +292,17 @@ class ApiClient {
 
   // Avatar
   Future<Response<Map<String, dynamic>>> uploadAvatar(String filePath) {
+    final ext = filePath.split('.').last.toLowerCase();
+    final mimeType = switch (ext) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      _ => 'image/jpeg',
+    };
     final formData = FormData.fromMap({
-      'avatar': MultipartFile.fromFileSync(filePath),
+      'avatar': MultipartFile.fromFileSync(
+        filePath,
+        contentType: MediaType.parse(mimeType),
+      ),
     });
     return _dio.post<Map<String, dynamic>>('/me/avatar', data: formData);
   }
