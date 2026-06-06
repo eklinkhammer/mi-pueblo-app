@@ -17,6 +17,8 @@ class GroupLocationsNotifier
 
   @override
   Future<List<MemberLocation>> build(String arg) async {
+    // Keep alive so WebSocket subscriptions persist when navigating away from map
+    ref.keepAlive();
     final locations = await _fetchLocations(arg);
     _listenToWebSocket(arg);
     _startPeriodicRefresh(arg);

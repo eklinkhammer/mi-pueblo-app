@@ -666,4 +666,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeGeofencesDontCount => 'Home geofences don\'t count';
+
+  @override
+  String get here => 'Here';
 }

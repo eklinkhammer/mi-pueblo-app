@@ -1315,6 +1315,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Home geofences don\'t count'**
   String get homeGeofencesDontCount;
+
+  /// No description provided for @here.
+  ///
+  /// In en, this message translates to:
+  /// **'Here'**
+  String get here;
 }
 
 class _AppLocalizationsDelegate

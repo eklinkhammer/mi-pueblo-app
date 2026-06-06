@@ -24,13 +24,29 @@ final geofenceSyncManagerProvider = Provider<void>((ref) {
   // Re-sync when geofences:changed arrives via WebSocket
   final wsService = ref.read(websocketServiceProvider);
   final subscription = wsService.messages.listen((message) {
-    if (message['event'] == 'geofences:changed') {
+    final event = message['event'] as String?;
+    final topic = message['topic'] as String?;
+
+    if (event == 'geofences:changed') {
       syncService.syncGeofences();
       // Refresh the UI provider for this group
-      final topic = message['topic'] as String?;
       if (topic != null && topic.startsWith('group:')) {
         final groupId = topic.replaceFirst('group:', '');
         ref.invalidate(geofencesProvider(groupId));
+      }
+    }
+
+    if (event == 'geofence:entered' || event == 'geofence:exited') {
+      if (topic != null && topic.startsWith('group:')) {
+        final groupId = topic.replaceFirst('group:', '');
+        final payload = message['payload'] as Map<String, dynamic>?;
+        final geofenceId = payload?['geofence_id'] as String?;
+        if (geofenceId != null) {
+          ref.invalidate(geofenceResidentsProvider(
+              (groupId: groupId, geofenceId: geofenceId)));
+          ref.invalidate(geofenceActivityProvider(
+              (groupId: groupId, geofenceId: geofenceId)));
+        }
       }
     }
   });

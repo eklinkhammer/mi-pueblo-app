@@ -672,4 +672,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeGeofencesDontCount => 'Las geocercas de hogar no cuentan';
+
+  @override
+  String get here => 'Aquí';
 }

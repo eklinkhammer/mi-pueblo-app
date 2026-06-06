@@ -10,6 +10,7 @@ import 'package:fence/providers/auth_provider.dart';
 import 'package:fence/providers/geofences_provider.dart';
 import 'package:fence/providers/groups_provider.dart' show groupMembersProvider;
 import 'package:fence/services/geofence_sync_service.dart';
+import 'package:fence/providers/locations_provider.dart';
 
 class GeofenceDetailScreen extends ConsumerWidget {
   final String groupId;
@@ -30,6 +31,11 @@ class GeofenceDetailScreen extends ConsumerWidget {
         geofenceResidentsProvider((groupId: groupId, geofenceId: geofenceId)));
     final activityAsync = ref.watch(
         geofenceActivityProvider((groupId: groupId, geofenceId: geofenceId)));
+    final presence = ref.watch(groupGeofencePresenceProvider(groupId));
+    final presentUserIds = presence
+        .where((p) => p.geofenceId == geofenceId)
+        .map((p) => p.userId)
+        .toSet();
     final currentUserId = ref.watch(authProvider).user?.id;
     final l10n = AppLocalizations.of(context);
 
@@ -129,8 +135,19 @@ class GeofenceDetailScreen extends ConsumerWidget {
                                   color: Theme.of(context).colorScheme.onSurfaceVariant)),
                         ),
                       ...residents.map((r) => ListTile(
-                            leading: const Icon(Icons.person),
+                            leading: Icon(
+                              Icons.person,
+                              color: presentUserIds.contains(r.id)
+                                  ? Colors.green
+                                  : null,
+                            ),
                             title: Text(r.displayName),
+                            trailing: presentUserIds.contains(r.id)
+                                ? Text(l10n.here,
+                                    style: TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold))
+                                : null,
                           )),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
