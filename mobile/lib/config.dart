@@ -17,4 +17,8 @@ class AppConfig {
   static const Duration locationInterval = Duration(minutes: 5);
   static final int locationIntervalMs = locationInterval.inMilliseconds;
   static const int locationDistanceFilter = 50; // meters
+
+  /// If no location update arrives within this duration, the position stream
+  /// is assumed stalled and will be restarted. Set to 2× the location interval.
+  static const Duration locationWatchdogTimeout = Duration(minutes: 10);
 }

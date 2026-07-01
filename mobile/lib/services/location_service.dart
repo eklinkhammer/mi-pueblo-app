@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -38,6 +39,8 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
   StreamSubscription<geo.Position>? _positionSub;
   bool _configured = false;
   int _distanceFilter = 50;
+  int _intervalMs = 300000;
+  Timer? _watchdog;
 
   @override
   Future<AppPermissionStatus> requestPermission() async {
@@ -65,6 +68,7 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
     required bool debug,
   }) async {
     _distanceFilter = distanceFilter;
+    _intervalMs = intervalMs;
 
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
@@ -94,29 +98,10 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
   Future<void> start() async {
     if (!_configured) return;
 
-    // Start listening to the position stream.
-    // flutter_foreground_task handles the foreground service, so we use plain
-    // LocationSettings here to avoid a duplicate notification.
-    await _positionSub?.cancel();
+    await _startPositionStream();
 
-    _positionSub = geo.Geolocator.getPositionStream(
-      locationSettings: geo.LocationSettings(
-        accuracy: geo.LocationAccuracy.high,
-        distanceFilter: _distanceFilter,
-      ),
-    ).listen((position) async {
-      final batteryLevel = await _getBatteryLevel();
-      final appLoc = AppLocation(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        accuracy: position.accuracy,
-        altitude: position.altitude,
-        speed: position.speed,
-        heading: position.heading,
-        batteryLevel: batteryLevel,
-      );
-      _locationController.add(appLoc);
-    });
+    // Listen for heartbeat data sent from the foreground task isolate
+    FlutterForegroundTask.addTaskDataCallback(_onTaskData);
 
     // Start the foreground task service
     final serviceRunning = await FlutterForegroundTask.isRunningService;
@@ -130,10 +115,90 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
     }
   }
 
+  void _onTaskData(Object data) {
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final appLoc = AppLocation(
+        latitude: map['latitude'] as double,
+        longitude: map['longitude'] as double,
+        accuracy: map['accuracy'] as double,
+        altitude: map['altitude'] as double,
+        speed: map['speed'] as double,
+        heading: map['heading'] as double,
+        batteryLevel: map['batteryLevel'] as double?,
+      );
+      _locationController.add(appLoc);
+      _resetWatchdog();
+    }
+  }
+
+  Future<void> _startPositionStream() async {
+    await _positionSub?.cancel();
+    _watchdog?.cancel();
+
+    // Use platform-specific settings for reliable background delivery.
+    // flutter_foreground_task handles the foreground service, so we omit
+    // foregroundNotificationConfig to avoid a duplicate notification.
+    final geo.LocationSettings settings;
+    if (Platform.isAndroid) {
+      settings = geo.AndroidSettings(
+        accuracy: geo.LocationAccuracy.high,
+        distanceFilter: _distanceFilter,
+        intervalDuration: Duration(milliseconds: _intervalMs),
+      );
+    } else {
+      settings = geo.AppleSettings(
+        accuracy: geo.LocationAccuracy.high,
+        distanceFilter: _distanceFilter,
+        activityType: geo.ActivityType.other,
+        allowBackgroundLocationUpdates: true,
+        showBackgroundLocationIndicator: true,
+      );
+    }
+
+    _positionSub = geo.Geolocator.getPositionStream(
+      locationSettings: settings,
+    ).listen((position) async {
+      _resetWatchdog();
+      final batteryLevel = await _getBatteryLevel();
+      final appLoc = AppLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+        altitude: position.altitude,
+        speed: position.speed,
+        heading: position.heading,
+        batteryLevel: batteryLevel,
+      );
+      _locationController.add(appLoc);
+    }, onError: (Object error) {
+      debugPrint('LocationService: position stream error: $error');
+      // Restart after a brief delay to avoid tight loop
+      Future.delayed(const Duration(seconds: 5), _startPositionStream);
+    });
+
+    _resetWatchdog();
+  }
+
+  /// Restarts the position stream if it silently stalls.
+  void _resetWatchdog() {
+    _watchdog?.cancel();
+    const timeout = kDebugMode
+        ? Duration(minutes: 2)
+        : AppConfig.locationWatchdogTimeout;
+    _watchdog = Timer(timeout, () {
+      debugPrint('LocationService: watchdog fired — restarting position stream');
+      _startPositionStream();
+    });
+  }
+
   @override
   Future<void> stop() async {
+    _watchdog?.cancel();
+    _watchdog = null;
     await _positionSub?.cancel();
     _positionSub = null;
+    FlutterForegroundTask.removeTaskDataCallback(_onTaskData);
     await FlutterForegroundTask.stopService();
   }
 
@@ -187,7 +252,9 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
   }
 
   void dispose() {
+    _watchdog?.cancel();
     _positionSub?.cancel();
+    FlutterForegroundTask.removeTaskDataCallback(_onTaskData);
     _locationController.close();
     _geofenceController.close();
   }
@@ -200,16 +267,47 @@ void _foregroundTaskCallback() {
 }
 
 /// TaskHandler that runs inside the foreground service isolate.
+///
+/// `onRepeatEvent()` acts as a heartbeat: it polls the current position and
+/// sends it back to the main isolate so location is reported even when the
+/// position stream stalls or the user is stationary.
 class LocationTaskHandler extends TaskHandler {
+  final _battery = Battery();
+
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     // Nothing needed on start
   }
 
   @override
-  void onRepeatEvent(DateTime timestamp) {
-    // The main location tracking is handled by Geolocator.getPositionStream()
-    // in the main isolate. This handler keeps the foreground service alive.
+  Future<void> onRepeatEvent(DateTime timestamp) async {
+    try {
+      final position = await geo.Geolocator.getCurrentPosition(
+        locationSettings: const geo.LocationSettings(
+          accuracy: geo.LocationAccuracy.high,
+        ),
+      );
+
+      double? batteryLevel;
+      try {
+        final level = await _battery.batteryLevel;
+        if (level >= 0) batteryLevel = level / 100.0;
+      } on Exception catch (_) {
+        // Ignore battery errors
+      }
+
+      FlutterForegroundTask.sendDataToMain({
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'accuracy': position.accuracy,
+        'altitude': position.altitude,
+        'speed': position.speed,
+        'heading': position.heading,
+        'batteryLevel': batteryLevel,
+      });
+    } on Exception catch (e) {
+      debugPrint('LocationTaskHandler heartbeat failed: $e');
+    }
   }
 
   @override
