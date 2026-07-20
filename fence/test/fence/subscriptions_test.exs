@@ -123,6 +123,7 @@ defmodule Fence.SubscriptionsTest do
       # Add 9 more members (creator + 9 = 10)
       for _ <- 1..9 do
         member = create_user()
+
         %Fence.Groups.Membership{}
         |> Fence.Groups.Membership.changeset(%{
           user_id: member.id,
@@ -207,6 +208,7 @@ defmodule Fence.SubscriptionsTest do
       group = create_group(creator)
 
       member = create_user()
+
       %Fence.Groups.Membership{}
       |> Fence.Groups.Membership.changeset(%{
         user_id: member.id,

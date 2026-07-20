@@ -1,7 +1,10 @@
 defmodule FenceWeb.GeofenceEventControllerTest do
   use FenceWeb.ConnCase, async: false
 
+  use Oban.Testing, repo: Fence.Repo
+
   import Fence.Factory
+  alias Fence.Workers.GeofenceCheckWorker
 
   setup %{conn: conn} do
     user = create_user()
@@ -120,6 +123,23 @@ defmodule FenceWeb.GeofenceEventControllerTest do
         })
 
       assert json_response(conn, 401)
+    end
+
+    test "geofence event enqueues GeofenceCheckWorker job", %{conn: conn, user: user} do
+      group = create_group(user)
+      geofence = create_geofence(group, user)
+
+      params = %{
+        "geofence_id" => geofence.id,
+        "action" => "entered",
+        "latitude" => 37.7749,
+        "longitude" => -122.4194,
+        "accuracy" => 10.0
+      }
+
+      post(conn, "/api/v1/geofence-events", params)
+
+      assert_enqueued(worker: GeofenceCheckWorker, args: %{"user_id" => user.id})
     end
   end
 end

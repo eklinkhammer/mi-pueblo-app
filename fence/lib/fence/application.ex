@@ -9,6 +9,11 @@ defmodule Fence.Application do
 
   @impl true
   def start(_type, _args) do
+    # ETS table for GPS EMA smoothing (per-user smoothed coordinates)
+    if :ets.whereis(:geofence_ema) == :undefined do
+      :ets.new(:geofence_ema, [:named_table, :public, :set])
+    end
+
     fcm_children =
       if Application.get_env(:fence, :fcm_credentials) do
         Logger.info("[FCM] FCM credentials found — starting Goth + FCM children")

@@ -19,6 +19,14 @@ class AppConfig {
   static const int locationDistanceFilter = 50; // meters
 
   /// If no location update arrives within this duration, the position stream
-  /// is assumed stalled and will be restarted. Set to 2× the location interval.
+  /// is assumed stalled and will be restarted. Set to 2x the location interval.
   static const Duration locationWatchdogTimeout = Duration(minutes: 10);
+
+  // Adaptive tracking thresholds
+  static const double batteryLowThreshold = 0.20;
+  static const double batteryCriticalThreshold = 0.10;
+  static const double stationarySpeedThreshold = 0.5; // m/s
+  static const int distanceFilterMoving = 25;
+  static const int distanceFilterLowBattery = 100;
+  static const int distanceFilterCritical = 200;
 }

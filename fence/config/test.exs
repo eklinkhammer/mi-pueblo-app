@@ -29,6 +29,11 @@ config :swoosh, :api_client, false
 config :fence, :google_token_module, Fence.Accounts.GoogleTokenMock
 config :fence, :start_google_jwks, false
 
+# Disable geofence dwell time in tests so state changes are immediate
+config :fence, :geofence_dwell,
+  entry_seconds: 0,
+  exit_seconds: 0
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

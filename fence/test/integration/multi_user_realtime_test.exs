@@ -73,12 +73,15 @@ defmodule Fence.Integration.MultiUserRealtimeTest do
   describe "broadcast isolation across groups" do
     test "broadcasts only go to the relevant group channel", %{conn: conn} do
       # A is in both groups, B in group1 only, C in group2 only
-      {_user_a, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
+      {user_a, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
       {_user_b, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       {_user_c, token_c, _} = register_via_api(conn, %{"display_name" => "Carol"})
       conn_a = authed_conn_from_token(conn, token_a)
       conn_b = authed_conn_from_token(conn, token_b)
       conn_c = authed_conn_from_token(conn, token_c)
+
+      # Upgrade Alice so she can create multiple groups
+      upgrade_tier(user_a["id"])
 
       # A creates group1, B joins
       group1 = setup_group_with_invite(conn_a, conn_b)

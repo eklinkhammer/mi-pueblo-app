@@ -44,7 +44,14 @@ else
   {:ok, _} = Groups.join_by_invite_code(carol.id, "123456")
 
   # ── Activate all visibility pairs ─────────────────────────────────
-  for {u1, u2} <- [{alice, bob}, {alice, carol}, {bob, alice}, {bob, carol}, {carol, alice}, {carol, bob}] do
+  for {u1, u2} <- [
+        {alice, bob},
+        {alice, carol},
+        {bob, alice},
+        {bob, carol},
+        {carol, alice},
+        {carol, bob}
+      ] do
     Groups.share_visibility(u1.id, group.id, u2.id)
   end
 
@@ -110,30 +117,36 @@ else
     {alice, bob_gf, alice_gf, 11 * 24, 25},
     {alice, bob_gf, alice_gf, 8 * 24, 45},
     {alice, bob_gf, alice_gf, 5 * 24, 30},
-    {alice, bob_gf, alice_gf, 6, 40},         # 6 hours ago
+    # 6 hours ago
+    {alice, bob_gf, alice_gf, 6, 40},
     # Alice visits Carol's House (3 times)
     {alice, carol_gf, alice_gf, 12 * 24, 50},
     {alice, carol_gf, alice_gf, 7 * 24, 20},
-    {alice, carol_gf, alice_gf, 3, 55},        # 3 hours ago
+    # 3 hours ago
+    {alice, carol_gf, alice_gf, 3, 55},
     # Bob visits Alice's House (4 times)
     {bob, alice_gf, bob_gf, 13 * 24, 40},
     {bob, alice_gf, bob_gf, 10 * 24, 30},
     {bob, alice_gf, bob_gf, 6 * 24, 25},
-    {bob, alice_gf, bob_gf, 8, 50},            # 8 hours ago
+    # 8 hours ago
+    {bob, alice_gf, bob_gf, 8, 50},
     # Bob visits Carol's House (2 times)
     {bob, carol_gf, bob_gf, 9 * 24, 35},
-    {bob, carol_gf, bob_gf, 14, 45},           # 14 hours ago
+    # 14 hours ago
+    {bob, carol_gf, bob_gf, 14, 45},
     # Carol visits Alice's House (6 times)
     {carol, alice_gf, carol_gf, 13 * 24, 30},
     {carol, alice_gf, carol_gf, 11 * 24, 45},
     {carol, alice_gf, carol_gf, 9 * 24, 20},
     {carol, alice_gf, carol_gf, 7 * 24, 55},
     {carol, alice_gf, carol_gf, 4 * 24, 35},
-    {carol, alice_gf, carol_gf, 10, 40},       # 10 hours ago
+    # 10 hours ago
+    {carol, alice_gf, carol_gf, 10, 40},
     # Carol visits Bob's House (3 times)
     {carol, bob_gf, carol_gf, 12 * 24, 25},
     {carol, bob_gf, carol_gf, 8 * 24, 50},
-    {carol, bob_gf, carol_gf, 4, 30}           # 4 hours ago
+    # 4 hours ago
+    {carol, bob_gf, carol_gf, 4, 30}
   ]
 
   visit_events =

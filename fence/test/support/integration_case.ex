@@ -71,4 +71,15 @@ defmodule Fence.IntegrationCase do
   def share_mutual_visibility(user_id_a, user_id_b, group_id) do
     {:ok, _} = Fence.Groups.share_visibility(user_id_a, group_id, user_id_b)
   end
+
+  @doc "Upgrade a user's subscription tier (e.g. to allow creating multiple groups)."
+  def upgrade_tier(user_id, tier \\ "village_elder") do
+    alias Fence.Subscriptions.Subscription
+
+    {:ok, sub} = Fence.Subscriptions.get_or_create_subscription(user_id)
+
+    sub
+    |> Subscription.changeset(%{tier: tier})
+    |> Fence.Repo.update!()
+  end
 end

@@ -98,6 +98,7 @@ defmodule Fence.Stats do
           %Geo.Point{coordinates: {lng, lat}} -> {lat, lng}
           _ -> {nil, nil}
         end
+
       %{name: gf.name, latitude: lat, longitude: lng}
     end)
   end

@@ -4,7 +4,7 @@ defmodule Fence.Locations do
   alias Fence.{Accounts, Groups}
   alias Fence.Locations.{DeviceLocation, GeofenceEvent, UserGeofenceState}
   alias Fence.Repo
-  alias Fence.Workers.{GeofenceCheckWorker, PushNotificationWorker}
+  alias Fence.Workers.GeofenceCheckWorker
 
   def report_location(user_id, attrs) do
     location_attrs = Map.put(attrs, "user_id", user_id)
@@ -129,6 +129,29 @@ defmodule Fence.Locations do
   end
 
   # sobelow_skip ["SQL.Query"]
+  def get_user_geofence_radii(user_id) do
+    query = """
+    SELECT g.id, g.radius_meters
+    FROM geofences g
+    JOIN memberships m ON m.group_id = g.group_id AND m.user_id = $1
+    LEFT JOIN geofence_opt_outs oo ON oo.geofence_id = g.id AND oo.user_id = $1
+    WHERE g.expires_at > $2 AND oo.id IS NULL
+    """
+
+    now = DateTime.utc_now()
+
+    case Repo.query(query, [Ecto.UUID.dump!(user_id), now]) do
+      {:ok, %{rows: rows}} ->
+        rows
+        |> Enum.map(fn [id, radius] -> {Ecto.UUID.cast!(id), radius} end)
+        |> Map.new()
+
+      _ ->
+        %{}
+    end
+  end
+
+  # sobelow_skip ["SQL.Query"]
   def find_containing_geofences(user_id, location_id) do
     # Use PostGIS to find all active geofences containing this point
     now = DateTime.utc_now()
@@ -145,6 +168,31 @@ defmodule Fence.Locations do
     """
 
     case Repo.query(query, [Ecto.UUID.dump!(user_id), Ecto.UUID.dump!(location_id), now]) do
+      {:ok, %{rows: rows}} ->
+        rows
+        |> Enum.map(fn [id] -> Ecto.UUID.cast!(id) end)
+        |> MapSet.new()
+
+      _ ->
+        MapSet.new()
+    end
+  end
+
+  # sobelow_skip ["SQL.Query"]
+  def find_containing_geofences_by_coords(user_id, lat, lng) do
+    now = DateTime.utc_now()
+
+    query = """
+    SELECT g.id
+    FROM geofences g
+    JOIN memberships m ON m.group_id = g.group_id AND m.user_id = $1
+    LEFT JOIN geofence_opt_outs oo ON oo.geofence_id = g.id AND oo.user_id = $1
+    WHERE ST_Contains(g.boundary, ST_SetSRID(ST_MakePoint($3, $2), 4326))
+      AND g.expires_at > $4
+      AND oo.id IS NULL
+    """
+
+    case Repo.query(query, [Ecto.UUID.dump!(user_id), lat, lng, now]) do
       {:ok, %{rows: rows}} ->
         rows
         |> Enum.map(fn [id] -> Ecto.UUID.cast!(id) end)
@@ -310,32 +358,33 @@ defmodule Fence.Locations do
 
   def broadcast_location_update(user_id, location_id) do
     location = Repo.get(DeviceLocation, location_id)
+    if location, do: broadcast_location_update_from_record(user_id, location)
+  end
 
-    if location do
-      groups = Groups.list_user_live_groups(user_id)
-      user = Accounts.get_user(user_id)
+  def broadcast_location_update_from_record(user_id, %DeviceLocation{} = location) do
+    groups = Groups.list_user_live_groups(user_id)
+    user = Accounts.get_user(user_id)
 
-      {lng, lat} =
-        case location.point do
-          %Geo.Point{coordinates: coords} -> coords
-          _ -> {nil, nil}
-        end
-
-      payload = %{
-        user_id: user_id,
-        display_name: user && user.display_name,
-        avatar_url: user && user.avatar_url,
-        latitude: lat,
-        longitude: lng,
-        accuracy: location.accuracy,
-        speed: location.speed,
-        battery_level: location.battery_level,
-        updated_at: location.inserted_at
-      }
-
-      for group <- groups do
-        FenceWeb.Endpoint.broadcast("group:#{group.id}", "location:updated", payload)
+    {lng, lat} =
+      case location.point do
+        %Geo.Point{coordinates: coords} -> coords
+        _ -> {nil, nil}
       end
+
+    payload = %{
+      user_id: user_id,
+      display_name: user && user.display_name,
+      avatar_url: user && user.avatar_url,
+      latitude: lat,
+      longitude: lng,
+      accuracy: location.accuracy,
+      speed: location.speed,
+      battery_level: location.battery_level,
+      updated_at: location.inserted_at
+    }
+
+    for group <- groups do
+      FenceWeb.Endpoint.broadcast("group:#{group.id}", "location:updated", payload)
     end
   end
 
@@ -348,7 +397,7 @@ defmodule Fence.Locations do
       else: {:error, :invalid_action}
   end
 
-  defp do_process_geofence_event(user_id, attrs, action) do
+  defp do_process_geofence_event(user_id, attrs, _action) do
     geofence_id = attrs["geofence_id"]
 
     with {:ok, _geofence} <- validate_geofence(geofence_id, user_id) do
@@ -358,7 +407,12 @@ defmodule Fence.Locations do
       case %DeviceLocation{} |> DeviceLocation.changeset(location_attrs) |> Repo.insert() do
         {:ok, location} ->
           verified = geofence_contains_location?(geofence_id, location.id)
-          maybe_update_state(user_id, geofence_id, action, attrs, location, verified)
+
+          # Route through GeofenceCheckWorker for unified state management
+          %{user_id: user_id, location_id: location.id, source: "geofence_event"}
+          |> GeofenceCheckWorker.new()
+          |> Oban.insert()
+
           {:ok, %{verified: verified}}
 
         {:error, changeset} ->
@@ -382,56 +436,6 @@ defmodule Fence.Locations do
       {:expired, true} -> {:error, :expired}
       {:member, false} -> {:error, :forbidden}
       {:opted_out, true} -> {:error, :opted_out}
-    end
-  end
-
-  defp maybe_update_state(user_id, geofence_id, action, attrs, _location, verified) do
-    accuracy = attrs["accuracy"] || 0.0
-    poor_accuracy = accuracy > 100.0
-
-    should_trust =
-      case action do
-        "entered" -> verified or poor_accuracy
-        "exited" -> !verified or poor_accuracy
-      end
-
-    if should_trust do
-      apply_state_change(user_id, geofence_id, action)
-    end
-  end
-
-  defp apply_state_change(user_id, geofence_id, action) do
-    previous_ids = get_user_geofence_ids(user_id)
-
-    {entered_ids, exited_ids} = compute_state_diff(previous_ids, geofence_id, action)
-
-    update_geofence_state(user_id, entered_ids, exited_ids)
-    enqueue_notifications(user_id, entered_ids, exited_ids)
-  end
-
-  defp compute_state_diff(previous_ids, geofence_id, "entered") do
-    if MapSet.member?(previous_ids, geofence_id),
-      do: {MapSet.new(), MapSet.new()},
-      else: {MapSet.new([geofence_id]), MapSet.new()}
-  end
-
-  defp compute_state_diff(previous_ids, geofence_id, "exited") do
-    if MapSet.member?(previous_ids, geofence_id),
-      do: {MapSet.new(), MapSet.new([geofence_id])},
-      else: {MapSet.new(), MapSet.new()}
-  end
-
-  defp enqueue_notifications(user_id, entered_ids, exited_ids) do
-    for gid <- entered_ids do
-      %{user_id: user_id, geofence_id: gid, event: "entered"}
-      |> PushNotificationWorker.new()
-      |> Oban.insert()
-    end
-
-    for gid <- exited_ids do
-      %{user_id: user_id, geofence_id: gid, event: "exited"}
-      |> PushNotificationWorker.new()
-      |> Oban.insert()
     end
   end
 

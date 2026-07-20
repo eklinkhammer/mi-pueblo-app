@@ -41,6 +41,10 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
   int _distanceFilter = 50;
   int _intervalMs = 300000;
   Timer? _watchdog;
+  Timer? _adaptiveTimer;
+  double _lastSpeed = 0.0;
+  double _lastBatteryLevel = 1.0;
+  int _currentDistanceFilter = 50;
 
   @override
   Future<AppPermissionStatus> requestPermission() async {
@@ -98,6 +102,7 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
   Future<void> start() async {
     if (!_configured) return;
 
+    _currentDistanceFilter = _distanceFilter;
     await _startPositionStream();
 
     // Listen for heartbeat data sent from the foreground task isolate
@@ -113,6 +118,8 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
         callback: _foregroundTaskCallback,
       );
     }
+
+    _startAdaptiveTimer();
   }
 
   void _onTaskData(Object data) {
@@ -143,13 +150,13 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
     if (Platform.isAndroid) {
       settings = geo.AndroidSettings(
         accuracy: geo.LocationAccuracy.high,
-        distanceFilter: _distanceFilter,
+        distanceFilter: _currentDistanceFilter,
         intervalDuration: Duration(milliseconds: _intervalMs),
       );
     } else {
       settings = geo.AppleSettings(
         accuracy: geo.LocationAccuracy.high,
-        distanceFilter: _distanceFilter,
+        distanceFilter: _currentDistanceFilter,
         activityType: geo.ActivityType.other,
         allowBackgroundLocationUpdates: true,
         showBackgroundLocationIndicator: true,
@@ -160,7 +167,9 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
       locationSettings: settings,
     ).listen((position) async {
       _resetWatchdog();
+      _lastSpeed = position.speed;
       final batteryLevel = await _getBatteryLevel();
+      if (batteryLevel != null) _lastBatteryLevel = batteryLevel;
       final appLoc = AppLocation(
         latitude: position.latitude,
         longitude: position.longitude,
@@ -192,8 +201,44 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
     });
   }
 
+  void _startAdaptiveTimer() {
+    _adaptiveTimer?.cancel();
+    _adaptiveTimer = Timer.periodic(
+      const Duration(minutes: 2),
+      (_) => _maybeAdaptTracking(),
+    );
+  }
+
+  void _maybeAdaptTracking() {
+    int idealFilter;
+
+    if (_lastBatteryLevel < AppConfig.batteryCriticalThreshold) {
+      idealFilter = AppConfig.distanceFilterCritical;
+    } else if (_lastBatteryLevel < AppConfig.batteryLowThreshold) {
+      idealFilter = AppConfig.distanceFilterLowBattery;
+    } else if (_lastSpeed < AppConfig.stationarySpeedThreshold) {
+      // Stationary — use default filter (less frequent updates)
+      idealFilter = _distanceFilter;
+    } else {
+      // Moving with good battery — tighter filter
+      idealFilter = AppConfig.distanceFilterMoving;
+    }
+
+    if (idealFilter != _currentDistanceFilter) {
+      debugPrint(
+        'LocationService: adapting distance filter '
+        '$_currentDistanceFilter -> $idealFilter '
+        '(battery=${(_lastBatteryLevel * 100).toInt()}%, speed=${_lastSpeed.toStringAsFixed(1)}m/s)',
+      );
+      _currentDistanceFilter = idealFilter;
+      _startPositionStream();
+    }
+  }
+
   @override
   Future<void> stop() async {
+    _adaptiveTimer?.cancel();
+    _adaptiveTimer = null;
     _watchdog?.cancel();
     _watchdog = null;
     await _positionSub?.cancel();
@@ -252,6 +297,7 @@ class GeolocatorForegroundBackend implements GeolocationBackend {
   }
 
   void dispose() {
+    _adaptiveTimer?.cancel();
     _watchdog?.cancel();
     _positionSub?.cancel();
     FlutterForegroundTask.removeTaskDataCallback(_onTaskData);
@@ -282,12 +328,7 @@ class LocationTaskHandler extends TaskHandler {
   @override
   Future<void> onRepeatEvent(DateTime timestamp) async {
     try {
-      final position = await geo.Geolocator.getCurrentPosition(
-        locationSettings: const geo.LocationSettings(
-          accuracy: geo.LocationAccuracy.high,
-        ),
-      );
-
+      // Check battery level first — skip heartbeat poll if critical
       double? batteryLevel;
       try {
         final level = await _battery.batteryLevel;
@@ -295,6 +336,19 @@ class LocationTaskHandler extends TaskHandler {
       } on Exception catch (_) {
         // Ignore battery errors
       }
+
+      if (batteryLevel != null &&
+          batteryLevel < AppConfig.batteryCriticalThreshold) {
+        debugPrint(
+            'LocationTaskHandler: skipping heartbeat (battery ${(batteryLevel * 100).toInt()}%)');
+        return;
+      }
+
+      final position = await geo.Geolocator.getCurrentPosition(
+        locationSettings: const geo.LocationSettings(
+          accuracy: geo.LocationAccuracy.high,
+        ),
+      );
 
       FlutterForegroundTask.sendDataToMain({
         'latitude': position.latitude,

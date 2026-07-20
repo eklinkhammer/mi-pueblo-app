@@ -38,13 +38,17 @@ defmodule Fence.Subscriptions.RevenueCat do
 
   defp active_entitlement?(entitlements, name) do
     case Map.get(entitlements, name) do
-      %{"expires_date" => nil} -> true
+      %{"expires_date" => nil} ->
+        true
+
       %{"expires_date" => expires} ->
         case DateTime.from_iso8601(expires) do
           {:ok, dt, _} -> DateTime.compare(dt, DateTime.utc_now()) == :gt
           _ -> false
         end
-      _ -> false
+
+      _ ->
+        false
     end
   end
 end

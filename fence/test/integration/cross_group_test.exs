@@ -13,12 +13,15 @@ defmodule Fence.Integration.CrossGroupTest do
     test "Alice in Group1 and Group2, entering geofence fires events on both channels", %{
       conn: conn
     } do
-      {_alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
+      {alice, token_a, _} = register_via_api(conn, %{"display_name" => "Alice"})
       {_bob, token_b, _} = register_via_api(conn, %{"display_name" => "Bob"})
       {_carol, token_c, _} = register_via_api(conn, %{"display_name" => "Carol"})
       conn_a = authed_conn_from_token(conn, token_a)
       conn_b = authed_conn_from_token(conn, token_b)
       conn_c = authed_conn_from_token(conn, token_c)
+
+      # Upgrade Alice so she can create multiple groups
+      upgrade_tier(alice["id"])
 
       # Alice creates Group1, Bob joins
       group1 = setup_group_with_invite(conn_a, conn_b, "Group1")

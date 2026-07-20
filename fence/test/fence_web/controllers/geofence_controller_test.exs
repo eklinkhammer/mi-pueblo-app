@@ -170,14 +170,7 @@ defmodule FenceWeb.GeofenceControllerTest do
       # Grant visibility both ways
       {:ok, _} = Fence.Groups.share_visibility(user.id, group.id, other.id)
 
-      {:ok, _} =
-        Fence.Notifications.log_push(%{
-          recipient_id: user.id,
-          triggering_user_id: other.id,
-          geofence_id: geofence.id,
-          event: "entered",
-          status: "sent"
-        })
+      {:ok, _} = Fence.Locations.log_geofence_event(other.id, geofence.id, "entered")
 
       conn = get(conn, "/api/v1/groups/#{group.id}/geofences/#{geofence.id}/activity")
       assert %{"activity" => activity} = json_response(conn, 200)

@@ -28,13 +28,21 @@ defmodule FenceWeb.StatsController do
                     end),
                   top_geofences:
                     Enum.map(hm.top_geofences, fn tg ->
-                      %{geofence_id: tg.geofence_id, geofence_name: tg.geofence_name, visit_count: tg.visit_count}
+                      %{
+                        geofence_id: tg.geofence_id,
+                        geofence_name: tg.geofence_name,
+                        visit_count: tg.visit_count
+                      }
                     end)
                 }
               end),
             your_top_geofences:
               Enum.map(s.your_top_geofences, fn tg ->
-                %{geofence_id: tg.geofence_id, geofence_name: tg.geofence_name, visit_count: tg.visit_count}
+                %{
+                  geofence_id: tg.geofence_id,
+                  geofence_name: tg.geofence_name,
+                  visit_count: tg.visit_count
+                }
               end)
           }
         end)

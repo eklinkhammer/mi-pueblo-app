@@ -259,7 +259,8 @@ defmodule Fence.Integration.SubscriptionEnforcementTest do
 
       # Members still exist
       members = Groups.list_members(group.id)
-      assert length(members) == 16  # creator + 15
+      # creator + 15
+      assert length(members) == 16
 
       # But adding more is blocked
       refute Subscriptions.can_add_member?(group.id)

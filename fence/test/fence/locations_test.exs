@@ -1,7 +1,10 @@
 defmodule Fence.LocationsTest do
   use Fence.DataCase, async: false
 
+  use Oban.Testing, repo: Fence.Repo
+
   alias Fence.Locations
+  alias Fence.Workers.GeofenceCheckWorker
   import Fence.Factory
 
   describe "report_location/2" do
@@ -279,6 +282,13 @@ defmodule Fence.LocationsTest do
                  "longitude" => -122.4194,
                  "accuracy" => 10.0
                })
+
+      # State update now happens async via GeofenceCheckWorker — drain the job
+      assert_enqueued(worker: GeofenceCheckWorker, args: %{"user_id" => user.id})
+
+      # Execute the enqueued job to apply state changes
+      [job] = all_enqueued(worker: GeofenceCheckWorker)
+      perform_job(GeofenceCheckWorker, job.args)
 
       # User should now be inside the geofence
       ids = Locations.get_user_geofence_ids(user.id)

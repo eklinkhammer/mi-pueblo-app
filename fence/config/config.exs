@@ -72,6 +72,11 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
+# Geofence dwell time (hysteresis) — seconds to wait before committing state changes
+config :fence, :geofence_dwell,
+  entry_seconds: 30,
+  exit_seconds: 60
+
 # Invite deep link base URL
 config :fence, :invite_base_url, "https://fence.app/join"
 

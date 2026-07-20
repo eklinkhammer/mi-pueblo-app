@@ -8,8 +8,18 @@ defmodule Fence.Subscriptions do
 
   @tier_limits %{
     "village_member" => %{max_groups: 1, max_members: 10, max_geofences: 3, history_days: 7},
-    "village_elder" => %{max_groups: 3, max_members: 50, max_geofences: :unlimited, history_days: 90},
-    "village_leader" => %{max_groups: :unlimited, max_members: 100, max_geofences: :unlimited, history_days: 90}
+    "village_elder" => %{
+      max_groups: 3,
+      max_members: 50,
+      max_geofences: :unlimited,
+      history_days: 90
+    },
+    "village_leader" => %{
+      max_groups: :unlimited,
+      max_members: 100,
+      max_geofences: :unlimited,
+      history_days: 90
+    }
   }
 
   def tier_limits, do: @tier_limits
@@ -140,7 +150,9 @@ defmodule Fence.Subscriptions do
 
   defp handle_cancellation(%{"app_user_id" => app_user_id}) do
     case Repo.get_by(Subscription, user_id: app_user_id) do
-      nil -> :ok
+      nil ->
+        :ok
+
       sub ->
         sub
         |> Subscription.changeset(%{status: "cancelled"})
@@ -150,7 +162,9 @@ defmodule Fence.Subscriptions do
 
   defp handle_expiration(%{"app_user_id" => app_user_id}) do
     case Repo.get_by(Subscription, user_id: app_user_id) do
-      nil -> :ok
+      nil ->
+        :ok
+
       sub ->
         sub
         |> Subscription.changeset(%{status: "expired"})
@@ -160,7 +174,9 @@ defmodule Fence.Subscriptions do
 
   defp handle_billing_issue(%{"app_user_id" => app_user_id}) do
     case Repo.get_by(Subscription, user_id: app_user_id) do
-      nil -> :ok
+      nil ->
+        :ok
+
       sub ->
         sub
         |> Subscription.changeset(%{status: "grace_period"})
@@ -186,6 +202,7 @@ defmodule Fence.Subscriptions do
   end
 
   defp parse_datetime(nil), do: nil
+
   defp parse_datetime(str) when is_binary(str) do
     case DateTime.from_iso8601(str) do
       {:ok, dt, _} -> DateTime.truncate(dt, :second)

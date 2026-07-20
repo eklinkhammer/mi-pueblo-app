@@ -27,7 +27,9 @@ defmodule FenceWeb.GeofenceController do
       if not Subscriptions.can_create_geofence?(group_id) do
         conn
         |> put_status(:payment_required)
-        |> json(%{error: %{code: "geofence_limit_reached", message: "Upgrade to create more geofences"}})
+        |> json(%{
+          error: %{code: "geofence_limit_reached", message: "Upgrade to create more geofences"}
+        })
       else
         attrs =
           params

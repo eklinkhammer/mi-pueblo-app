@@ -20,7 +20,9 @@ defmodule FenceWeb.GroupController do
     if not Subscriptions.can_create_group?(user.id) do
       conn
       |> put_status(:payment_required)
-      |> json(%{error: %{code: "group_limit_reached", message: "Upgrade your plan to create more groups"}})
+      |> json(%{
+        error: %{code: "group_limit_reached", message: "Upgrade your plan to create more groups"}
+      })
     else
       case Groups.create_group(user, params) do
         {:ok, group} ->
