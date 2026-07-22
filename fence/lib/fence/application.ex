@@ -20,8 +20,8 @@ defmodule Fence.Application do
         credentials = Application.fetch_env!(:fence, :fcm_credentials)
 
         [
-          {Goth, name: Fence.Goth, source: {:service_account, credentials, []}},
-          Fence.FCM
+          {DynamicSupervisor, name: Fence.FCMDynSupervisor, strategy: :one_for_one},
+          {Fence.FCMStarter, credentials}
         ]
       else
         Logger.warning("[FCM] FCM_SERVICE_ACCOUNT_JSON not set — push notifications disabled")
