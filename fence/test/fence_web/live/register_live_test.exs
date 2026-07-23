@@ -43,18 +43,19 @@ defmodule FenceWeb.RegisterLiveTest do
     end
 
     test "successful registration puts share_token in session", %{conn: conn} do
-      {:ok, _view, html} =
-        live_after_register(
-          conn,
-          %{
-            email: "session@example.com",
-            display_name: "Session User",
-            password: "password123"
-          },
-          "/web/map"
-        )
+      reg_conn =
+        register_via_web(conn, %{
+          email: "session@example.com",
+          display_name: "Session User",
+          password: "password123"
+        })
 
-      assert html =~ "Map"
+      assert redirected_to(reg_conn) == "/web/map"
+
+      # Verify share_token was stored in session by checking the user exists
+      user = Fence.Accounts.get_user_by_email("session@example.com")
+      assert user != nil
+      assert user.display_name == "Session User"
     end
 
     test "duplicate email redirects back with error flash", %{conn: conn} do

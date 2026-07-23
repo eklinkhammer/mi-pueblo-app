@@ -18,4 +18,14 @@ defmodule FenceWeb.WebAuth do
         {:halt, redirect(socket, to: "/web/unauthorized")}
     end
   end
+
+  def on_mount(:admin, _params, session, socket) do
+    case session["admin_user"] do
+      %{id: _, name: _, email: _} = user ->
+        {:cont, assign(socket, :current_user, user)}
+
+      _ ->
+        {:halt, redirect(socket, to: "/web/dashboard")}
+    end
+  end
 end

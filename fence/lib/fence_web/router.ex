@@ -23,6 +23,10 @@ defmodule FenceWeb.Router do
     plug FenceWeb.ShareTokenPlug
   end
 
+  pipeline :admin_authenticated do
+    plug FenceWeb.AdminBasicAuth
+  end
+
   scope "/api/v1", FenceWeb do
     pipe_through :api
 
@@ -121,11 +125,18 @@ defmodule FenceWeb.Router do
   end
 
   scope "/web", FenceWeb do
+    pipe_through [:browser, :admin_authenticated]
+
+    live_session :admin, on_mount: [{FenceWeb.WebAuth, :admin}] do
+      live "/dashboard", DashboardLive
+      live "/map", MapLive
+    end
+  end
+
+  scope "/web", FenceWeb do
     pipe_through [:browser, :web_authenticated]
 
     live_session :authenticated, on_mount: [{FenceWeb.WebAuth, :ensure_authenticated}] do
-      live "/dashboard", DashboardLive
-      live "/map", MapLive
       live "/groups/:group_id/geofences/new", GeofenceCreateLive
       live "/groups/:group_id/geofences/:id", GeofenceDetailLive
     end

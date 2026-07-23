@@ -123,11 +123,11 @@ defmodule FenceWeb.GeofenceCreateLive do
         }
 
         case Geofences.create_geofence(attrs) do
-          {:ok, _geofence} ->
+          {:ok, geofence} ->
             socket =
               socket
               |> put_flash(:info, "Geofence created")
-              |> push_navigate(to: ~p"/web/map")
+              |> push_navigate(to: ~p"/web/groups/#{group_id}/geofences/#{geofence}")
 
             {:noreply, socket}
 

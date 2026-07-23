@@ -44,4 +44,14 @@ defmodule FenceWeb.ConnCase do
       live(unquote(conn), "#{unquote(path)}#{sep}token=#{st.token}")
     end
   end
+
+  defmacro live_admin(conn, path) do
+    quote do
+      {admin_user, admin_pass} = Application.get_env(:fence, :admin_credentials)
+
+      unquote(conn)
+      |> put_req_header("authorization", "Basic " <> Base.encode64("#{admin_user}:#{admin_pass}"))
+      |> live(unquote(path))
+    end
+  end
 end

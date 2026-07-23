@@ -58,6 +58,19 @@ if rc_webhook_secret = System.get_env("REVENUECAT_WEBHOOK_SECRET") do
   config :fence, :revenuecat_webhook_secret, rc_webhook_secret
 end
 
+# Admin dashboard credentials
+admin_user = System.get_env("ADMIN_USER") || "admin"
+
+admin_pass =
+  System.get_env("ADMIN_PASS") ||
+    if config_env() == :prod do
+      raise "ADMIN_PASS env var required"
+    else
+      "changeme"
+    end
+
+config :fence, admin_credentials: {admin_user, admin_pass}
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

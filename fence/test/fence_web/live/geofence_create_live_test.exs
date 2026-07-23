@@ -43,8 +43,9 @@ defmodule FenceWeb.GeofenceCreateLiveTest do
 
       render_click(view, "create")
 
-      # Should redirect to /web/map
-      assert_redirect(view, "/web/map")
+      # Should redirect to the geofence detail page
+      {path, _flash} = assert_redirect(view)
+      assert path =~ ~r|/web/groups/.+/geofences/.+|
 
       # Verify geofence was created in DB
       geofences = Geofences.list_active_group_geofences(group.id)
