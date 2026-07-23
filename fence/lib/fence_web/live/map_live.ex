@@ -18,6 +18,8 @@ defmodule FenceWeb.MapLive do
       |> assign(:new_group_name, "")
       |> assign(:search_results, [])
       |> assign(:searching, false)
+      |> load_data()
+      |> schedule_refresh()
 
     {:ok, socket}
   end
@@ -29,15 +31,19 @@ defmodule FenceWeb.MapLive do
 
   @impl true
   def handle_event("select_group", %{"group_id" => ""}, socket) do
-    {:noreply, assign(socket, selected_group_id: nil, search_results: [])}
+    socket =
+      socket
+      |> assign(selected_group_id: nil, search_results: [])
+      |> load_data()
+
+    {:noreply, socket}
   end
 
   def handle_event("select_group", %{"group_id" => group_id}, socket) do
     socket =
       socket
       |> assign(selected_group_id: group_id, search_results: [])
-      |> load_data(group_id)
-      |> schedule_refresh()
+      |> load_data()
 
     {:noreply, socket}
   end
@@ -54,7 +60,7 @@ defmodule FenceWeb.MapLive do
           |> assign(:groups, groups)
           |> assign(:selected_group_id, group.id)
           |> assign(:new_group_name, "")
-          |> load_data(group.id)
+          |> load_data()
           |> put_flash(:info, "Group \"#{group.name}\" created!")
 
         {:noreply, socket}
@@ -108,21 +114,49 @@ defmodule FenceWeb.MapLive do
 
   @impl true
   def handle_info(:refresh, socket) do
+    socket =
+      socket
+      |> load_data()
+      |> schedule_refresh()
+
+    {:noreply, socket}
+  end
+
+  defp load_data(socket) do
     case socket.assigns.selected_group_id do
-      nil ->
-        {:noreply, socket}
-
-      group_id ->
-        socket =
-          socket
-          |> load_data(group_id)
-          |> schedule_refresh()
-
-        {:noreply, socket}
+      nil -> load_all_locations(socket)
+      group_id -> load_group_data(socket, group_id)
     end
   end
 
-  defp load_data(socket, group_id) do
+  defp load_all_locations(socket) do
+    locations = Locations.get_all_last_locations()
+
+    location_data =
+      Enum.map(locations, fn loc ->
+        {lng, lat} = loc.point.coordinates
+
+        %{
+          user_id: loc.user_id,
+          display_name: loc.display_name || "Unknown",
+          avatar_url: loc.avatar_url,
+          lat: lat,
+          lng: lng,
+          time_ago: time_ago(loc.updated_at)
+        }
+      end)
+
+    bounds = Enum.map(location_data, &[&1.lat, &1.lng])
+
+    socket
+    |> assign(:locations, location_data)
+    |> assign(:geofences, [])
+    |> push_event("update_locations", %{locations: location_data})
+    |> push_event("update_geofences", %{geofences: []})
+    |> maybe_fit_bounds(bounds)
+  end
+
+  defp load_group_data(socket, group_id) do
     locations = Locations.get_group_last_locations(group_id, socket.assigns.current_user.id)
     geofences = Geofences.list_active_group_geofences(group_id)
 
@@ -197,7 +231,7 @@ defmodule FenceWeb.MapLive do
         <div class="flex items-center gap-4">
           <form phx-change="select_group">
             <select name="group_id" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
-              <option value="">Select a group</option>
+              <option value="">All Users</option>
               <option :for={group <- @groups} value={group.id} selected={group.id == @selected_group_id}>
                 {group.name}
               </option>
@@ -213,8 +247,8 @@ defmodule FenceWeb.MapLive do
         </div>
       </div>
 
-      <div :if={@groups == [] and @selected_group_id == nil} class="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-        <p class="text-gray-500 mb-4">Create a group to get started</p>
+      <div :if={@groups == []} class="flex flex-col items-center justify-center h-32 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <p class="text-gray-500 mb-4">Create a group to enable geofences</p>
         <form phx-submit="create_group" class="flex items-center gap-2">
           <input
             type="text"
@@ -233,48 +267,48 @@ defmodule FenceWeb.MapLive do
         </form>
       </div>
 
-      <div :if={@groups != [] and @selected_group_id == nil} class="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
-        <p class="text-gray-500">Select a group to view the map</p>
-      </div>
-
-      <div :if={@selected_group_id} class="space-y-2">
+      <div class="space-y-2">
         <.search_bar searching={@searching} results={@search_results} />
         <div class="flex gap-4">
-        <div
-          id="map"
-          phx-hook="LeafletMap"
-          data-interactive="false"
-          style="height:500px"
-          class="flex-1 rounded-lg border border-gray-200"
-          phx-update="ignore"
-        >
-        </div>
-        <div class="w-64 space-y-2">
-          <h3 class="font-semibold text-sm text-gray-700">Members</h3>
-          <div :for={loc <- @locations} class="text-sm flex items-center gap-2">
-            <div
-              class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold bg-cover bg-center"
-              style={if loc.avatar_url, do: "background-image: url(#{loc.avatar_url})", else: "background-color: #{user_color(loc.user_id)}"}
-            >
-              <span :if={!loc.avatar_url}>{String.first(loc.display_name)}</span>
+          <div
+            id="map"
+            phx-hook="LeafletMap"
+            data-interactive="false"
+            style="height:70vh"
+            class="flex-1 rounded-lg border border-gray-200"
+            phx-update="ignore"
+          >
+          </div>
+          <div class="w-64 space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700">
+              {if @selected_group_id, do: "Members", else: "All Users"}
+            </h3>
+            <div :for={loc <- @locations} class="text-sm flex items-center gap-2">
+              <div
+                class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold bg-cover bg-center"
+                style={if loc.avatar_url, do: "background-image: url(#{loc.avatar_url})", else: "background-color: #{user_color(loc.user_id)}"}
+              >
+                <span :if={!loc.avatar_url}>{String.first(loc.display_name)}</span>
+              </div>
+              <span class="font-medium truncate">{loc.display_name}</span>
+              <span class="text-gray-500 ml-auto text-xs whitespace-nowrap">{loc.time_ago}</span>
             </div>
-            <span class="font-medium truncate">{loc.display_name}</span>
-            <span class="text-gray-500 ml-auto text-xs whitespace-nowrap">{loc.time_ago}</span>
-          </div>
-          <div :if={@locations == []} class="text-sm text-gray-400">No locations yet</div>
+            <div :if={@locations == []} class="text-sm text-gray-400">No locations yet</div>
 
-          <h3 class="font-semibold text-sm text-gray-700 mt-4">Geofences</h3>
-          <div :for={gf <- @geofences} class="text-sm">
-            <.link
-              navigate={~p"/web/groups/#{gf.group_id}/geofences/#{gf.id}"}
-              class="text-blue-600 hover:underline"
-            >
-              {gf.name}
-            </.link>
-            <span class="text-gray-500 ml-1">{round_radius(gf.radius)}m</span>
+            <div :if={@selected_group_id}>
+              <h3 class="font-semibold text-sm text-gray-700 mt-4">Geofences</h3>
+              <div :for={gf <- @geofences} class="text-sm">
+                <.link
+                  navigate={~p"/web/groups/#{gf.group_id}/geofences/#{gf.id}"}
+                  class="text-blue-600 hover:underline"
+                >
+                  {gf.name}
+                </.link>
+                <span class="text-gray-500 ml-1">{round_radius(gf.radius)}m</span>
+              </div>
+              <div :if={@geofences == []} class="text-sm text-gray-400">No geofences</div>
+            </div>
           </div>
-          <div :if={@geofences == []} class="text-sm text-gray-400">No geofences</div>
-        </div>
         </div>
       </div>
     </div>

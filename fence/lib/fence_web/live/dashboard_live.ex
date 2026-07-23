@@ -17,6 +17,12 @@ defmodule FenceWeb.DashboardLive do
       |> assign(:selected_group_id, nil)
       |> assign(:locations, [])
       |> assign(:total_users, 0)
+      |> assign(:tracked_users, 0)
+      |> assign(:active_users, 0)
+      |> assign(:notification_stats, %{sent_today: 0, sent_hour: 0, errors_today: 0, errors_hour: 0})
+      |> assign(:group_count, 0)
+      |> assign(:active_geofences, 0)
+      |> assign(:geofence_events_today, 0)
       |> assign(:staleness, %{p50: 0, p90: 0})
       |> assign(:vm_memory_mb, 0.0)
       |> assign(:process_count, 0)
@@ -94,8 +100,16 @@ defmodule FenceWeb.DashboardLive do
   end
 
   defp load_metrics(socket) do
+    notification_stats = Metrics.notification_stats()
+
     socket
     |> assign(:total_users, Metrics.total_user_count())
+    |> assign(:tracked_users, Metrics.tracked_user_count())
+    |> assign(:active_users, Metrics.active_user_count())
+    |> assign(:notification_stats, notification_stats)
+    |> assign(:group_count, Metrics.group_count())
+    |> assign(:active_geofences, Metrics.active_geofence_count())
+    |> assign(:geofence_events_today, Metrics.geofence_events_today())
     |> assign(:staleness, Metrics.sync_staleness_percentiles())
     |> assign(:vm_memory_mb, Float.round(:erlang.memory(:total) / 1_048_576, 1))
     |> assign(:process_count, :erlang.system_info(:process_count))
@@ -148,15 +162,42 @@ defmodule FenceWeb.DashboardLive do
 
   attr :title, :string, required: true
   attr :value, :string, required: true
+  attr :color, :string, default: nil
+  attr :subtitle, :string, default: nil
 
   defp metric_card(assigns) do
     ~H"""
-    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">{@title}</div>
-      <div class="mt-1 text-lg font-semibold text-gray-900">{@value}</div>
+    <div class={[
+      "rounded-lg border p-4 shadow-sm",
+      color_classes(@color)
+    ]}>
+      <div class="text-xs font-medium uppercase tracking-wide" style={label_style(@color)}>{@title}</div>
+      <div class="mt-1 text-lg font-semibold" style={value_style(@color)}>{@value}</div>
+      <div :if={@subtitle} class="mt-0.5 text-xs text-gray-400">{@subtitle}</div>
     </div>
     """
   end
+
+  defp color_classes(nil), do: "border-gray-200 bg-white"
+  defp color_classes("green"), do: "border-emerald-200 bg-emerald-50"
+  defp color_classes("blue"), do: "border-blue-200 bg-blue-50"
+  defp color_classes("red"), do: "border-red-200 bg-red-50"
+  defp color_classes("amber"), do: "border-amber-200 bg-amber-50"
+  defp color_classes(_), do: "border-gray-200 bg-white"
+
+  defp label_style(nil), do: "color: #6b7280"
+  defp label_style("green"), do: "color: #047857"
+  defp label_style("blue"), do: "color: #1d4ed8"
+  defp label_style("red"), do: "color: #b91c1c"
+  defp label_style("amber"), do: "color: #b45309"
+  defp label_style(_), do: "color: #6b7280"
+
+  defp value_style(nil), do: "color: #111827"
+  defp value_style("green"), do: "color: #065f46"
+  defp value_style("blue"), do: "color: #1e3a5f"
+  defp value_style("red"), do: "color: #991b1b"
+  defp value_style("amber"), do: "color: #92400e"
+  defp value_style(_), do: "color: #111827"
 
   defp time_ago(datetime) do
     diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
@@ -185,36 +226,49 @@ defmodule FenceWeb.DashboardLive do
         </form>
       </div>
 
-      <%!-- Row 1: App metrics --%>
+      <%!-- Row 1: User KPIs --%>
       <div class="grid grid-cols-3 gap-4">
         <.metric_card title="Total Users" value={format_number(@total_users)} />
-        <.metric_card title="Staleness p50" value={format_staleness(@staleness.p50)} />
-        <.metric_card title="Staleness p90" value={format_staleness(@staleness.p90)} />
+        <.metric_card title="Tracked Users" value={format_number(@tracked_users)} color="green" subtitle="last 7 days" />
+        <.metric_card title="Active Users" value={format_number(@active_users)} color="blue" subtitle="last 1 hour" />
       </div>
 
-      <%!-- Row 2: VM metrics --%>
-      <div class="grid grid-cols-3 gap-4">
-        <.metric_card title="VM Memory" value={"#{@vm_memory_mb} MB"} />
-        <.metric_card title="Processes" value={format_number(@process_count)} />
-        <.metric_card title="Atoms" value={format_number(@atom_count)} />
+      <%!-- Row 2: Notifications --%>
+      <div class="grid grid-cols-4 gap-4">
+        <.metric_card title="Sent (today)" value={format_number(@notification_stats.sent_today)} />
+        <.metric_card title="Sent (last hour)" value={format_number(@notification_stats.sent_hour)} />
+        <.metric_card title="Errors (today)" value={format_number(@notification_stats.errors_today)} color="red" />
+        <.metric_card title="Errors (last hour)" value={format_number(@notification_stats.errors_hour)} color="red" />
       </div>
 
-      <%!-- Row 3: Latency metrics --%>
+      <%!-- Row 3: Platform KPIs --%>
       <div class="grid grid-cols-3 gap-4">
+        <.metric_card title="Total Groups" value={format_number(@group_count)} />
+        <.metric_card title="Active Geofences" value={format_number(@active_geofences)} />
+        <.metric_card title="Geofence Events Today" value={format_number(@geofence_events_today)} />
+      </div>
+
+      <%!-- Row 4: System metrics --%>
+      <div class="grid grid-cols-4 gap-4">
+        <.metric_card
+          title="Staleness"
+          value={"p50: #{format_staleness(@staleness.p50)} / p90: #{format_staleness(@staleness.p90)}"}
+        />
         <.metric_card
           title="Request Latency (ms)"
           value={"p50:#{@request_latency.p50} p90:#{@request_latency.p90} p99:#{@request_latency.p99}"}
         />
         <.metric_card
-          title="DB Query Time (ms)"
-          value={"p50:#{@db_query.p50} p90:#{@db_query.p90} p99:#{@db_query.p99}"}
+          title="DB Query / Queue (ms)"
+          value={"Q #{@db_query.p50}/#{@db_query.p90}/#{@db_query.p99} | W #{@db_queue.p50}/#{@db_queue.p90}/#{@db_queue.p99}"}
         />
         <.metric_card
-          title="DB Queue Wait (ms)"
-          value={"p50:#{@db_queue.p50} p90:#{@db_queue.p90} p99:#{@db_queue.p99}"}
+          title="VM"
+          value={"#{@vm_memory_mb}MB / #{format_number(@process_count)} procs"}
         />
       </div>
 
+      <%!-- Row 5: Map + sidebar --%>
       <div class="flex gap-4">
         <div
           id="map"
