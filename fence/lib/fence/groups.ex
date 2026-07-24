@@ -21,6 +21,22 @@ defmodule Fence.Groups do
     end)
   end
 
+  def list_all_groups do
+    from(g in Group,
+      left_join: m in Membership,
+      on: m.group_id == g.id,
+      group_by: g.id,
+      order_by: [desc: g.inserted_at],
+      select: %{
+        id: g.id,
+        name: g.name,
+        member_count: count(m.id),
+        inserted_at: g.inserted_at
+      }
+    )
+    |> Repo.all()
+  end
+
   def get_group(id), do: Repo.get(Group, id)
 
   def update_group(%Group{} = group, attrs) do

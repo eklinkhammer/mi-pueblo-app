@@ -30,6 +30,22 @@ defmodule Fence.Geofences do
     end
   end
 
+  def list_all_geofences do
+    from(gf in Geofence,
+      left_join: g in Fence.Groups.Group,
+      on: g.id == gf.group_id,
+      order_by: [desc: gf.inserted_at],
+      select: %{
+        id: gf.id,
+        name: gf.name,
+        group_name: g.name,
+        radius_meters: gf.radius_meters,
+        inserted_at: gf.inserted_at
+      }
+    )
+    |> Repo.all()
+  end
+
   def get_geofence(id), do: Repo.get(Geofence, id)
 
   def update_geofence(%Geofence{} = geofence, attrs) do

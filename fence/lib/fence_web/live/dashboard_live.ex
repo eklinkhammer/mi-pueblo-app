@@ -1,7 +1,7 @@
 defmodule FenceWeb.DashboardLive do
   use FenceWeb, :live_view
 
-  alias Fence.{Groups, Locations}
+  alias Fence.{Accounts, Geofences, Groups, Locations}
   alias Fence.Metrics
   alias Fence.Metrics.Collector
 
@@ -19,7 +19,12 @@ defmodule FenceWeb.DashboardLive do
       |> assign(:total_users, 0)
       |> assign(:tracked_users, 0)
       |> assign(:active_users, 0)
-      |> assign(:notification_stats, %{sent_today: 0, sent_hour: 0, errors_today: 0, errors_hour: 0})
+      |> assign(:notification_stats, %{
+        sent_today: 0,
+        sent_hour: 0,
+        errors_today: 0,
+        errors_hour: 0
+      })
       |> assign(:group_count, 0)
       |> assign(:active_geofences, 0)
       |> assign(:geofence_events_today, 0)
@@ -30,7 +35,12 @@ defmodule FenceWeb.DashboardLive do
       |> assign(:request_latency, %{p50: 0, p90: 0, p99: 0})
       |> assign(:db_query, %{p50: 0, p90: 0, p99: 0})
       |> assign(:db_queue, %{p50: 0, p90: 0, p99: 0})
+      |> assign(:all_users, [])
+      |> assign(:all_groups, [])
+      |> assign(:all_geofences, [])
+      |> assign(:admin_tab, "users")
       |> load_data()
+      |> load_admin_data()
       |> schedule_refresh()
 
     {:ok, socket}
@@ -53,6 +63,44 @@ defmodule FenceWeb.DashboardLive do
       |> load_data()
 
     {:noreply, socket}
+  end
+
+  def handle_event("switch_admin_tab", %{"tab" => tab}, socket)
+      when tab in ~w(users groups geofences) do
+    {:noreply, assign(socket, :admin_tab, tab)}
+  end
+
+  def handle_event("delete_user", %{"id" => id}, socket) do
+    case Accounts.get_user(id) do
+      nil ->
+        {:noreply, socket}
+
+      user ->
+        Accounts.delete_user(user)
+        {:noreply, load_admin_data(socket)}
+    end
+  end
+
+  def handle_event("delete_group", %{"id" => id}, socket) do
+    case Groups.get_group(id) do
+      nil ->
+        {:noreply, socket}
+
+      group ->
+        Groups.delete_group(group)
+        {:noreply, load_admin_data(socket)}
+    end
+  end
+
+  def handle_event("delete_geofence", %{"id" => id}, socket) do
+    case Geofences.get_geofence(id) do
+      nil ->
+        {:noreply, socket}
+
+      geofence ->
+        Geofences.delete_geofence(geofence)
+        {:noreply, load_admin_data(socket)}
+    end
   end
 
   @impl true
@@ -117,6 +165,13 @@ defmodule FenceWeb.DashboardLive do
     |> assign(:request_latency, Collector.get_request_latency_percentiles())
     |> assign(:db_query, Collector.get_db_query_percentiles())
     |> assign(:db_queue, Collector.get_db_queue_percentiles())
+  end
+
+  defp load_admin_data(socket) do
+    socket
+    |> assign(:all_users, Accounts.list_all_users())
+    |> assign(:all_groups, Groups.list_all_groups())
+    |> assign(:all_geofences, Geofences.list_all_geofences())
   end
 
   defp maybe_fit_bounds(socket, []), do: socket
@@ -198,6 +253,19 @@ defmodule FenceWeb.DashboardLive do
   defp value_style("red"), do: "color: #991b1b"
   defp value_style("amber"), do: "color: #92400e"
   defp value_style(_), do: "color: #111827"
+
+  defp stale_user?(user) do
+    case user.last_location_at do
+      nil -> true
+      ts -> NaiveDateTime.diff(NaiveDateTime.utc_now(), ts, :day) >= 30
+    end
+  end
+
+  defp format_datetime(nil), do: "—"
+
+  defp format_datetime(dt) do
+    Calendar.strftime(dt, "%Y-%m-%d %H:%M")
+  end
 
   defp time_ago(datetime) do
     diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
@@ -288,6 +356,124 @@ defmodule FenceWeb.DashboardLive do
             <span class="text-gray-500 ml-1">{loc.time_ago}</span>
           </div>
           <div :if={@locations == []} class="text-sm text-gray-400">No locations yet</div>
+        </div>
+      </div>
+
+      <%!-- Admin Actions --%>
+      <div class="mt-8">
+        <h2 class="text-xl font-bold mb-4">Admin Actions</h2>
+        <div class="flex gap-2 mb-4">
+          <button
+            :for={tab <- [{"users", "Users"}, {"groups", "Groups"}, {"geofences", "Geofences"}]}
+            phx-click="switch_admin_tab"
+            phx-value-tab={elem(tab, 0)}
+            class={[
+              "px-4 py-2 rounded-md text-sm font-medium",
+              if(@admin_tab == elem(tab, 0),
+                do: "bg-blue-600 text-white",
+                else: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )
+            ]}
+          >
+            {elem(tab, 1)}
+          </button>
+        </div>
+
+        <div :if={@admin_tab == "users"} class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Last Seen</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                <th class="px-4 py-2"></th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr :for={user <- @all_users} class={if(stale_user?(user), do: "bg-amber-50", else: "")}>
+                <td class="px-4 py-2 text-sm">{user.display_name || "—"}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{user.email || "—"}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{format_datetime(user.last_location_at)}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{format_datetime(user.inserted_at)}</td>
+                <td class="px-4 py-2 text-sm">
+                  <button
+                    phx-click="delete_user"
+                    phx-value-id={user.id}
+                    data-confirm="Delete this user? This cannot be undone."
+                    class="text-red-600 hover:text-red-800 font-medium"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div :if={@all_users == []} class="text-sm text-gray-400 py-4 text-center">No users</div>
+        </div>
+
+        <div :if={@admin_tab == "groups"} class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Members</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                <th class="px-4 py-2"></th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr :for={group <- @all_groups}>
+                <td class="px-4 py-2 text-sm">{group.name}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{group.member_count}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{format_datetime(group.inserted_at)}</td>
+                <td class="px-4 py-2 text-sm">
+                  <button
+                    phx-click="delete_group"
+                    phx-value-id={group.id}
+                    data-confirm="Delete this group and all its geofences? This cannot be undone."
+                    class="text-red-600 hover:text-red-800 font-medium"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div :if={@all_groups == []} class="text-sm text-gray-400 py-4 text-center">No groups</div>
+        </div>
+
+        <div :if={@admin_tab == "geofences"} class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Group</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Radius</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                <th class="px-4 py-2"></th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr :for={gf <- @all_geofences}>
+                <td class="px-4 py-2 text-sm">{gf.name}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{gf.group_name || "—"}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{round(gf.radius_meters)}m</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{format_datetime(gf.inserted_at)}</td>
+                <td class="px-4 py-2 text-sm">
+                  <button
+                    phx-click="delete_geofence"
+                    phx-value-id={gf.id}
+                    data-confirm="Delete this geofence? This cannot be undone."
+                    class="text-red-600 hover:text-red-800 font-medium"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div :if={@all_geofences == []} class="text-sm text-gray-400 py-4 text-center">No geofences</div>
         </div>
       </div>
     </div>

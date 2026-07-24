@@ -49,6 +49,23 @@ defmodule Fence.Accounts do
     end
   end
 
+  def list_all_users do
+    from(u in User,
+      left_join: dl in Fence.Locations.DeviceLocation,
+      on: dl.user_id == u.id,
+      group_by: u.id,
+      order_by: [desc: u.inserted_at],
+      select: %{
+        id: u.id,
+        display_name: u.display_name,
+        email: u.email,
+        inserted_at: u.inserted_at,
+        last_location_at: max(dl.inserted_at)
+      }
+    )
+    |> Repo.all()
+  end
+
   def get_user(id), do: Repo.get(User, id)
 
   def get_user_by_email(email), do: Repo.get_by(User, email: email)
