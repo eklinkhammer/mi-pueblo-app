@@ -33,7 +33,8 @@ config :fence, Oban,
   queues: [
     geofence_checks: 10,
     notifications: 10,
-    maintenance: 2
+    maintenance: 2,
+    geocoding: 2
   ],
   plugins: [
     {Oban.Plugins.Pruner, max_age: 7 * 24 * 60 * 60},

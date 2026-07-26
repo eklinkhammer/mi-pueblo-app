@@ -4,7 +4,7 @@ defmodule Fence.Locations do
   alias Fence.{Accounts, Groups}
   alias Fence.Locations.{DeviceLocation, GeofenceEvent, UserGeofenceState}
   alias Fence.Repo
-  alias Fence.Workers.GeofenceCheckWorker
+  alias Fence.Workers.{DwellDetectionWorker, GeofenceCheckWorker}
 
   def report_location(user_id, attrs) do
     location_attrs = Map.put(attrs, "user_id", user_id)
@@ -19,6 +19,11 @@ defmodule Fence.Locations do
         # Enqueue geofence check
         %{user_id: user_id, location_id: location.id, source: location.source}
         |> GeofenceCheckWorker.new()
+        |> Oban.insert()
+
+        # Enqueue dwell detection
+        %{user_id: user_id, location_id: location.id}
+        |> DwellDetectionWorker.new()
         |> Oban.insert()
 
         {:ok, location}

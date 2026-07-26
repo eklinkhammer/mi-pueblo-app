@@ -80,8 +80,24 @@ class GroupDetailScreen extends ConsumerWidget {
                         leading: const CircleAvatar(child: Icon(Icons.person)),
                         title: Text(m.displayName),
                         subtitle: Text(m.role),
-                        trailing: _buildVisibilityControl(
-                            ref, m.id, currentUserId, pairs, l10n),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (m.id != currentUserId)
+                              IconButton(
+                                icon: const Icon(Icons.notifications_outlined, size: 20),
+                                tooltip: l10n.notifications,
+                                onPressed: () => context.go(
+                                  '/users/${m.id}?name=${Uri.encodeComponent(m.displayName)}',
+                                ),
+                              ),
+                            if (_buildVisibilityControl(
+                                    ref, m.id, currentUserId, pairs, l10n) !=
+                                null)
+                              _buildVisibilityControl(
+                                  ref, m.id, currentUserId, pairs, l10n)!,
+                          ],
+                        ),
                         onTap: () {
                           ref.read(mapFocusUserProvider.notifier).state = m.id;
                           ref.read(selectedGroupIdProvider.notifier).state = groupId;

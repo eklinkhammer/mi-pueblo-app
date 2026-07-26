@@ -106,6 +106,15 @@ defmodule FenceWeb.Router do
 
     # Geocoding
     get "/geocode", GeocodingController, :search
+
+    # Dwells
+    get "/users/:user_id/dwells", DwellController, :index
+
+    # Category watches
+    get "/category-watches", CategoryWatchController, :index
+    post "/category-watches", CategoryWatchController, :create
+    delete "/category-watches/:id", CategoryWatchController, :delete
+    get "/category-watches/categories", CategoryWatchController, :categories
   end
 
   scope "/", FenceWeb do

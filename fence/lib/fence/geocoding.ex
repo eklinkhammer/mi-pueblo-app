@@ -4,7 +4,8 @@ defmodule Fence.Geocoding do
   """
   use GenServer
 
-  @nominatim_url "https://nominatim.openstreetmap.org/search"
+  @nominatim_search_url "https://nominatim.openstreetmap.org/search"
+  @nominatim_reverse_url "https://nominatim.openstreetmap.org/reverse"
   @min_interval_ms 1_000
 
   # --- Client API ---
@@ -21,6 +22,13 @@ defmodule Fence.Geocoding do
     GenServer.call(name, {:search, query}, 10_000)
   end
 
+  @doc """
+  Reverse geocode a lat/lng pair. Returns `{:ok, %{display_name, class, type, lat, lng}}` or `{:error, reason}`.
+  """
+  def reverse(lat, lng, name \\ __MODULE__) do
+    GenServer.call(name, {:reverse, lat, lng}, 10_000)
+  end
+
   # --- GenServer callbacks ---
 
   @impl true
@@ -32,6 +40,19 @@ defmodule Fence.Geocoding do
 
   @impl true
   def handle_call({:search, query}, _from, state) do
+    state = rate_limit(state)
+    {result, new_state} = do_search(query, state)
+    {:reply, result, new_state}
+  end
+
+  @impl true
+  def handle_call({:reverse, lat, lng}, _from, state) do
+    state = rate_limit(state)
+    {result, new_state} = do_reverse(lat, lng, state)
+    {:reply, result, new_state}
+  end
+
+  defp rate_limit(state) do
     now = System.monotonic_time(:millisecond)
 
     if state.last_request_at do
@@ -39,14 +60,13 @@ defmodule Fence.Geocoding do
       if elapsed < @min_interval_ms, do: Process.sleep(@min_interval_ms - elapsed)
     end
 
-    {result, new_state} = do_search(query, state)
-    {:reply, result, new_state}
+    state
   end
 
   defp do_search(query, state) do
     req_options =
       [
-        url: @nominatim_url,
+        url: @nominatim_search_url,
         headers: [{"user-agent", "Fence/1.0 (family location sharing app)"}],
         params: [q: query, format: "jsonv2", limit: 5],
         retry: false,
@@ -75,6 +95,37 @@ defmodule Fence.Geocoding do
     end
   end
 
+  defp do_reverse(lat, lng, state) do
+    req_options =
+      [
+        url: @nominatim_reverse_url,
+        headers: [{"user-agent", "Fence/1.0 (family location sharing app)"}],
+        params: [lat: lat, lon: lng, format: "jsonv2", zoom: 18],
+        retry: false,
+        connect_options: [timeout: 5_000],
+        receive_timeout: 5_000
+      ] ++ state.req_options
+
+    case Req.get(req_options) do
+      {:ok, %Req.Response{status: 200, body: body}} when is_map(body) ->
+        result = %{
+          display_name: body["display_name"],
+          class: body["category"] || body["class"],
+          type: body["type"],
+          lat: parse_float(body["lat"]),
+          lng: parse_float(body["lon"])
+        }
+
+        {{:ok, result}, %{state | last_request_at: System.monotonic_time(:millisecond)}}
+
+      {:ok, %Req.Response{status: status}} ->
+        {{:error, "Nominatim returned status #{status}"}, state}
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
   defp parse_float(val) when is_binary(val) do
     {f, _} = Float.parse(val)
     f
@@ -82,4 +133,5 @@ defmodule Fence.Geocoding do
 
   defp parse_float(val) when is_float(val), do: val
   defp parse_float(val) when is_integer(val), do: val * 1.0
+  defp parse_float(nil), do: nil
 end

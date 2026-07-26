@@ -18,6 +18,7 @@ import 'package:fence/screens/geofences/geofence_detail_screen.dart';
 import 'package:fence/screens/groups/group_notification_settings_screen.dart';
 import 'package:fence/screens/subscription/subscription_screen.dart';
 import 'package:fence/screens/settings/settings_screen.dart';
+import 'package:fence/screens/user/user_detail_screen.dart';
 import 'package:fence/widgets/shell_scaffold.dart';
 
 /// Global reference to the current GoRouter for use outside the widget tree
@@ -133,6 +134,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/subscription',
             builder: (context, state) => const SubscriptionScreen(),
+          ),
+          GoRoute(
+            path: '/users/:userId',
+            builder: (context, state) => UserDetailScreen(
+              userId: state.pathParameters['userId']!,
+              displayName: state.uri.queryParameters['name'],
+            ),
           ),
           GoRoute(
             path: '/settings',

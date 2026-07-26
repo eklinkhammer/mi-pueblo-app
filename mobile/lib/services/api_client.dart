@@ -290,6 +290,28 @@ class ApiClient {
   Future<Response<Map<String, dynamic>>> getUserHistory(String userId) =>
       _dio.get<Map<String, dynamic>>('/users/$userId/history');
 
+  // Dwells
+  Future<Response<Map<String, dynamic>>> getUserDwells(String userId) =>
+      _dio.get<Map<String, dynamic>>('/users/$userId/dwells');
+
+  // Category watches
+  Future<Response<Map<String, dynamic>>> getCategoryWatches() =>
+      _dio.get<Map<String, dynamic>>('/category-watches');
+
+  Future<Response<Map<String, dynamic>>> createCategoryWatch(
+      String watchedUserId, String category) {
+    return _dio.post<Map<String, dynamic>>('/category-watches', data: {
+      'watched_user_id': watchedUserId,
+      'category': category,
+    });
+  }
+
+  Future<Response<Map<String, dynamic>>> deleteCategoryWatch(String id) =>
+      _dio.delete<Map<String, dynamic>>('/category-watches/$id');
+
+  Future<Response<Map<String, dynamic>>> getCategories() =>
+      _dio.get<Map<String, dynamic>>('/category-watches/categories');
+
   // Avatar
   Future<Response<Map<String, dynamic>>> uploadAvatar(String filePath) {
     final ext = filePath.split('.').last.toLowerCase();

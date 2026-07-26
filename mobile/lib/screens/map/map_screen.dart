@@ -999,6 +999,21 @@ class _MemberDetailSheet extends ConsumerWidget {
                 ),
               ),
 
+            const SizedBox(height: 8),
+
+            // View Profile button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.person, size: 18),
+                label: Text(l10n.notifications),
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.go('/users/$userId?name=${Uri.encodeComponent(displayName)}');
+                },
+              ),
+            ),
+
             const SizedBox(height: 12),
 
             // History: arrivals/departures
